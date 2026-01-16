@@ -79,8 +79,8 @@
             <UButton
               variant="outline"
               icon="i-lucide-download"
-              label="CSV eksport"
-              @click="exportLeadsToCSV"
+              label="Excel eksport"
+              @click="exportLeadsToExcel"
             />
           </template>
         </UDashboardToolbar>
@@ -647,37 +647,51 @@ const refreshLeads = () => {
   loadLeads();
 };
 
-const exportLeadsToCSV = () => {
-  const headers = [
-    "Ism",
-    "Familiya",
-    "Telefon",
-    "Holat",
-    "Manba",
-    "Kurs",
-    "Yaratilgan",
-  ];
-  const rows = filteredLeads.value.map((lead) => [
-    lead.first_name,
-    lead.last_name,
-    lead.phone,
-    lead.status,
-    lead.source,
-    getCourseTitle(lead.course_id || ""),
-    formatDate(lead.createdAt),
-  ]);
+const exportLeadsToExcel = async () => {
+  try {
+    const XLSX = await import('xlsx');
+    
+    const data = filteredLeads.value.map((lead) => ({
+      "Ism": lead.first_name,
+      "Familiya": lead.last_name,
+      "Telefon": lead.phone,
+      "Holat": lead.status,
+      "Manba": lead.source,
+      "Kurs": getCourseTitle(lead.course_id || ""),
+      "Yaratilgan": formatDate(lead.createdAt),
+    }));
 
-  const csvContent = [
-    headers.join(","),
-    ...rows.map((row) => row.join(",")),
-  ].join("\n");
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Leadlar");
+    
+    // Set column widths
+    const colWidths = [
+      { wch: 15 }, // Ism
+      { wch: 15 }, // Familiya
+      { wch: 15 }, // Telefon
+      { wch: 20 }, // Holat
+      { wch: 20 }, // Manba
+      { wch: 25 }, // Kurs
+      { wch: 15 }, // Yaratilgan
+    ];
+    worksheet['!cols'] = colWidths;
 
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const link = document.createElement("a");
-  const url = URL.createObjectURL(blob);
-  link.setAttribute("href", url);
-  link.setAttribute("download", `leads_${new Date().toISOString()}.csv`);
-  link.click();
+    XLSX.writeFile(workbook, `leads_${new Date().toISOString().split('T')[0]}.xlsx`);
+    
+    toast.add({
+      title: "Muvaffaqiyatli",
+      description: "Leadlar Excel faylga eksport qilindi",
+      color: "success",
+    });
+  } catch (error) {
+    console.error("Failed to export leads:", error);
+    toast.add({
+      title: "Xatolik",
+      description: "Leadlarni eksport qilishda xatolik yuz berdi",
+      color: "error",
+    });
+  }
 };
 
 // URL param updates

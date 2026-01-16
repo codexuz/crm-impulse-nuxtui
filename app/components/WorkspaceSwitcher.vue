@@ -7,10 +7,10 @@ defineProps<{
 
 const workspaces = ref([
   {
-    label: "Impulse Study CRM",
+    label: "Impulse Academy",
     avatar: {
-      icon: "i-lucide-graduation-cap",
-      alt: "Impulse Study",
+      src: "/android-chrome-512x512.png",
+      alt: "Impulse Academy logotipi",
     },
   },
 ]);
@@ -26,8 +26,8 @@ const items = computed<DropdownMenuItem[][]>(() => {
     })),
     [
       {
-        label: "Sozlamalar",
-        icon: "i-lucide-cog",
+        label: "Yangi Filial (Tez kunda)",
+        icon: "i-lucide-plus",
       },
     ],
   ];
