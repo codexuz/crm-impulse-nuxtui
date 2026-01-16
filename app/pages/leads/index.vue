@@ -36,7 +36,11 @@
           <template #right>
             <USelectMenu
               :model-value="filterStatus"
-              @update:model-value="(val: string | any) => filterStatus = typeof val === 'string' ? val : val?.value || ''"
+              @update:model-value="
+                (val: string | any) =>
+                  (filterStatus =
+                    typeof val === 'string' ? val : val?.value || '')
+              "
               :items="statusOptions"
               value-attribute="value"
               option-attribute="label"
@@ -46,7 +50,11 @@
 
             <USelectMenu
               :model-value="filterSource"
-              @update:model-value="(val: string | any) => filterSource = typeof val === 'string' ? val : val?.value || ''"
+              @update:model-value="
+                (val: string | any) =>
+                  (filterSource =
+                    typeof val === 'string' ? val : val?.value || '')
+              "
               :items="sourceOptions"
               value-attribute="value"
               option-attribute="label"
@@ -104,12 +112,52 @@
                 :items-per-page="itemsPerPage"
                 show-last
                 show-first
-                @update:page="(p: number) => currentPage = p"
+                @update:page="(p: number) => (currentPage = p)"
               />
             </div>
           </template>
         </UCard>
       </div>
+
+      <!-- View Lead Modal -->
+      <LeadsViewLeadModal
+        v-model:open="viewLeadDialog"
+        :lead="selectedLead"
+        :courses="courses"
+        @edit="editFromView"
+      />
+
+      <!-- Edit Lead Modal -->
+      <LeadsEditLeadModal
+        v-model:open="editLeadDialog"
+        :lead="selectedLead"
+        :status-options="statusOptions"
+        :source-options="sourceOptions"
+        :courses="courses"
+        @updated="loadLeads"
+      />
+
+      <!-- Change Status Modal -->
+      <LeadsChangeLeadStatusModal
+        v-model:open="changeStatusDialog"
+        :lead="selectedLead"
+        :status-options="statusOptions"
+        @updated="loadLeads"
+      />
+
+      <!-- Trial Lesson Modal -->
+      <LeadsLeadTrialLessonModal
+        v-model:open="trialLessonDialog"
+        :lead="selectedLead"
+        @created="loadLeads"
+      />
+
+      <!-- Convert to Student Modal -->
+      <LeadsConvertLeadStudentModal
+        v-model:open="convertToStudentDialog"
+        :lead="selectedLead"
+        @converted="loadLeads"
+      />
     </template>
   </UDashboardPanel>
 </template>
@@ -122,6 +170,7 @@ import { useAuth } from "~/composables/useAuth";
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
+const UPopover = resolveComponent("UPopover");
 
 definePageMeta({
   middleware: ["auth"],
@@ -164,10 +213,7 @@ const leads = ref<Lead[]>([]);
 const courses = ref<any[]>([]);
 const teachers = ref<any[]>([]);
 const isLoading = ref(true);
-const isUpdating = ref(false);
 const isDeleting = ref(false);
-const isSavingTrial = ref(false);
-const isCreatingStudent = ref(false);
 
 // Pagination
 const currentPage = ref(1);
@@ -175,13 +221,13 @@ const itemsPerPage = ref(10);
 const totalLeads = ref(0);
 
 const totalPages = computed(() =>
-  Math.ceil(totalLeads.value / itemsPerPage.value)
+  Math.ceil(totalLeads.value / itemsPerPage.value),
 );
 const paginationStart = computed(
-  () => (currentPage.value - 1) * itemsPerPage.value + 1
+  () => (currentPage.value - 1) * itemsPerPage.value + 1,
 );
 const paginationEnd = computed(() =>
-  Math.min(currentPage.value * itemsPerPage.value, totalLeads.value)
+  Math.min(currentPage.value * itemsPerPage.value, totalLeads.value),
 );
 
 // Filters
@@ -193,31 +239,14 @@ const endDate = ref("");
 
 // Modals
 const viewLeadDialog = ref(false);
+const editLeadDialog = ref(false);
 const changeStatusDialog = ref(false);
 const trialLessonDialog = ref(false);
-const deleteConfirmDialog = ref(false);
 const convertToStudentDialog = ref(false);
-const editLeadDialog = ref(false);
 const showPassword = ref(false);
+const deletePopoverOpen = ref<Record<string, boolean>>({});
 
 const selectedLead = ref<Lead | null>(null);
-const leadTrialLessons = ref<TrialLesson[]>([]);
-
-// Form data
-
-const trialLesson = ref({
-  teacher_id: "",
-  scheduled_date: "",
-  scheduled_time: "",
-  status: "scheduled",
-  notes: "",
-});
-
-const studentData = ref({
-  username: "",
-  password: "",
-  level_id: "",
-});
 
 // Table columns with render functions
 const columns: TableColumn<Lead>[] = [
@@ -229,7 +258,7 @@ const columns: TableColumn<Lead>[] = [
         h(
           "div",
           { class: "font-medium" },
-          `${row.original.first_name} ${row.original.last_name}`
+          `${row.original.first_name} ${row.original.last_name}`,
         ),
         h("div", { class: "text-xs text-gray-500" }, `ID: ${row.original.id}`),
       ]);
@@ -248,7 +277,7 @@ const columns: TableColumn<Lead>[] = [
         {
           color: getStatusColor(row.original.status),
         },
-        () => getStatusDisplay(row.original.status)
+        () => getStatusDisplay(row.original.status),
       );
     },
   },
@@ -264,13 +293,29 @@ const columns: TableColumn<Lead>[] = [
   },
   {
     accessorKey: "createdAt",
-    header: "Yaratilgan",
+    header: ({ column }) => {
+      const isSorted = column.getIsSorted();
+
+      return h(UButton, {
+        color: "neutral",
+        variant: "ghost",
+        label: "Yaratilgan",
+        icon: isSorted
+          ? isSorted === "asc"
+            ? "i-lucide-arrow-up-narrow-wide"
+            : "i-lucide-arrow-down-wide-narrow"
+          : "i-lucide-arrow-up-down",
+        class: "-mx-2.5",
+        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
+      });
+    },
     cell: ({ row }) => formatDate(row.original.createdAt),
   },
   {
     id: "actions",
     header: "Amallar",
     cell: ({ row }) => {
+      const leadId = row.original.id;
       return h("div", { class: "flex items-center gap-1" }, [
         h(UButton, {
           variant: "ghost",
@@ -287,6 +332,59 @@ const columns: TableColumn<Lead>[] = [
           onClick: () => editLead(row.original),
         }),
         h(
+          UPopover,
+          {
+            open: deletePopoverOpen.value[leadId] || false,
+            "onUpdate:open": (value: boolean) => {
+              deletePopoverOpen.value[leadId] = value;
+            },
+          },
+          {
+            default: () =>
+              h(UButton, {
+                color: "error",
+                variant: "ghost",
+                icon: "i-lucide-trash-2",
+                size: "sm",
+                square: true,
+              }),
+            content: () =>
+              h("div", { class: "p-4 max-w-sm space-y-3" }, [
+                h(
+                  "h4",
+                  { class: "font-semibold text-sm" },
+                  "Ishonchingiz komilmi?",
+                ),
+                h(
+                  "p",
+                  { class: "text-sm text-gray-600" },
+                  "Bu leadni butunlay o'chiradi va barcha bog'langan ma'lumotlarni olib tashlaydi.",
+                ),
+                h("div", { class: "flex justify-end gap-2 mt-3" }, [
+                  h(UButton, {
+                    color: "neutral",
+                    variant: "subtle",
+                    label: "Bekor qilish",
+                    size: "sm",
+                    onClick: () => {
+                      deletePopoverOpen.value[leadId] = false;
+                    },
+                  }),
+                  h(UButton, {
+                    color: "red",
+                    label: isDeleting.value ? "O'chirilmoqda..." : "O'chirish",
+                    loading: isDeleting.value,
+                    size: "sm",
+                    onClick: async () => {
+                      await confirmDeleteLead(row.original);
+                      deletePopoverOpen.value[leadId] = false;
+                    },
+                  }),
+                ]),
+              ]),
+          },
+        ),
+        h(
           UDropdownMenu,
           {
             items: getLeadActions(row.original),
@@ -298,7 +396,7 @@ const columns: TableColumn<Lead>[] = [
               icon: "i-lucide-more-vertical",
               size: "sm",
               square: true,
-            })
+            }),
         ),
       ]);
     },
@@ -348,7 +446,7 @@ const teacherOptions = computed(() =>
   teachers.value.map((t) => ({
     ...t,
     name: `${t.first_name} ${t.last_name}`,
-  }))
+  })),
 );
 
 // Using server-side filtering, so filteredLeads just returns leads
@@ -410,10 +508,9 @@ const getLeadActions = (lead: Lead) => [
   ],
   [
     {
-      label: "O'chirish",
-      icon: "i-lucide-trash-2",
-      onSelect: () => deleteLead(lead),
-      class: "text-red-600 dark:text-red-400",
+      label: "Arxivlash",
+      icon: "i-lucide-archive",
+      onSelect: () => archiveLead(lead),
     },
   ],
 ];
@@ -435,7 +532,7 @@ const loadLeads = async () => {
 
     const response = await api.get<{ leads: Lead[]; total: number }>(
       apiService.value,
-      `/leads?${params.toString()}`
+      `/leads?${params.toString()}`,
     );
 
     leads.value = response.leads || [];
@@ -465,7 +562,7 @@ const loadTeachers = async () => {
   try {
     const response = await api.get<{ data: any[] }>(
       apiService.value,
-      "/users/teachers"
+      "/users/teachers",
     );
     teachers.value = response.data || [];
   } catch (error) {
@@ -473,47 +570,15 @@ const loadTeachers = async () => {
   }
 };
 
-const updateLead = async () => {
-  if (!selectedLead.value) return;
-
-  isUpdating.value = true;
-  try {
-    await api.put(
-      apiService.value,
-      `/leads/${selectedLead.value.id}`,
-      selectedLead.value
-    );
-    toast.add({
-      title: "Muvaffaqiyatli",
-      description: "Lead ma'lumotlari yangilandi",
-      color: "success",
-    });
-    editLeadDialog.value = false;
-    loadLeads();
-  } catch (error) {
-    console.error("Failed to update lead:", error);
-    toast.add({
-      title: "Xatolik",
-      description: "Lead yangilashda xatolik yuz berdi",
-      color: "error",
-    });
-  } finally {
-    isUpdating.value = false;
-  }
-};
-
-const confirmDeleteLead = async () => {
-  if (!selectedLead.value) return;
-
+const confirmDeleteLead = async (lead: Lead) => {
   isDeleting.value = true;
   try {
-    await api.delete(apiService.value, `/leads/${selectedLead.value.id}`);
+    await api.delete(apiService.value, `/leads/${lead.id}`);
     toast.add({
       title: "Muvaffaqiyatli",
       description: "Lead o'chirildi",
       color: "success",
     });
-    deleteConfirmDialog.value = false;
     loadLeads();
   } catch (error) {
     console.error("Failed to delete lead:", error);
@@ -527,141 +592,55 @@ const confirmDeleteLead = async () => {
   }
 };
 
-const saveTrialLesson = async () => {
-  if (!selectedLead.value) return;
-
-  isSavingTrial.value = true;
-  try {
-    await api.post(apiService.value, "/trial-lessons", {
-      ...trialLesson.value,
-      lead_id: selectedLead.value.id,
-    });
-    toast.add({
-      title: "Muvaffaqiyatli",
-      description: "Sinov darsi rejalashtirildi",
-      color: "success",
-    });
-    trialLessonDialog.value = false;
-    resetTrialLesson();
-  } catch (error) {
-    console.error("Failed to schedule trial lesson:", error);
-    toast.add({
-      title: "Xatolik",
-      description: "Sinov darsini rejalashtirishda xatolik yuz berdi",
-      color: "error",
-    });
-  } finally {
-    isSavingTrial.value = false;
-  }
-};
-
-const convertLeadToStudent = async () => {
-  if (!selectedLead.value) return;
-
-  isCreatingStudent.value = true;
-  try {
-    await api.post(apiService.value, "/leads/convert-to-student", {
-      lead_id: selectedLead.value.id,
-      ...studentData.value,
-      first_name: selectedLead.value.first_name,
-      last_name: selectedLead.value.last_name,
-      phone: selectedLead.value.phone,
-    });
-    toast.add({
-      title: "Muvaffaqiyatli",
-      description: "Lead talabaga aylantirildi",
-      color: "success",
-    });
-    convertToStudentDialog.value = false;
-    resetStudentData();
-    loadLeads();
-  } catch (error) {
-    console.error("Failed to convert lead to student:", error);
-    toast.add({
-      title: "Xatolik",
-      description: "Leadni talabaga aylantirishda xatolik yuz berdi",
-      color: "error",
-    });
-  } finally {
-    isCreatingStudent.value = false;
-  }
-};
-
-const saveStatusChange = async () => {
-  if (!selectedLead.value) return;
-
-  isUpdating.value = true;
-  try {
-    await api.put(apiService.value, `/leads/${selectedLead.value.id}`, {
-      status: selectedLead.value.status,
-    });
-    toast.add({
-      title: "Muvaffaqiyatli",
-      description: "Holat o'zgartirildi",
-      color: "success",
-    });
-    changeStatusDialog.value = false;
-    loadLeads();
-  } catch (error) {
-    console.error("Failed to change status:", error);
-    toast.add({
-      title: "Xatolik",
-      description: "Holatni o'zgartirishda xatolik yuz berdi",
-      color: "error",
-    });
-  } finally {
-    isUpdating.value = false;
-  }
-};
-
 // Action handlers
 const viewLead = async (lead: Lead) => {
   selectedLead.value = lead;
-
-  // Load trial lessons for this lead
-  try {
-    const trials = await api.get<TrialLesson[]>(
-      apiService.value,
-      `/trial-lessons?lead_id=${lead.id}`
-    );
-    leadTrialLessons.value = trials;
-  } catch (error) {
-    console.error("Failed to load trial lessons:", error);
-  }
-
   viewLeadDialog.value = true;
 };
 
 const editLead = (lead: Lead) => {
-  selectedLead.value = { ...lead };
+  selectedLead.value = lead;
   editLeadDialog.value = true;
 };
 
-const editFromView = () => {
+const editFromView = (lead: Lead) => {
   viewLeadDialog.value = false;
+  selectedLead.value = lead;
   editLeadDialog.value = true;
 };
 
 const changeLeadStatus = (lead: Lead) => {
-  selectedLead.value = { ...lead };
+  selectedLead.value = lead;
   changeStatusDialog.value = true;
 };
 
 const scheduleTrialLesson = (lead: Lead) => {
   selectedLead.value = lead;
-  resetTrialLesson();
   trialLessonDialog.value = true;
 };
 
 const convertToStudent = (lead: Lead) => {
   selectedLead.value = lead;
-  studentData.value.username = `${lead.first_name.toLowerCase()}_${lead.last_name.toLowerCase()}`;
   convertToStudentDialog.value = true;
 };
 
-const deleteLead = (lead: Lead) => {
-  selectedLead.value = lead;
-  deleteConfirmDialog.value = true;
+const archiveLead = async (lead: Lead) => {
+  try {
+    await api.patch(apiService.value, `/leads/${lead.id}/archive`, {});
+    toast.add({
+      title: "Muvaffaqiyatli",
+      description: "Lead arxivlandi",
+      color: "success",
+    });
+    loadLeads();
+  } catch (error) {
+    console.error("Failed to archive lead:", error);
+    toast.add({
+      title: "Xatolik",
+      description: "Lead arxivlashda xatolik yuz berdi",
+      color: "error",
+    });
+  }
 };
 
 const refreshLeads = () => {
@@ -699,25 +678,6 @@ const exportLeadsToCSV = () => {
   link.setAttribute("href", url);
   link.setAttribute("download", `leads_${new Date().toISOString()}.csv`);
   link.click();
-};
-
-// Reset functions
-const resetTrialLesson = () => {
-  trialLesson.value = {
-    teacher_id: "",
-    scheduled_date: "",
-    scheduled_time: "",
-    status: "scheduled",
-    notes: "",
-  };
-};
-
-const resetStudentData = () => {
-  studentData.value = {
-    username: "",
-    password: "",
-    level_id: "",
-  };
 };
 
 // URL param updates

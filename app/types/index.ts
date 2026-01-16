@@ -36,17 +36,12 @@ export interface Role {
 export interface Student extends User {
   level_id?: string;
   enrollment_date?: string;
-<<<<<<< HEAD
-  level_id?: string;
-  avatar_url?: string;
-=======
   avatar_url?: string;
   is_active: boolean;
   created_at: string;
   last_login?: string;
   currentSessionId?: string;
   roles: Role[];
->>>>>>> 1ad9a8b6a273d84ca877fc5bea9b64f92d6d2187
   student_profile?: {
     user_id: string;
     points: number;

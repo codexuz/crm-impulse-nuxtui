@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { Student } from "~/types";
 
-const open = ref(false);
+const open = defineModel<boolean>('open');
+
 const props = defineProps<{
   student: Student | null;
   studentGroups: any[];
@@ -9,7 +10,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   edit: [student: Student];
-  "update:open": [value: boolean];
 }>();
 
 const getInitials = (firstName: string, lastName: string): string => {
@@ -29,15 +29,13 @@ const getStudentCourse = (student: Student | null) => {
 
 <template>
   <UModal
-    v-if="student"
     v-model:open="open"
-    @update:open="emit('update:open', $event)"
     title="Talaba ma'lumotlari"
     description="Talaba haqida batafsil ma'lumot"
     :ui="{ content: 'w-[calc(100vw-2rem)] max-w-2xl', footer: 'justify-end' }"
   >
     <template #body>
-      <div class="space-y-6">
+      <div v-if="student" class="space-y-6">
         <div class="flex items-center gap-4">
           <UAvatar
             :alt="`${student.first_name} ${student.last_name}`"
@@ -165,6 +163,7 @@ const getStudentCourse = (student: Student | null) => {
         @click="close"
       />
       <UButton
+        v-if="student"
         label="Tahrirlash"
         @click="
           emit('edit', student);

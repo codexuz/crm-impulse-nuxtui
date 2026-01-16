@@ -70,16 +70,16 @@
           </template>
         </UCard>
       </div>
-    </template>
-  </UDashboardPanel>
 
+      
   <!-- View Student Modal -->
-  <!-- <UModal v-model="viewDialog" :ui="{ width: 'sm:max-w-3xl' }">
-    <UCard>
+
+  <UModal v-model:open="viewDialog" :ui="{ width: 'sm:max-w-3xl' }">
       <template #header>
         <h3 class="text-base font-semibold">Talaba ma'lumotlari</h3>
       </template>
-
+      
+      <template #body>
       <div v-if="selectedStudent" class="space-y-4">
         <div class="flex items-center gap-4">
           <UAvatar
@@ -149,7 +149,7 @@
               </div>
               <div class="flex">
                 <span class="text-gray-500 w-20">Yaratilgan:</span>
-                <span>{{ formatDate(selectedStudent.created_at) }}</span>
+                <span>{{ formatDate(selectedStudent?.created_at) }}</span>
               </div>
             </div>
           </div>
@@ -204,6 +204,7 @@
           </div>
         </div>
       </div>
+     </template>
 
       <template #footer>
         <div class="flex justify-end gap-2">
@@ -212,71 +213,13 @@
             label="Yopish"
             @click="viewDialog = false"
           />
-          <UButton label="Tahrirlash" @click="editStudent(selectedStudent)" />
         </div>
       </template>
-    </UCard>
-  </UModal> -->
+  </UModal>
 
-  <!-- Edit Student Modal -->
-  <!-- <UModal v-model="editDialog">
-    <UCard>
-      <template #header>
-        <h3 class="text-base font-semibold">Talabani tahrirlash</h3>
-      </template>
 
-      <form
-        v-if="editingStudent"
-        @submit.prevent="updateStudent"
-        class="space-y-4"
-      >
-        <div>
-          <label class="block text-sm font-medium mb-2">Ism</label>
-          <UInput v-model="editingStudent.first_name" />
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-2">Familiya</label>
-          <UInput v-model="editingStudent.last_name" />
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-2">Login</label>
-          <UInput v-model="editingStudent.username" />
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-2">Telefon</label>
-          <UInput v-model="editingStudent.phone" />
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-2">Daraja</label>
-          <USelectMenu
-            v-model="editingStudent.level_id"
-            :items="[
-              { label: 'Yo\'q', value: 'none' },
-              ...courses.map((c) => ({ label: c.title, value: c.id })),
-            ]"
-            value-attribute="value"
-            option-attribute="label"
-            placeholder="Darajani tanlang"
-          />
-        </div>
-      </form>
-
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <UButton
-            variant="outline"
-            label="Bekor qilish"
-            @click="editDialog = false"
-          />
-          <UButton
-            :label="isUpdating ? 'Yangilanmoqda...' : 'Talabani yangilash'"
-            :loading="isUpdating"
-            @click="updateStudent"
-          />
-        </div>
-      </template>
-    </UCard>
-  </UModal> -->
+    </template>
+  </UDashboardPanel>
 
 </template>
 
@@ -397,13 +340,6 @@ const columns: TableColumn<Student>[] = [
           square: true,
           onClick: () => viewStudent(row.original),
         }),
-        h(UButton, {
-          variant: "ghost",
-          icon: "i-lucide-pencil",
-          size: "sm",
-          square: true,
-          onClick: () => editStudent(row.original),
-        }),
         h(
           UPopover,
           {
@@ -469,7 +405,7 @@ const columns: TableColumn<Student>[] = [
                   icon: row.original.is_active
                     ? "i-lucide-user-x"
                     : "i-lucide-user-check",
-                  click: () => toggleStudentStatus(row.original),
+                  onSelect: () => toggleStudentStatus(row.original),
                 },
               ],
             ],

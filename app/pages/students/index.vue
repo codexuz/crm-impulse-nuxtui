@@ -68,14 +68,27 @@
                 :items-per-page="limit"
                 show-last
                 show-first
-                @update:page="(p: number) => page = p"
+                @update:page="(p: number) => (page = p)"
               />
             </div>
           </template>
         </UCard>
       </div>
-    </template>
+      <!-- View Student Modal -->
+      <StudentsViewStudentModal
+        v-model:open="viewDialog"
+        :student="selectedStudent"
+        :student-groups="studentGroups"
+        @edit="editStudent"
+      />
 
+      <!-- Edit Student Modal -->
+      <StudentsEditStudentModal
+        v-model:open="editDialog"
+        :student="editingStudent"
+        @updated="loadStudents"
+      />
+    </template>
   </UDashboardPanel>
 </template>
 
@@ -89,6 +102,7 @@ const UAvatar = resolveComponent("UAvatar");
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
+const UPopover = resolveComponent("UPopover");
 
 const { apiService } = useAuth();
 const toast = useToast();
@@ -114,13 +128,19 @@ const viewDialog = ref(false);
 const editDialog = ref(false);
 const confirmDialog = ref(false);
 
+// Debug viewDialog changes
+watch(viewDialog, (newVal) => {
+  console.log("viewDialog changed to:", newVal);
+});
+
 // Selected student data
 const selectedStudent = ref<Student | null>(null);
 const isUpdating = ref(false);
 const isDeleting = ref(false);
-const editingStudent = ref<Partial<Student> | null>(null);
+const editingStudent = ref<Student | null>(null);
 const studentToDelete = ref<Student | null>(null);
 const studentGroups = ref<any[]>([]);
+const deletePopoverOpen = ref<Record<string, boolean>>({});
 
 // New student form
 const newStudent = reactive({
@@ -151,12 +171,12 @@ const columns: TableColumn<Student>[] = [
             : {
                 fallback: () =>
                   getInitials(row.original.first_name, row.original.last_name),
-              }
+              },
         ),
         h(
           "span",
           { class: "font-medium" },
-          `${row.original.first_name} ${row.original.last_name}`
+          `${row.original.first_name} ${row.original.last_name}`,
         ),
       ]);
     },
@@ -178,7 +198,7 @@ const columns: TableColumn<Student>[] = [
         ? h(
             UBadge,
             { variant: "subtle" },
-            () => (row.original as any).level.title
+            () => (row.original as any).level.title,
           )
         : h("span", { class: "text-gray-400 text-sm" }, "Yo'q");
     },
@@ -187,56 +207,109 @@ const columns: TableColumn<Student>[] = [
     id: "actions",
     header: "Amallar",
     cell: ({ row }) => {
-      return h(
-        UDropdownMenu,
-        {
-          items: [
-            [
-              {
-                label: "Ko'rish",
-                icon: "i-lucide-eye",
-                click: () => viewStudent(row.original),
-              },
-              {
-                label: "Tahrirlash",
-                icon: "i-lucide-pencil",
-                click: () => editStudent(row.original),
-              },
-            ],
-            [
-              {
-                label: row.original.is_active
-                  ? "Faolsizlantirish"
-                  : "Faollashtirish",
-                icon: row.original.is_active
-                  ? "i-lucide-user-x"
-                  : "i-lucide-user-check",
-                click: () => toggleStudentStatus(row.original),
-              },
-              {
-                label: "Guruhlarni ko'rish",
-                icon: "i-lucide-users-2",
-                click: () => viewStudentGroups(row.original),
-              },
-            ],
-            [
-              {
-                label: "O'chirish",
+      const studentId = row.original.user_id;
+      return h("div", { class: "flex items-center gap-1" }, [
+        h(UButton, {
+          variant: "ghost",
+          icon: "i-lucide-eye",
+          size: "sm",
+          square: true,
+          onClick: () => {
+            console.log("View clicked for:", row.original);
+            viewStudent(row.original);
+          },
+        }),
+        h(UButton, {
+          variant: "ghost",
+          icon: "i-lucide-pencil",
+          size: "sm",
+          square: true,
+          onClick: () => editStudent(row.original),
+        }),
+        h(
+          UPopover,
+          {
+            open: deletePopoverOpen.value[studentId] || false,
+            "onUpdate:open": (value: boolean) => {
+              deletePopoverOpen.value[studentId] = value;
+            },
+          },
+          {
+            default: () =>
+              h(UButton, {
+                color: "error",
+                variant: "ghost",
                 icon: "i-lucide-trash-2",
-                click: () => deleteStudent(row.original),
-                class: "text-red-600 dark:text-red-400",
-              },
+                size: "sm",
+                square: true,
+              }),
+            content: () =>
+              h("div", { class: "p-4 max-w-sm space-y-3" }, [
+                h(
+                  "h4",
+                  { class: "font-semibold text-sm" },
+                  "Ishonchingiz komilmi?",
+                ),
+                h(
+                  "p",
+                  { class: "text-sm text-gray-600" },
+                  "Bu talabaning hisobini butunlay o'chiradi va \nbarcha bog'langan ma'lumotlarni olib tashlaydi.",
+                ),
+                h("div", { class: "flex justify-end gap-2 mt-3" }, [
+                  h(UButton, {
+                    color: "neutral",
+                    variant: "subtle",
+                    label: "Bekor qilish",
+                    size: "sm",
+                    onClick: () => {
+                      deletePopoverOpen.value[studentId] = false;
+                    },
+                  }),
+                  h(UButton, {
+                    color: "red",
+                    label: isDeleting.value ? "O'chirilmoqda..." : "O'chirish",
+                    loading: isDeleting.value,
+                    size: "sm",
+                    onClick: async () => {
+                      await confirmDelete(row.original);
+                      deletePopoverOpen.value[studentId] = false;
+                    },
+                  }),
+                ]),
+              ]),
+          },
+        ),
+        h(
+          UDropdownMenu,
+          {
+            items: [
+              [
+                {
+                  label: row.original.is_active
+                    ? "Faolsizlantirish"
+                    : "Faollashtirish",
+                  icon: row.original.is_active
+                    ? "i-lucide-user-x"
+                    : "i-lucide-user-check",
+                  onSelect: () => toggleStudentStatus(row.original),
+                },
+                {
+                  label: "Guruhlarni ko'rish",
+                  icon: "i-lucide-users-2",
+                  onSelect: () => viewStudentGroups(row.original),
+                },
+              ],
             ],
-          ],
-        },
-        () =>
-          h(UButton, {
-            color: "neutral",
-            variant: "ghost",
-            icon: "i-lucide-more-vertical",
-            size: "sm",
-          })
-      );
+          },
+          () =>
+            h(UButton, {
+              color: "neutral",
+              variant: "ghost",
+              icon: "i-lucide-more-vertical",
+              size: "sm",
+            }),
+        ),
+      ]);
     },
   },
 ];
@@ -312,7 +385,7 @@ const addStudent = async (studentData: any) => {
     const response = await api.post<Student>(
       apiService.value,
       "/auth/register",
-      data
+      data,
     );
 
     // Reload students from server
@@ -336,13 +409,15 @@ const addStudent = async (studentData: any) => {
 };
 
 const viewStudent = async (student: Student) => {
+  console.log("viewStudent called with:", student);
   selectedStudent.value = student;
   viewDialog.value = true;
+  console.log("viewDialog set to:", viewDialog.value);
 
   try {
     const response = await api.get<GroupStudent[]>(
       apiService.value,
-      `/group-students/student/${student.user_id}`
+      `/group-students/student/${student.user_id}`,
     );
     studentGroups.value = response;
   } catch (error) {
@@ -355,59 +430,8 @@ const editStudent = (student: Student | null) => {
   if (!student) return;
 
   viewDialog.value = false;
-  editingStudent.value = { ...student };
-
-  if (!(editingStudent.value as any).level_id) {
-    (editingStudent.value as any).level_id = "none";
-  }
-
+  editingStudent.value = student;
   editDialog.value = true;
-};
-
-const updateStudent = async () => {
-  if (!editingStudent.value || !editingStudent.value.user_id) return;
-
-  isUpdating.value = true;
-  try {
-    const studentData: any = { ...editingStudent.value };
-
-    if (studentData.level_id === "none") {
-      studentData.level_id = "";
-    }
-
-    const response = await api.patch<Student>(
-      apiService.value,
-      `/users/${editingStudent.value.user_id}`,
-      studentData
-    );
-
-    const index = students.value.findIndex(
-      (s) => s.user_id === response.user_id
-    );
-    if (index !== -1) {
-      students.value[index] = {
-        ...response,
-      };
-    }
-
-    toast.add({
-      title: "Muvaffaqiyat",
-      description: "Talaba muvaffaqiyatli yangilandi",
-      color: "success",
-    });
-
-    editDialog.value = false;
-  } catch (error) {
-    console.error("Failed to update student:", error);
-    toast.add({
-      title: "Xatolik",
-      description:
-        "Talabani yangilashda xatolik. Iltimos, qayta urinib ko'ring.",
-      color: "error",
-    });
-  } finally {
-    isUpdating.value = false;
-  }
 };
 
 const toggleStudentStatus = async (student: Student) => {
@@ -419,7 +443,7 @@ const toggleStudentStatus = async (student: Student) => {
     await api.patch<Student>(apiService.value, endpoint, {});
 
     const index = students.value.findIndex(
-      (s) => s.user_id === student.user_id
+      (s) => s.user_id === student.user_id,
     );
     if (index !== -1) {
       students.value[index] = {
@@ -455,15 +479,10 @@ const deleteStudent = (student: Student) => {
   confirmDialog.value = true;
 };
 
-const confirmDelete = async () => {
-  if (!studentToDelete.value) return;
-
+const confirmDelete = async (student: Student) => {
   isDeleting.value = true;
   try {
-    await api.delete<void>(
-      apiService.value,
-      `/users/${studentToDelete.value.user_id}`
-    );
+    await api.delete<void>(apiService.value, `/users/${student.user_id}`);
 
     // Reload students from server
     await loadStudents();
@@ -473,9 +492,6 @@ const confirmDelete = async () => {
       description: "Talaba muvaffaqiyatli o'chirildi",
       color: "success",
     });
-
-    confirmDialog.value = false;
-    studentToDelete.value = null;
   } catch (error) {
     console.error("Failed to delete student:", error);
     toast.add({

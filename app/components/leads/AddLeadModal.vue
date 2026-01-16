@@ -2,7 +2,7 @@
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 
-const { apiService } = useAuth();
+const { apiService, auth } = useAuth();
 const toast = useToast();
 
 const emit = defineEmits<{
@@ -54,15 +54,15 @@ const courseOptions = computed(() =>
       label: `${course.title} ${course.level ? `(${course.level})` : ""}`,
       title: course.title,
       level: course.level,
-    }))
+    })),
 );
 
 const filteredStatusOptions = computed(() =>
-  props.statusOptions.filter((s) => s.value !== "")
+  props.statusOptions.filter((s) => s.value !== ""),
 );
 
 const filteredSourceOptions = computed(() =>
-  props.sourceOptions.filter((s) => s.value !== "")
+  props.sourceOptions.filter((s) => s.value !== ""),
 );
 
 const loadCourses = async () => {
@@ -85,7 +85,12 @@ const loadCourses = async () => {
 const createLead = async (close: () => void) => {
   isCreatingLead.value = true;
   try {
-    await api.post(apiService.value, "/leads", newLead);
+    const leadData = {
+      ...newLead,
+      admin_id: auth.value.user?.user_id || auth.value.user?.id,
+    };
+
+    await api.post(apiService.value, "/leads", leadData);
     toast.add({
       title: "Muvaffaqiyatli",
       description: "Lead muvaffaqiyatli yaratildi",
@@ -212,8 +217,7 @@ onMounted(() => {
               <USelectMenu
                 v-model="newLead.status"
                 :items="filteredStatusOptions"
-                value-attribute="value"
-                option-attribute="label"
+                value-key="value"
                 placeholder="Holatni tanlang"
               />
             </div>
@@ -227,8 +231,7 @@ onMounted(() => {
               <USelectMenu
                 v-model="newLead.source"
                 :items="filteredSourceOptions"
-                value-attribute="value"
-                option-attribute="label"
+                value-key="value"
                 placeholder="Manbani tanlang"
               />
             </div>
@@ -255,8 +258,7 @@ onMounted(() => {
             <USelectMenu
               v-model="newLead.course_id"
               :items="courseOptions"
-              value-attribute="id"
-              option-attribute="label"
+              value-key="id"
               placeholder="Kursni tanlang"
               :loading="isLoadingCourses"
             >

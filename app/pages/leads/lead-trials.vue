@@ -28,7 +28,11 @@
           <template #right>
             <USelectMenu
               :model-value="statusFilter"
-              @update:model-value="(val: string | any) => statusFilter = typeof val === 'string' ? val : val?.value || ''"
+              @update:model-value="
+                (val: string | any) =>
+                  (statusFilter =
+                    typeof val === 'string' ? val : val?.value || '')
+              "
               :items="statusOptions"
               value-attribute="value"
               option-attribute="label"
@@ -38,7 +42,11 @@
 
             <USelectMenu
               :model-value="teacherFilter"
-              @update:model-value="(val: string | any) => teacherFilter = typeof val === 'string' ? val : val?.value || ''"
+              @update:model-value="
+                (val: string | any) =>
+                  (teacherFilter =
+                    typeof val === 'string' ? val : val?.value || '')
+              "
               :items="teacherOptions"
               value-attribute="value"
               option-attribute="label"
@@ -75,23 +83,21 @@
                 :items-per-page="itemsPerPage"
                 show-last
                 show-first
-                @update:page="(p: number) => currentPage = p"
+                @update:page="(p: number) => (currentPage = p)"
               />
             </div>
           </template>
         </UCard>
       </div>
-    </template>
-  </UDashboardPanel>
 
-  <!-- Edit Trial Lesson Modal -->
-  <!-- <UModal v-model="showEditDialog">
-    <UCard>
+        <!-- Edit Trial Lesson Modal -->
+  <UModal v-model:open="showEditDialog">
       <template #header>
         <h3 class="text-base font-semibold">Sinov darsini tahrirlash</h3>
       </template>
 
-      <div class="space-y-4">
+      <template #body>
+        <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium mb-2">Holat</label>
           <USelectMenu
@@ -109,9 +115,11 @@
             v-model="editingTrial.notes"
             placeholder="Sinov darsi haqida izoh qo'shing"
             :rows="3"
+            class="w-full"
           />
         </div>
       </div>
+      </template>
 
       <template #footer>
         <div class="flex justify-end gap-2">
@@ -123,33 +131,13 @@
           <UButton label="O'zgarishlarni saqlash" @click="saveTrialChanges" />
         </div>
       </template>
-    </UCard>
-  </UModal> -->
+  </UModal>
 
-  <!-- Delete Confirmation Modal -->
-  <!-- <UModal v-model="showDeleteDialog">
-    <UCard>
-      <template #header>
-        <h3 class="text-base font-semibold">Ishonchingiz komilmi?</h3>
-      </template>
+    </template>
+  </UDashboardPanel>
 
-      <p class="text-sm text-gray-600">
-        Bu amalni qaytarib bo'lmaydi. Sinov darsi va unga tegishli barcha
-        ma'lumotlar butunlay o'chiriladi.
-      </p>
 
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <UButton
-            variant="outline"
-            label="Bekor qilish"
-            @click="showDeleteDialog = false"
-          />
-          <UButton color="red" label="O'chirish" @click="confirmDelete" />
-        </div>
-      </template>
-    </UCard>
-  </UModal> -->
+
 </template>
 
 <script setup lang="ts">
@@ -160,6 +148,7 @@ import { useAuth } from "~/composables/useAuth";
 
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
+const UPopover = resolveComponent("UPopover");
 
 definePageMeta({
   middleware: ["auth"],
@@ -221,6 +210,8 @@ const { auth, apiService } = useAuth();
 const showDeleteDialog = ref(false);
 const trialToDelete = ref<string | null>(null);
 const showEditDialog = ref(false);
+const deletePopoverOpen = ref<Record<string, boolean>>({});
+const isDeleting = ref(false);
 const editingTrial = reactive({
   id: "",
   status: "",
@@ -253,12 +244,12 @@ const columns: TableColumn<TrialLesson>[] = [
         h(
           "div",
           { class: "font-medium" },
-          formatDate(row.original.scheduledAt)
+          formatDate(row.original.scheduledAt),
         ),
         h(
           "div",
           { class: "text-xs text-gray-500" },
-          formatTime(row.original.scheduledAt)
+          formatTime(row.original.scheduledAt),
         ),
       ]);
     },
@@ -274,12 +265,12 @@ const columns: TableColumn<TrialLesson>[] = [
         h(
           "div",
           { class: "font-medium" },
-          `${row.original.leadInfo.first_name} ${row.original.leadInfo.last_name}`
+          `${row.original.leadInfo.first_name} ${row.original.leadInfo.last_name}`,
         ),
         h(
           "div",
           { class: "text-xs text-gray-500" },
-          formatPhone(row.original.leadInfo.phone)
+          formatPhone(row.original.leadInfo.phone),
         ),
       ]);
     },
@@ -292,12 +283,12 @@ const columns: TableColumn<TrialLesson>[] = [
         h(
           "div",
           { class: "font-medium" },
-          `${row.original.teacherInfo.first_name} ${row.original.teacherInfo.last_name}`
+          `${row.original.teacherInfo.first_name} ${row.original.teacherInfo.last_name}`,
         ),
         h(
           "div",
           { class: "text-xs text-gray-500" },
-          formatPhone(row.original.teacherInfo.phone)
+          formatPhone(row.original.teacherInfo.phone),
         ),
       ]);
     },
@@ -311,7 +302,7 @@ const columns: TableColumn<TrialLesson>[] = [
         {
           color: getStatusColor(row.original.status),
         },
-        () => row.original.status
+        () => row.original.status,
       );
     },
   },
@@ -324,6 +315,7 @@ const columns: TableColumn<TrialLesson>[] = [
     id: "actions",
     header: "Amallar",
     cell: ({ row }) => {
+      const trialId = row.original.id;
       return h("div", { class: "flex items-center gap-1" }, [
         h(UButton, {
           variant: "ghost",
@@ -332,14 +324,59 @@ const columns: TableColumn<TrialLesson>[] = [
           square: true,
           onClick: () => openEditTrialDialog(row.original),
         }),
-        h(UButton, {
-          variant: "ghost",
-          icon: "i-lucide-trash-2",
-          size: "sm",
-          square: true,
-          color: "red",
-          onClick: () => confirmDeleteTrial(row.original),
-        }),
+        h(
+          UPopover,
+          {
+            open: deletePopoverOpen.value[trialId] || false,
+            "onUpdate:open": (value: boolean) => {
+              deletePopoverOpen.value[trialId] = value;
+            },
+          },
+          {
+            default: () =>
+              h(UButton, {
+                color: "error",
+                variant: "ghost",
+                icon: "i-lucide-trash-2",
+                size: "sm",
+                square: true,
+              }),
+            content: () =>
+              h("div", { class: "p-4 max-w-sm space-y-3" }, [
+                h(
+                  "h4",
+                  { class: "font-semibold text-sm" },
+                  "Ishonchingiz komilmi?",
+                ),
+                h(
+                  "p",
+                  { class: "text-sm text-gray-600" },
+                  "Bu sinov darsini butunlay o'chiradi va \nbarcha bog'langan ma'lumotlarni olib tashlaydi.",
+                ),
+                h("div", { class: "flex justify-end gap-2 mt-3" }, [
+                  h(UButton, {
+                    color: "neutral",
+                    variant: "subtle",
+                    label: "Bekor qilish",
+                    size: "sm",
+                    onClick: () => {
+                      deletePopoverOpen.value[trialId] = false;
+                    },
+                  }),
+                  h(UButton, {
+                    color: "red",
+                    label: isDeleting.value ? "O'chirilmoqda..." : "O'chirish",
+                    loading: isDeleting.value,
+                    size: "sm",
+                    onClick: async () => {
+                      await deleteTrial(row.original.id);
+                      deletePopoverOpen.value[trialId] = false;
+                    },
+                  }),
+                ]),
+              ]),
+          },
+        ),
       ]);
     },
   },
@@ -453,7 +490,7 @@ const fetchTeachers = async () => {
   try {
     const response = await api.get<{ data: TeacherInfo[] }>(
       apiService.value,
-      "/users/teachers"
+      "/users/teachers",
     );
     teachers.value = response.data || [];
   } catch (err) {
@@ -519,12 +556,12 @@ const saveTrialChanges = async () => {
       {
         status: editingTrial.status,
         notes: editingTrial.notes,
-      }
+      },
     );
 
     // Update the trial in the local state
     const index = trialLessons.value.findIndex(
-      (trial: TrialLesson) => trial.id === editingTrial.id
+      (trial: TrialLesson) => trial.id === editingTrial.id,
     );
     if (index !== -1) {
       const trial = trialLessons.value[index];
@@ -568,12 +605,13 @@ const confirmDelete = async () => {
 
 // Delete a trial lesson
 const deleteTrial = async (id: string) => {
+  isDeleting.value = true;
   try {
     await api.delete(apiService.value, `/lead-trial-lessons/${id}`);
 
     // Remove from local state
     trialLessons.value = trialLessons.value.filter(
-      (trial: TrialLesson) => trial.id !== id
+      (trial: TrialLesson) => trial.id !== id,
     );
 
     toast.add({
@@ -588,6 +626,8 @@ const deleteTrial = async (id: string) => {
       description: "Sinov darsini o'chirishda xatolik",
       color: "error",
     });
+  } finally {
+    isDeleting.value = false;
   }
 };
 
@@ -644,6 +684,6 @@ watch(
     // Update URL params
     updateUrlParams();
   },
-  { deep: true }
+  { deep: true },
 );
 </script>

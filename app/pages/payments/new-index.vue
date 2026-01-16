@@ -292,7 +292,6 @@
                 v-model="newPayment.notes"
                 placeholder="To'lov tafsilotlari"
                 rows="3"
-                 class="w-full"
               />
             </div>
           </form>
@@ -408,7 +407,6 @@
                 v-model="editPayment.notes"
                 placeholder="To'lov tafsilotlari"
                 rows="3"
-                class="w-full"
               />
             </div>
           </form>

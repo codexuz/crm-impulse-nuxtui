@@ -3,6 +3,21 @@ import type { DropdownMenuItem } from "@nuxt/ui";
 
 const appConfig = useAppConfig();
 
+// Load saved colors from localStorage on mount
+onMounted(() => {
+  if (process.client) {
+    const savedPrimary = localStorage.getItem("theme-color-primary");
+    const savedNeutral = localStorage.getItem("theme-color-neutral");
+
+    if (savedPrimary) {
+      appConfig.ui.colors.primary = savedPrimary;
+    }
+    if (savedNeutral) {
+      appConfig.ui.colors.neutral = savedNeutral;
+    }
+  }
+});
+
 const colors = [
   "red",
   "orange",
@@ -44,6 +59,9 @@ const items = computed<DropdownMenuItem[][]>(() => [
         onSelect: (e) => {
           e.preventDefault();
           appConfig.ui.colors.primary = color;
+          if (process.client) {
+            localStorage.setItem("theme-color-primary", color);
+          }
         },
       })),
     },
@@ -68,6 +86,9 @@ const items = computed<DropdownMenuItem[][]>(() => [
         onSelect: (e) => {
           e.preventDefault();
           appConfig.ui.colors.neutral = color;
+          if (process.client) {
+            localStorage.setItem("theme-color-neutral", color);
+          }
         },
       })),
     },
@@ -91,7 +112,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
           class="rounded-full ring ring-bg bg-(--chip-light) dark:bg-(--chip-dark) size-2"
           :style="{
             '--chip-light': `var(--color-${(item as any).chip}-500)`,
-            '--chip-dark': `var(--color-${(item as any).chip}-400)`
+            '--chip-dark': `var(--color-${(item as any).chip}-400)`,
           }"
         />
       </div>

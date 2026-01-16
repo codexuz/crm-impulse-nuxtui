@@ -30,6 +30,88 @@ const links = [
   [
     {
       type: "label" as const,
+      label: "Marketing",
+    },
+    {
+      label: "Leadlar",
+      icon: "i-lucide-users-round",
+      to: "/leads",
+      defaultOpen: true,
+      type: "trigger" as const,
+      children: [
+        {
+          label: "Leadlar",
+          to: "/leads",
+          exact: true,
+          onSelect: () => {
+            open.value = false;
+          },
+        },
+        {
+          label: "Sinov darslari",
+          to: "/leads/lead-trials",
+          onSelect: () => {
+            open.value = false;
+          },
+        },
+      ],
+      onSelect: () => {
+        open.value = false;
+      },
+    },
+    {
+      label: "SMS Xabarnoma",
+      icon: "i-lucide-message-square",
+      to: "/sms/sms-posting",
+      defaultOpen: true,
+      type: "trigger" as const,
+      children: [
+        {
+          label: "SMS yuborish",
+          to: "/sms/sms-posting",
+          exact: true,
+          onSelect: () => {
+            open.value = false;
+          },
+        },
+        {
+          label: "Hisobot",
+          to: "/sms/report",
+          onSelect: () => {
+            open.value = false;
+          },
+        },
+        {
+          label: "Jo'natmalar",
+          to: "/sms/send-sms",
+          onSelect: () => {
+            open.value = false;
+          },
+        },
+        {
+          label: "Shablonlar",
+          to: "/sms/templates",
+          onSelect: () => {
+            open.value = false;
+          },
+        },
+      ],
+      onSelect: () => {
+        open.value = false;
+      },
+    },
+    {
+      label: "Bildirishnomalar",
+      icon: "i-lucide-bell",
+      to: "/notifications",
+      onSelect: () => {
+        open.value = false;
+      },
+    },
+  ],
+  [
+    {
+      type: "label" as const,
       label: "Talabalar va Guruhlar",
     },
     {
@@ -124,88 +206,6 @@ const links = [
       label: "Jadvallar",
       icon: "i-lucide-calendar",
       to: "/schedules",
-      onSelect: () => {
-        open.value = false;
-      },
-    },
-  ],
-  [
-    {
-      type: "label" as const,
-      label: "Marketing",
-    },
-    {
-      label: "Leadlar",
-      icon: "i-lucide-users-round",
-      to: "/leads",
-      defaultOpen: true,
-      type: "trigger" as const,
-      children: [
-        {
-          label: "Leadlar",
-          to: "/leads",
-          exact: true,
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-        {
-          label: "Sinov darslari",
-          to: "/leads/lead-trials",
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-      ],
-      onSelect: () => {
-        open.value = false;
-      },
-    },
-    {
-      label: "SMS Xabarnoma",
-      icon: "i-lucide-message-square",
-      to: "/sms/sms-posting",
-      defaultOpen: true,
-      type: "trigger" as const,
-      children: [
-        {
-          label: "SMS yuborish",
-          to: "/sms/sms-posting",
-          exact: true,
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-        {
-          label: "Hisobot",
-          to: "/sms/report",
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-        {
-          label: "Jo'natmalar",
-          to: "/sms/send-sms",
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-        {
-          label: "Shablonlar",
-          to: "/sms/templates",
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-      ],
-      onSelect: () => {
-        open.value = false;
-      },
-    },
-    {
-      label: "Bildirishnomalar",
-      icon: "i-lucide-bell",
-      to: "/notifications",
       onSelect: () => {
         open.value = false;
       },
@@ -312,6 +312,12 @@ const links = [
           },
         ]
       : []),
+  ],
+  [
+    {
+      type: "label" as const,
+      label: "Boshqalar",
+    },
     {
       label: "CD IELTS",
       icon: "i-lucide-file-text",
@@ -349,34 +355,6 @@ const handleLogout = async () => {
     });
   }
 };
-
-onMounted(async () => {
-  const cookie = useCookie("cookie-consent");
-  if (cookie.value === "accepted") {
-    return;
-  }
-
-  toast.add({
-    title:
-      "We use first-party cookies to enhance your experience on our website.",
-    description: "Please accept or opt out.",
-    actions: [
-      {
-        label: "Accept",
-        color: "neutral",
-        variant: "outline",
-        onClick: () => {
-          cookie.value = "accepted";
-        },
-      },
-      {
-        label: "Opt out",
-        color: "neutral",
-        variant: "ghost",
-      },
-    ],
-  });
-});
 </script>
 
 <template>

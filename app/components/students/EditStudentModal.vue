@@ -1,24 +1,31 @@
 <script setup lang="ts">
+import type { Student } from "~/types";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 
 const { apiService } = useAuth();
 const toast = useToast();
 
+const open = defineModel<boolean>("open");
+
+const props = defineProps<{
+  student: Student | null;
+}>();
+
 const emit = defineEmits<{
-  submit: [student: any];
+  updated: [];
 }>();
 
 const showPassword = ref(false);
 const courses = ref<any[]>([]);
 const isLoadingCourses = ref(false);
+const isUpdating = ref(false);
 
-const newStudent = reactive({
+const editingStudent = ref({
   first_name: "",
   last_name: "",
   username: "",
   phone: "",
-  password: "",
   level_id: "none",
 });
 
@@ -26,11 +33,9 @@ const courseOptions = computed(() => [
   { value: "none", label: "Yo'q" },
   ...courses.value.map((course) => ({
     value: course.id,
-    label: `${course.title} - ${course.level || ""}`,
+    label: course.title,
   })),
 ]);
-
-const isLoading = ref(false);
 
 const loadCourses = async () => {
   isLoadingCourses.value = true;
@@ -49,14 +54,65 @@ const loadCourses = async () => {
   }
 };
 
-const handleSubmit = () => {
-  emit("submit", { ...newStudent });
-  // Reset form
-  Object.keys(newStudent).forEach((key) => {
-    newStudent[key as keyof typeof newStudent] = "";
-  });
-  newStudent.level_id = "none";
+const handleSubmit = async () => {
+  if (!props.student) return;
+
+  isUpdating.value = true;
+  try {
+    const studentData: any = { ...editingStudent.value };
+
+    // Ensure level_id is always a string
+    if (studentData.level_id === "none" || !studentData.level_id) {
+      studentData.level_id = "";
+    } else {
+      studentData.level_id = String(studentData.level_id);
+    }
+
+    await api.patch<Student>(
+      apiService.value,
+      `/users/${props.student.user_id}`,
+      studentData,
+    );
+
+    toast.add({
+      title: "Muvaffaqiyat",
+      description: "Talaba muvaffaqiyatli yangilandi",
+      color: "success",
+    });
+
+    emit("updated");
+    open.value = false;
+  } catch (error) {
+    console.error("Failed to update student:", error);
+    toast.add({
+      title: "Xatolik",
+      description:
+        "Talabani yangilashda xatolik. Iltimos, qayta urinib ko'ring.",
+      color: "error",
+    });
+  } finally {
+    isUpdating.value = false;
+  }
 };
+
+// Watch for student changes to populate form
+watch(
+  () => props.student,
+  (newStudent) => {
+    if (newStudent) {
+      const levelId =
+        (newStudent as any).level?.id || (newStudent as any).level_id || "none";
+      editingStudent.value = {
+        first_name: newStudent.first_name,
+        last_name: newStudent.last_name,
+        username: newStudent.username,
+        phone: newStudent.phone,
+        level_id: levelId,
+      };
+    }
+  },
+  { immediate: true },
+);
 
 // Load courses on mount
 onMounted(() => {
@@ -66,20 +122,13 @@ onMounted(() => {
 
 <template>
   <UModal
-    title="Yangi talaba qo'shish"
-    description="Tizimda yangi talaba hisobi yaratish"
-    :ui="{ footer: 'justify-end' }"
+    v-model:open="open"
+    title="Talabani tahrirlash"
+    description="Talaba ma'lumotlarini yangilash"
+    :ui="{ content: 'w-[calc(100vw-2rem)] max-w-2xl', footer: 'justify-end' }"
   >
-    <UButton icon="i-lucide-plus" label="Talaba qo'shish" color="primary" />
-
-    <template #body="{ close }">
-      <form
-        @submit.prevent="
-          handleSubmit();
-          close();
-        "
-        class="space-y-6"
-      >
+    <template #body>
+      <form v-if="student" @submit.prevent="handleSubmit" class="space-y-6">
         <!-- Personal Information Section -->
         <div class="space-y-4">
           <div
@@ -100,7 +149,7 @@ onMounted(() => {
                 <span class="text-red-500">*</span>
               </label>
               <UInput
-                v-model="newStudent.first_name"
+                v-model="editingStudent.first_name"
                 placeholder="Ismni kiriting"
                 icon="i-lucide-user"
                 size="lg"
@@ -116,7 +165,7 @@ onMounted(() => {
                 <span class="text-red-500">*</span>
               </label>
               <UInput
-                v-model="newStudent.last_name"
+                v-model="editingStudent.last_name"
                 placeholder="Familiyani kiriting"
                 icon="i-lucide-user"
                 size="lg"
@@ -145,42 +194,12 @@ onMounted(() => {
               <span class="text-red-500">*</span>
             </label>
             <UInput
-              v-model="newStudent.username"
+              v-model="editingStudent.username"
               placeholder="Loginni kiriting"
               icon="i-lucide-at-sign"
               size="lg"
               required
             />
-          </div>
-
-          <div class="space-y-2">
-            <label
-              class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1"
-            >
-              Parol
-              <span class="text-red-500">*</span>
-            </label>
-            <UInput
-              v-model="newStudent.password"
-              :type="showPassword ? 'text' : 'password'"
-              placeholder="Parolni kiriting"
-              icon="i-lucide-lock"
-              size="lg"
-              required
-            >
-              <template #trailing>
-                <UButton
-                  color="neutral"
-                  variant="ghost"
-                  size="xs"
-                  :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                  @click="showPassword = !showPassword"
-                />
-              </template>
-            </UInput>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Kamida 6 ta belgi
-            </p>
           </div>
         </div>
 
@@ -203,7 +222,7 @@ onMounted(() => {
               <span class="text-red-500">*</span>
             </label>
             <UInput
-              v-model="newStudent.phone"
+              v-model="editingStudent.phone"
               placeholder="+998 XX XXX XX XX"
               icon="i-lucide-phone"
               size="lg"
@@ -231,7 +250,7 @@ onMounted(() => {
               Daraja
             </label>
             <USelectMenu
-              v-model="newStudent.level_id"
+              v-model="editingStudent.level_id"
               :items="courseOptions"
               value-key="value"
               :loading="isLoadingCourses"
@@ -254,13 +273,10 @@ onMounted(() => {
       />
       <UButton
         type="submit"
-        :loading="isLoading"
-        :disabled="isLoading"
-        label="Talaba yaratish"
-        @click="
-          handleSubmit();
-          close();
-        "
+        :loading="isUpdating"
+        :disabled="isUpdating"
+        label="O'zgarishlarni saqlash"
+        @click="handleSubmit"
       />
     </template>
   </UModal>
