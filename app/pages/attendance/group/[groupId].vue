@@ -1,176 +1,97 @@
 <template>
-  <div>
-    <div class="flex items-center justify-between mb-4">
-      <div>
-        <h1 class="text-2xl font-bold tracking-tight">Group Attendance</h1>
-        <p class="text-muted-foreground">
-          {{ group.name || "Loading group details..." }}
-        </p>
-      </div>
-      <div>
-        <div class="flex flex-col space-y-2">
-          <Input type="date" v-model="dateInputValue" class="w-[180px]" />
-        </div>
-      </div>
-    </div>
-
-    <Card>
-      <CardHeader>
-        <CardTitle>Attendance for {{ formatDate(selectedDate) }}</CardTitle>
-        <CardDescription>
-          Mark attendance status for each student in the group
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div v-if="isLoading" class="flex justify-center py-8">
-          <div class="animate-spin mr-2">
-            <Icon name="lucide:loader" class="h-6 w-6" />
-          </div>
-          <span>Loading...</span>
-        </div>
-        <div v-else-if="groupStudents.length === 0" class="py-8 text-center">
-          <p class="text-muted-foreground">No students found in this group</p>
-        </div>
-        <div v-else>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead class="w-12">#</TableHead>
-                <TableHead>Student</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Notes</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow
-                v-for="(student, index) in groupStudents"
-                :key="student.student.user_id"
-              >
-                <TableCell class="font-medium">{{ index + 1 }}</TableCell>
-                <TableCell>
-                  <div class="flex items-center gap-2">
-                    <Avatar v-if="student.student.avatar_url">
-                      <AvatarImage :src="student.student.avatar_url" />
-                      <AvatarFallback>{{
-                        getInitials(
-                          student.student.first_name,
-                          student.student.last_name
-                        )
-                      }}</AvatarFallback>
-                    </Avatar>
-                    <Avatar v-else>
-                      <AvatarFallback>{{
-                        getInitials(
-                          student.student.first_name,
-                          student.student.last_name
-                        )
-                      }}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div>
-                        {{ student.student.first_name }}
-                        {{ student.student.last_name }}
-                      </div>
-                      <div class="text-xs text-muted-foreground">
-                        {{ student.student.phone }}
-                      </div>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Select
-                    v-model="getAttendanceData(student.student.user_id).status"
-                    :disabled="isSaving"
-                  >
-                    <SelectTrigger class="w-[180px]">
-                      <SelectValue placeholder="Select Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="present">
-                        <div class="flex items-center">
-                          <span
-                            class="h-2 w-2 rounded-full bg-green-500 mr-2"
-                          ></span>
-                          Present
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="absent">
-                        <div class="flex items-center">
-                          <span
-                            class="h-2 w-2 rounded-full bg-red-500 mr-2"
-                          ></span>
-                          Absent
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="late">
-                        <div class="flex items-center">
-                          <span
-                            class="h-2 w-2 rounded-full bg-yellow-500 mr-2"
-                          ></span>
-                          Late
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell>
-                  <Input
-                    v-model="getAttendanceData(student.student.user_id).note"
-                    placeholder="Optional note"
-                    :disabled="isSaving"
-                  />
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-      <CardFooter class="flex justify-between">
-        <Button
-          variant="outline"
-          @click="fetchAttendanceData"
-          :disabled="isLoading || isSaving"
-        >
-          Refresh
-        </Button>
-        <Button
-          @click="saveAttendance"
-          :disabled="isLoading || isSaving || !hasChanges"
-        >
-          <Icon
-            v-if="isSaving"
-            name="lucide:loader"
-            class="mr-2 h-4 w-4 animate-spin"
+  <UDashboardPanel id="group-attendance">
+    <template #header>
+      <UDashboardNavbar
+        :title="`Guruh davomati - ${group.name || 'Yuklanmoqda...'}`"
+        :ui="{ right: 'gap-3' }"
+      >
+        <template #leading>
+          <UButton
+            icon="i-lucide-arrow-left"
+            color="neutral"
+            variant="ghost"
+            @click="navigateTo('/groups')"
           />
-          <Icon v-else name="lucide:save" class="mr-2 h-4 w-4" />
-          Save Attendance
-        </Button>
-      </CardFooter>
-    </Card>
+        </template>
 
-    <div
-      v-if="showSuccessAlert"
-      class="fixed bottom-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded"
-    >
-      <div class="flex items-center">
-        <Icon name="lucide:check-circle" class="h-5 w-5 mr-2" />
-        <span>Attendance saved successfully!</span>
-        <button @click="showSuccessAlert = false" class="ml-4">
-          <Icon name="lucide:x" class="h-4 w-4" />
-        </button>
+        <template #description>
+          {{ formatDate(selectedDate) }} uchun guruh talabalarining davomatini
+          belgilang
+        </template>
+
+        <template #right>
+          <UInput
+            v-model="dateInputValue"
+            type="date"
+            icon="i-lucide-calendar"
+            class="w-48"
+          />
+        </template>
+      </UDashboardNavbar>
+    </template>
+
+    <template #body>
+      <div>
+        <!-- Attendance Table -->
+        <UCard>
+          <template #header>
+            <div class="flex items-center justify-between">
+              <h3 class="text-base font-semibold">
+                Talabalar davomati - {{ formatDate(selectedDate) }}
+              </h3>
+              <div class="flex gap-2">
+                <UButton
+                  icon="i-lucide-refresh-cw"
+                  color="neutral"
+                  variant="outline"
+                  size="sm"
+                  @click="fetchAttendanceData"
+                  :disabled="isLoading || isSaving"
+                  :loading="isLoading"
+                >
+                  Yangilash
+                </UButton>
+                <UButton
+                  icon="i-lucide-save"
+                  color="primary"
+                  size="sm"
+                  @click="saveAttendance"
+                  :disabled="isLoading || isSaving || !hasChanges"
+                  :loading="isSaving"
+                >
+                  Saqlash
+                </UButton>
+              </div>
+            </div>
+          </template>
+
+          <UTable
+            :data="groupStudents"
+            :columns="columns"
+            :loading="isLoading"
+            :empty="'Bu guruhda talabalar topilmadi'"
+          />
+        </UCard>
       </div>
-    </div>
-  </div>
+    </template>
+  </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
+import { ref, computed, watch, onMounted, h, resolveComponent } from "vue";
+import type { TableColumn } from "@nuxt/ui";
 import { useAuth } from "~/composables/useAuth";
 import { api } from "~/lib/api";
+
+const UAvatar = resolveComponent("UAvatar");
+const UBadge = resolveComponent("UBadge");
+const USelectMenu = resolveComponent("USelectMenu");
+const UInput = resolveComponent("UInput");
 
 const route = useRoute();
 const groupId = computed(() => route.params.groupId as string);
 const { apiService } = useAuth();
-const { toast } = useToast();
+const toast = useToast();
 
 definePageMeta({
   middleware: ["auth"],
@@ -194,7 +115,133 @@ const selectedDate = ref(new Date());
 const attendanceData = reactive<
   Record<string, { status: string; note: string }>
 >({});
-const showSuccessAlert = ref(false);
+
+// Status options
+const statusOptions = [
+  { value: "present", label: "Keldi" },
+  { value: "absent", label: "Kelmadi" },
+];
+
+// Table columns with render functions
+const columns: TableColumn<any>[] = [
+  {
+    accessorKey: "index",
+    header: "#",
+    cell: ({ row }) => {
+      const index = groupStudents.value.findIndex(
+        (s) => s.student.user_id === row.original.student.user_id,
+      );
+      return h("span", { class: "font-medium" }, index + 1);
+    },
+  },
+  {
+    accessorKey: "student",
+    header: "Talaba",
+    cell: ({ row }) => {
+      const student = row.original.student;
+      return h("div", { class: "flex items-center gap-3" }, [
+        h(
+          UAvatar,
+          {
+            src: student.avatar_url,
+            alt: `${student.first_name} ${student.last_name}`,
+            size: "sm",
+          },
+          student.avatar_url
+            ? undefined
+            : {
+                fallback: () =>
+                  getInitials(student.first_name, student.last_name),
+              },
+        ),
+        h("div", {}, [
+          h(
+            "div",
+            { class: "font-medium" },
+            `${student.first_name} ${student.last_name}`,
+          ),
+          h("div", { class: "text-xs text-gray-500" }, student.phone || ""),
+        ]),
+      ]);
+    },
+  },
+  {
+    accessorKey: "status",
+    header: "Holat",
+    cell: ({ row }) => {
+      const studentId = row.original.student.user_id;
+      const currentStatus = getAttendanceData(studentId).status;
+
+      return h(
+        "div",
+        { class: "w-48" },
+        h(
+          USelectMenu,
+          {
+            modelValue: currentStatus,
+            "onUpdate:modelValue": (value: string) => {
+              getAttendanceData(studentId).status = value;
+            },
+            items: statusOptions,
+            valueKey: "value",
+            placeholder: "Holatni tanlang",
+            disabled: isSaving.value,
+            size: "md",
+          },
+          {
+            label: () => {
+              const selected = statusOptions.find(
+                (s) => s.value === currentStatus,
+              );
+              if (!selected) return "Holatni tanlang";
+
+              return h("div", { class: "flex items-center gap-2" }, [
+                h("span", {
+                  class: `h-2 w-2 rounded-full ${
+                    currentStatus === "present"
+                      ? "bg-green-500"
+                      : currentStatus === "absent"
+                        ? "bg-red-500"
+                        : "bg-gray-300"
+                  }`,
+                }),
+                h("span", {}, selected.label),
+              ]);
+            },
+            option: ({ option }: any) => {
+              return h("div", { class: "flex items-center gap-2" }, [
+                h("span", {
+                  class: `h-2 w-2 rounded-full ${
+                    option.value === "present" ? "bg-green-500" : "bg-red-500"
+                  }`,
+                }),
+                h("span", {}, option.label),
+              ]);
+            },
+          },
+        ),
+      );
+    },
+  },
+  {
+    accessorKey: "note",
+    header: "Izoh",
+    cell: ({ row }) => {
+      const studentId = row.original.student.user_id;
+      const currentNote = getAttendanceData(studentId).note;
+
+      return h(UInput, {
+        modelValue: currentNote,
+        "onUpdate:modelValue": (value: string) => {
+          getAttendanceData(studentId).note = value;
+        },
+        placeholder: "Ixtiyoriy izoh...",
+        disabled: isSaving.value,
+        size: "md",
+      });
+    },
+  },
+];
 
 // Computed
 const hasChanges = computed(() => {
@@ -204,7 +251,7 @@ const hasChanges = computed(() => {
 const dateInputValue = computed({
   get: () => formatDateForApi(selectedDate.value),
   set: (value: string) => {
-    selectedDate.value = new Date(value + "T00:00:00");
+    selectedDate.value = new Date(value + "T00:00:00Z");
   },
 });
 
@@ -213,15 +260,15 @@ const fetchGroupDetails = async () => {
   try {
     const response = await api.get<any>(
       apiService.value,
-      `/groups/${groupId.value}`
+      `/groups/${groupId.value}`,
     );
     Object.assign(group, response);
   } catch (error) {
     console.error("Failed to fetch group details:", error);
-    toast({
-      title: "Error",
-      description: "Failed to load group details",
-      variant: "destructive",
+    toast.add({
+      title: "Xatolik",
+      description: "Guruh ma'lumotlarini yuklashda xatolik",
+      color: "error",
     });
   }
 };
@@ -231,7 +278,7 @@ const fetchGroupStudents = async () => {
   try {
     const response = await api.get<any[]>(
       apiService.value,
-      `/group-students/group/${groupId.value}`
+      `/group-students/group/${groupId.value}`,
     );
     groupStudents.value = response || [];
 
@@ -246,10 +293,10 @@ const fetchGroupStudents = async () => {
     });
   } catch (error) {
     console.error("Failed to fetch group students:", error);
-    toast({
-      title: "Error",
-      description: "Failed to load students",
-      variant: "destructive",
+    toast.add({
+      title: "Xatolik",
+      description: "Talabalarni yuklashda xatolik",
+      color: "error",
     });
   }
 };
@@ -270,10 +317,10 @@ const fetchAttendanceData = async () => {
     // Format date for API call (YYYY-MM-DD)
     const formattedDate = formatDateForApi(selectedDate.value);
 
-    // Get existing attendance records for this group and date using the date range endpoint
+    // Get existing attendance records for this group and date
     const response = await api.get<any[]>(
       apiService.value,
-      `/attendance/group/${groupId.value}/daterange?startDate=${formattedDate}&endDate=${formattedDate}`
+      `/attendance/group/${groupId.value}/daterange?startDate=${formattedDate}&endDate=${formattedDate}`,
     );
 
     // Update attendance data with existing records
@@ -289,10 +336,10 @@ const fetchAttendanceData = async () => {
     }
   } catch (error) {
     console.error("Failed to fetch attendance data:", error);
-    toast({
-      title: "Error",
-      description: "Failed to load attendance records",
-      variant: "destructive",
+    toast.add({
+      title: "Xatolik",
+      description: "Davomat yozuvlarini yuklashda xatolik",
+      color: "error",
     });
   } finally {
     isLoading.value = false;
@@ -325,29 +372,31 @@ const saveAttendance = async () => {
       } catch (error) {
         console.error(
           `Failed to save attendance for student ${record.student_id}:`,
-          error
+          error,
         );
         hasErrors = true;
       }
     }
 
     if (hasErrors) {
-      toast({
-        title: "Warning",
-        description: "Some attendance records failed to save",
+      toast.add({
+        title: "Ogohlantirish",
+        description: "Ba'zi davomat yozuvlari saqlanmadi",
+        color: "warning",
       });
     } else {
-      showSuccessAlert.value = true;
-      setTimeout(() => {
-        showSuccessAlert.value = false;
-      }, 3000);
+      toast.add({
+        title: "Muvaffaqiyat",
+        description: "Davomat muvaffaqiyatli saqlandi!",
+        color: "success",
+      });
     }
   } catch (error) {
     console.error("Failed to save attendance:", error);
-    toast({
-      title: "Error",
-      description: "Failed to save attendance",
-      variant: "destructive",
+    toast.add({
+      title: "Xatolik",
+      description: "Davomatni saqlashda xatolik",
+      color: "error",
     });
   } finally {
     isSaving.value = false;
@@ -356,27 +405,22 @@ const saveAttendance = async () => {
 
 // Helper functions
 const getInitials = (firstName: string, lastName: string): string => {
-  return `${firstName?.charAt(0) || ""}${
-    lastName?.charAt(0) || ""
-  }`.toUpperCase();
+  return `${firstName?.charAt(0) || ""}${lastName?.charAt(0) || ""}`.toUpperCase();
 };
 
 const formatDate = (date: Date): string => {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "long",
+  return new Intl.DateTimeFormat("en-GB", {
     year: "numeric",
-    month: "long",
+    month: "numeric",
     day: "numeric",
-    timeZone: "Asia/Tashkent",
   }).format(date);
 };
 
 const formatDateForApi = (date: Date): string => {
   const d = new Date(date);
-  // Adjust to Uzbekistan timezone
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 };
 
@@ -391,8 +435,6 @@ const getAttendanceData = (studentId: string) => {
 // Fetch initial data
 onMounted(async () => {
   isLoading.value = true;
-
-  // Initialize date to today
   selectedDate.value = new Date();
 
   await Promise.all([fetchGroupDetails(), fetchGroupStudents()]);

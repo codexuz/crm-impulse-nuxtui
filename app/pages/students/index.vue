@@ -293,11 +293,6 @@ const columns: TableColumn<Student>[] = [
                     : "i-lucide-user-check",
                   onSelect: () => toggleStudentStatus(row.original),
                 },
-                {
-                  label: "Guruhlarni ko'rish",
-                  icon: "i-lucide-users-2",
-                  onSelect: () => viewStudentGroups(row.original),
-                },
               ],
             ],
           },
@@ -470,9 +465,6 @@ const toggleStudentStatus = async (student: Student) => {
   }
 };
 
-const viewStudentGroups = (student: Student) => {
-  navigateTo(`/groups/student/${student.user_id}`);
-};
 
 const deleteStudent = (student: Student) => {
   studentToDelete.value = student;

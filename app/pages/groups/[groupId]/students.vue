@@ -1,475 +1,304 @@
 <template>
-  <div>
-    <!-- Full page loader -->
-    <div
-      v-if="isLoading"
-      class="fixed inset-0 bg-background/80 flex items-center justify-center z-50"
-    >
-      <div class="text-center space-y-4">
-        <Icon
-          name="lucide:loader-2"
-          class="h-12 w-12 animate-spin text-primary mx-auto"
-        />
-        <p class="text-xl font-medium">Loading students...</p>
-      </div>
-    </div>
+  <UDashboardPanel id="group-students">
+    <template #header>
+      <UDashboardNavbar
+        :title="`Guruh talabalari - ${groupName}`"
+        :ui="{ right: 'gap-3' }"
+      >
+        <template #leading>
+          <UButton
+            icon="i-lucide-arrow-left"
+            color="neutral"
+            variant="ghost"
+            @click="navigateTo(`/groups`)"
+          />
+        </template>
 
-    <div class="flex justify-between items-center mb-6">
+        <template #description>
+          Guruhga yozilgan talabalarni boshqarish
+        </template>
+
+        <template #right>
+          <GroupsAddStudentToGroupModal
+            :group-id="groupId"
+            @submit="handleAddStudent"
+          />
+        </template>
+      </UDashboardNavbar>
+
+      <UDashboardToolbar>
+        <template #left>
+          <UInput
+            v-model="search"
+            icon="i-lucide-search"
+            placeholder="Talabalarni qidirish..."
+            class="w-64"
+          />
+        </template>
+
+        <template #right>
+          <USelectMenu
+            v-model="statusFilter"
+            :items="statusOptions"
+            value-key="value"
+            placeholder="Holat bo'yicha filtr"
+            class="w-48"
+          >
+            <template #label>
+              {{
+                statusOptions.find((s) => s.value === statusFilter)?.label ||
+                "Barcha holatlar"
+              }}
+            </template>
+          </USelectMenu>
+
+          <USelectMenu v-model="limit" :items="[10, 20, 30, 50]" class="w-24">
+            <template #label> {{ limit }} ta </template>
+          </USelectMenu>
+        </template>
+      </UDashboardToolbar>
+    </template>
+
+    <template #body>
       <div>
-        <h2 class="text-3xl font-bold tracking-tight">Group Students</h2>
-        <p class="text-muted-foreground">
-          Manage students enrolled in {{ groupName }}
-        </p>
-      </div>
-      <div class="flex space-x-2">
-        <Button variant="outline" @click="navigateTo(`/groups/${groupId}`)">
-          <Icon name="lucide:arrow-left" class="mr-2 h-4 w-4" />
-          Back to Group
-        </Button>
-        <Dialog
-          v-model:open="addDialog"
-          @update:open="(open: boolean) => !open && (studentSearch = '')"
-        >
-          <DialogTrigger as-child>
-            <Button @click="studentSearch = ''">
-              <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
-              Add Student
-            </Button>
-          </DialogTrigger>
-          <DialogContent class="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Add Student to Group</DialogTitle>
-              <DialogDescription>
-                Enroll a student in this group
-              </DialogDescription>
-            </DialogHeader>
-            <form @submit.prevent="addStudentToGroup" class="py-4">
-              <div class="grid gap-4">
-                <div>
-                  <Label for="student-select">Select Student</Label>
-                  <div class="mb-2">
-                    <Input
-                      v-model="studentSearch"
-                      placeholder="Search students..."
-                      class="w-full"
-                    />
-                  </div>
-                  <Select v-model="selectedStudentId" class="w-full mt-1">
-                    <SelectTrigger id="student-select">
-                      <SelectValue placeholder="Select a student" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem
-                        v-for="student in filteredStudentsForAdd"
-                        :key="student.user_id"
-                        :value="student.user_id"
-                      >
-                        {{ student.first_name }} {{ student.last_name }} ({{
-                          student.phone
-                        }})
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label for="enrollment-date">Enrollment Date</Label>
-                  <Input
-                    id="enrollment-date"
-                    v-model="enrollmentDate"
-                    type="date"
-                    class="w-full mt-1"
-                  />
-                </div>
-                <div>
-                  <Label for="status-select">Initial Status</Label>
-                  <Select v-model="initialStatus" class="w-full mt-1">
-                    <SelectTrigger id="status-select">
-                      <SelectValue placeholder="Select a status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="frozen">Frozen</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter class="mt-6">
-                <Button
-                  variant="outline"
-                  type="button"
-                  @click="addDialog = false"
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" :disabled="isAddingStudent">
-                  <Icon
-                    v-if="isAddingStudent"
-                    name="lucide:loader-2"
-                    class="mr-2 h-4 w-4 animate-spin"
-                  />
-                  {{ isAddingStudent ? "Adding..." : "Add to Group" }}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-    </div>
+        <!-- Students Table -->
+        <UCard>
+          <template #header>
+            <h3 class="text-base font-semibold">Guruh talabalari ro'yxati</h3>
+          </template>
 
-    <!-- Search and Filters -->
-    <div class="flex flex-col sm:flex-row gap-4 mb-6">
-      <Input
-        v-model="search"
-        placeholder="Search students..."
-        class="sm:max-w-xs"
+          <UTable
+            :data="paginatedStudents"
+            :columns="columns"
+            :loading="isLoading"
+            :empty="'Bu guruhda talabalar topilmadi'"
+          />
+
+          <template #footer>
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-gray-500">
+                <span class="font-medium">{{ paginationStart }}</span> dan
+                <span class="font-medium">{{ paginationEnd }}</span> gacha, jami
+                <span class="font-medium">{{ totalItems }}</span> talaba
+              </div>
+
+              <UPagination
+                :model-value="page"
+                :total="totalItems"
+                :items-per-page="limit"
+                show-last
+                show-first
+                @update:page="(p: number) => (page = p)"
+              />
+            </div>
+          </template>
+        </UCard>
+      </div>
+
+      <!-- Status Change Modal -->
+      <GroupsChangeStudentStatusModal
+        v-model:open="statusDialog"
+        :group-student="selectedGroupStudent"
+        @updated="loadGroupStudents"
       />
-      <Select v-model="statusFilter" class="sm:max-w-xs">
-        <SelectTrigger>
-          <SelectValue placeholder="Filter by status" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All Statuses</SelectItem>
-          <SelectItem value="active">Active</SelectItem>
-          <SelectItem value="removed">Removed</SelectItem>
-          <SelectItem value="completed">Completed</SelectItem>
-          <SelectItem value="frozen">Frozen</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
 
-    <!-- Students Table -->
-    <div class="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Student</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Enrolled At</TableHead>
-            <TableHead>Created At</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <TableRow v-if="isLoading">
-            <TableCell colspan="5" class="text-center py-10">
-              <div class="flex justify-center">
-                <Icon
-                  name="lucide:loader-2"
-                  class="h-8 w-8 animate-spin text-primary"
-                />
-              </div>
-              <p class="text-muted-foreground mt-2">Loading students...</p>
-            </TableCell>
-          </TableRow>
-          <TableRow v-else-if="filteredGroupStudents.length === 0">
-            <TableCell colspan="5" class="text-center py-10">
-              <div class="flex justify-center">
-                <Icon
-                  name="lucide:users-x"
-                  class="h-8 w-8 text-muted-foreground"
-                />
-              </div>
-              <p class="text-muted-foreground mt-2">
-                No students found in this group
-              </p>
-              <Button variant="link" @click="loadGroupStudents" class="mt-2">
-                Refresh data
-              </Button>
-            </TableCell>
-          </TableRow>
-          <TableRow
-            v-for="groupStudent in filteredGroupStudents"
-            :key="groupStudent.id"
-          >
-            <TableCell class="font-medium">
-              <div class="flex items-center">
-                <Avatar class="h-8 w-8 mr-2">
-                  <AvatarFallback>{{
-                    groupStudent.student
-                      ? getInitials(
-                          groupStudent.student.first_name,
-                          groupStudent.student.last_name
-                        )
-                      : "??"
-                  }}</AvatarFallback>
-                </Avatar>
-                {{
-                  groupStudent.student
-                    ? `${groupStudent.student.first_name} ${groupStudent.student.last_name}`
-                    : "Unknown Student"
-                }}
-              </div>
-            </TableCell>
-            <TableCell>
-              <Badge :variant="getStatusVariant(groupStudent.status)">
-                {{ capitalizeFirstLetter(groupStudent.status) }}
-              </Badge>
-            </TableCell>
-            <TableCell>{{ formatDate(groupStudent.enrolled_at) }}</TableCell>
-            <TableCell>{{ formatDate(groupStudent.createdAt) }}</TableCell>
-            <TableCell>
-              <div class="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  @click="viewStudentDetails(groupStudent)"
-                >
-                  <Icon name="lucide:eye" class="h-4 w-4" />
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger as-child>
-                    <Button variant="ghost" size="icon">
-                      <Icon name="lucide:more-vertical" class="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      @click="changeStudentStatus(groupStudent)"
-                    >
-                      <Icon name="lucide:edit-3" class="mr-2 h-4 w-4" />
-                      Change Status
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      @click="confirmRemoveStudent(groupStudent)"
-                      class="text-destructive focus:text-destructive"
-                    >
-                      <Icon name="lucide:user-minus" class="mr-2 h-4 w-4" />
-                      Remove from Group
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
-    </div>
-
-    <!-- Status Change Dialog -->
-    <Dialog v-model:open="statusDialog">
-      <DialogContent class="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Change Student Status</DialogTitle>
-          <DialogDescription>
-            Update the student's status in this group
-          </DialogDescription>
-        </DialogHeader>
-        <div class="py-4">
-          <Label for="status-select">Select Status</Label>
-          <Select v-model="newStatus" class="w-full mt-1">
-            <SelectTrigger id="status-select">
-              <SelectValue placeholder="Select a status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="removed">Removed</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="frozen">Frozen</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" @click="statusDialog = false"
-            >Cancel</Button
-          >
-          <Button @click="updateStudentStatus" :disabled="isUpdatingStatus">
-            <Icon
-              v-if="isUpdatingStatus"
-              name="lucide:loader-2"
-              class="mr-2 h-4 w-4 animate-spin"
-            />
-            {{ isUpdatingStatus ? "Updating..." : "Update Status" }}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    <!-- Student Details Dialog -->
-    <Dialog v-model:open="studentDetailsDialog">
-      <DialogContent class="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Student Details</DialogTitle>
-          <DialogDescription>
-            Information about the selected student
-          </DialogDescription>
-        </DialogHeader>
-        <div v-if="selectedStudent" class="py-4">
-          <div class="flex items-center gap-4 mb-4">
-            <Avatar class="h-16 w-16">
-              <AvatarFallback class="text-lg">
-                {{
-                  getInitials(
-                    selectedStudent.first_name,
-                    selectedStudent.last_name
-                  )
-                }}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h3 class="text-lg font-semibold">
-                {{ selectedStudent.first_name }} {{ selectedStudent.last_name }}
-              </h3>
-              <p class="text-muted-foreground">{{ selectedStudent.phone }}</p>
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <h4 class="font-medium text-sm">Contact Information</h4>
-              <div class="space-y-1 mt-2">
-                <div class="flex">
-                  <span class="text-muted-foreground w-20">Phone:</span>
-                  <span>{{ selectedStudent.phone }}</span>
-                </div>
-                <div class="flex">
-                  <span class="text-muted-foreground w-20">Username:</span>
-                  <span>{{ selectedStudent.username }}</span>
-                </div>
-              </div>
-            </div>
-            <div>
-              <h4 class="font-medium text-sm">Group Information</h4>
-              <div class="space-y-1 mt-2">
-                <div class="flex">
-                  <span class="text-muted-foreground w-20">Status:</span>
-                  <Badge
-                    :variant="getStatusVariant(selectedGroupStudent?.status)"
-                  >
-                    {{ capitalizeFirstLetter(selectedGroupStudent?.status) }}
-                  </Badge>
-                </div>
-                <div class="flex">
-                  <span class="text-muted-foreground w-20">Enrolled:</span>
-                  <span>{{
-                    formatDate(selectedGroupStudent?.enrolled_at)
-                  }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" @click="studentDetailsDialog = false"
-            >Close</Button
-          >
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    <!-- Confirmation Dialog -->
-    <AlertDialog v-model:open="confirmDialog">
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This will remove the student from this group.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            @click="removeStudentFromGroup"
-            class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
-            <Icon
-              v-if="isRemoving"
-              name="lucide:loader-2"
-              class="mr-2 h-4 w-4 animate-spin"
-            />
-            {{ isRemoving ? "Removing..." : "Remove" }}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  </div>
+      <!-- Student Details Modal -->
+      <GroupsViewGroupStudentModal
+        v-model:open="studentDetailsDialog"
+        :student="selectedStudent"
+        :group-student="selectedGroupStudent"
+      />
+    </template>
+  </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
+import type { TableColumn } from "@nuxt/ui";
 import type { GroupStudent, Student } from "~/types";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 
-// Extended GroupStudent interface with nested data
-interface GroupStudentWithData extends GroupStudent {
-  student?: {
-    user_id: string;
-    username: string;
-    first_name: string;
-    last_name: string;
-    avatar_url: string | null;
-  };
-  group?: {
-    id: string;
-    name: string;
-    teacher_id: string;
-    level_id: string;
-    teacher?: {
-      user_id: string;
-      username: string;
-      first_name: string;
-      last_name: string;
-      avatar_url: string | null;
-    };
-  };
-}
+const UAvatar = resolveComponent("UAvatar");
+const UBadge = resolveComponent("UBadge");
+const UButton = resolveComponent("UButton");
+const UDropdownMenu = resolveComponent("UDropdownMenu");
+const UPopover = resolveComponent("UPopover");
 
 const { apiService } = useAuth();
-const { toast } = useToast();
+const toast = useToast();
 const route = useRoute();
+const router = useRouter();
 
 // Route params
 const groupId = computed(() => route.params.groupId as string);
 
 // Data
-const groupStudents = ref<GroupStudentWithData[]>([]);
-const students = ref<Student[]>([]);
+const groupStudents = ref<GroupStudent[]>([]);
 const isLoading = ref(true);
 const groupName = ref("");
 const search = ref("");
-const studentSearch = ref(""); // For searching students in the add dialog
 const statusFilter = ref("all");
+const page = ref(1);
+const limit = ref(10);
 
-// Add student dialog
-const addDialog = ref(false);
-const selectedStudentId = ref("");
-const enrollmentDate = ref(new Date().toISOString().split("T")[0]); // Today's date
-const initialStatus = ref("active");
-const isAddingStudent = ref(false);
+// Status options
+const statusOptions = [
+  { value: "all", label: "Barcha holatlar" },
+  { value: "active", label: "Faol" },
+  { value: "removed", label: "O'chirilgan" },
+  { value: "completed", label: "Tugatgan" },
+  { value: "frozen", label: "Muzlatilgan" },
+];
 
-// Status change dialog
+// Dialogs
 const statusDialog = ref(false);
-const selectedGroupStudent = ref<GroupStudent | null>(null);
-const newStatus = ref("");
-const isUpdatingStatus = ref(false);
-
-// Student details dialog
 const studentDetailsDialog = ref(false);
+const selectedGroupStudent = ref<GroupStudent | null>(null);
 const selectedStudent = ref<Student | null>(null);
+const deletePopoverOpen = ref<Record<string, boolean>>({});
 
-// Remove student confirmation
-const confirmDialog = ref(false);
-const groupStudentToRemove = ref<GroupStudent | null>(null);
-const isRemoving = ref(false);
+// Table columns with render functions
+const columns: TableColumn<GroupStudent>[] = [
+  {
+    accessorKey: "student",
+    header: "Talaba",
+    cell: ({ row }) => {
+      const student = row.original.student;
+      if (!student) return h("span", { class: "text-gray-400" }, "N/A");
+
+      return h("div", { class: "flex items-center gap-3" }, [
+        h(
+          UAvatar,
+          {
+            src: student.avatar_url,
+            alt: `${student.first_name} ${student.last_name}`,
+            size: "sm",
+          },
+          student.avatar_url
+            ? undefined
+            : {
+                fallback: () =>
+                  getInitials(student.first_name, student.last_name),
+              },
+        ),
+        h("div", {}, [
+          h(
+            "div",
+            { class: "font-medium" },
+            `${student.first_name} ${student.last_name}`,
+          ),
+          h(
+            "div",
+            { class: "text-xs text-gray-500" },
+            student.phone || student.username,
+          ),
+        ]),
+      ]);
+    },
+  },
+  {
+    accessorKey: "status",
+    header: "Holat",
+    cell: ({ row }) => {
+      const status = row.original.status;
+      return h(
+        UBadge,
+        {
+          color: getStatusColor(status),
+          variant: "subtle",
+        },
+        () => getStatusLabel(status),
+      );
+    },
+  },
+  {
+    accessorKey: "enrolled_at",
+    header: "Ro'yxatga olindi",
+    cell: ({ row }) => formatDate(row.original.enrolled_at),
+  },
+  {
+    accessorKey: "createdAt",
+    header: "Yaratildi",
+    cell: ({ row }) => formatDate(row.original.createdAt),
+  },
+  {
+    id: "actions",
+    header: "Amallar",
+    cell: ({ row }) => {
+      const studentId = row.original.id;
+      return h("div", { class: "flex items-center gap-1" }, [
+        h(UButton, {
+          variant: "ghost",
+          icon: "i-lucide-eye",
+          size: "sm",
+          square: true,
+          onClick: () => viewStudentDetails(row.original),
+        }),
+        h(UButton, {
+          variant: "ghost",
+          icon: "i-lucide-edit-3",
+          size: "sm",
+          square: true,
+          onClick: () => changeStudentStatus(row.original),
+        }),
+        h(
+          UPopover,
+          {
+            open: deletePopoverOpen.value[studentId] || false,
+            "onUpdate:open": (value: boolean) => {
+              deletePopoverOpen.value[studentId] = value;
+            },
+          },
+          {
+            default: () =>
+              h(UButton, {
+                color: "error",
+                variant: "ghost",
+                icon: "i-lucide-user-minus",
+                size: "sm",
+                square: true,
+              }),
+            content: () =>
+              h("div", { class: "p-4 max-w-sm space-y-3" }, [
+                h(
+                  "h4",
+                  { class: "font-semibold text-sm" },
+                  "Ishonchingiz komilmi?",
+                ),
+                h(
+                  "p",
+                  { class: "text-sm text-gray-600" },
+                  "Bu talabani guruhdan butunlay o'chiradi.",
+                ),
+                h("div", { class: "flex justify-end gap-2 mt-3" }, [
+                  h(UButton, {
+                    color: "neutral",
+                    variant: "subtle",
+                    label: "Bekor qilish",
+                    size: "sm",
+                    onClick: () => {
+                      deletePopoverOpen.value[studentId] = false;
+                    },
+                  }),
+                  h(UButton, {
+                    color: "red",
+                    label: "O'chirish",
+                    size: "sm",
+                    onClick: async () => {
+                      await removeStudentFromGroup(row.original);
+                      deletePopoverOpen.value[studentId] = false;
+                    },
+                  }),
+                ]),
+              ]),
+          },
+        ),
+      ]);
+    },
+  },
+];
 
 // Computed properties
-const filteredStudentsForAdd = computed(() => {
-  if (!studentSearch.value) {
-    return students.value;
-  }
-
-  const searchLower = studentSearch.value.toLowerCase();
-  return students.value.filter(
-    (student) =>
-      student.first_name.toLowerCase().includes(searchLower) ||
-      student.last_name.toLowerCase().includes(searchLower) ||
-      `${student.first_name} ${student.last_name}`
-        .toLowerCase()
-        .includes(searchLower) ||
-      student.phone?.includes(studentSearch.value) ||
-      student.username?.toLowerCase().includes(searchLower)
-  );
-});
-
 const filteredGroupStudents = computed(() => {
   let result = [...groupStudents.value];
 
@@ -493,11 +322,28 @@ const filteredGroupStudents = computed(() => {
   // Apply status filter
   if (statusFilter.value !== "all") {
     result = result.filter(
-      (groupStudent) => groupStudent.status === statusFilter.value
+      (groupStudent) => groupStudent.status === statusFilter.value,
     );
   }
 
   return result;
+});
+
+const totalItems = computed(() => filteredGroupStudents.value.length);
+const totalPages = computed(() => Math.ceil(totalItems.value / limit.value));
+
+const paginatedStudents = computed(() => {
+  const start = (page.value - 1) * limit.value;
+  const end = start + limit.value;
+  return filteredGroupStudents.value.slice(start, end);
+});
+
+const paginationStart = computed(() => {
+  return totalItems.value === 0 ? 0 : (page.value - 1) * limit.value + 1;
+});
+
+const paginationEnd = computed(() => {
+  return Math.min(page.value * limit.value, totalItems.value);
 });
 
 // Methods
@@ -505,29 +351,25 @@ const loadGroupStudents = async () => {
   isLoading.value = true;
   try {
     // Load group students with nested student and group data
-    const response = await api.get<GroupStudentWithData[]>(
+    const response = await api.get<GroupStudent[]>(
       apiService.value,
-      `/group-students/group/${groupId.value}`
+      `/group-students/group/${groupId.value}`,
     );
     groupStudents.value = response;
 
     // Get group name from first item if available
-    if (response.length > 0 && response[0].group) {
-      groupName.value = response[0].group.name;
+    if (response.length > 0 && response[0]?.group?.name) {
+      groupName.value = response[0]?.group?.name;
     } else {
       // Fallback: Get group info separately
       await loadGroupInfo();
     }
-
-    // Load all students for the add dialog
-    await loadAllStudents();
   } catch (error) {
     console.error("Failed to load group students:", error);
-    toast({
+    toast.add({
       title: "Xatolik",
-      description:
-        "Guruh talabalarini yuklashda xatolik. Iltimos, qayta urinib ko'ring.",
-      variant: "destructive",
+      description: "Guruh talabalarini yuklashda xatolik",
+      color: "error",
     });
   } finally {
     isLoading.value = false;
@@ -538,144 +380,30 @@ const loadGroupInfo = async () => {
   try {
     const response = await api.get<any>(
       apiService.value,
-      `/groups/${groupId.value}`
+      `/groups/${groupId.value}`,
     );
     groupName.value = response.name;
   } catch (error) {
     console.error("Failed to load group info:", error);
-    groupName.value = "this group";
+    groupName.value = "Bu guruh";
   }
 };
 
-const loadAllStudents = async () => {
-  try {
-    // Fetch all students for dropdown - using high limit to get all
-    const params = new URLSearchParams({
-      page: "1",
-      limit: "1000", // Get all students
-    });
-
-    const response = await api.get<{
-      data: Student[];
-      total: number;
-      page: number;
-      limit: number;
-      totalPages: number;
-    }>(apiService.value, `/users/students?${params.toString()}`);
-
-    students.value = response.data || [];
-  } catch (error) {
-    console.error("Failed to load students:", error);
-    toast({
-      title: "Xatolik",
-      description:
-        "Talabalar ro'yxatini yuklashda xatolik. Ba'zi talaba nomlari to'g'ri ko'rsatilmasligi mumkin.",
-      variant: "destructive",
-    });
-    students.value = [];
-  }
-};
-
-const addStudentToGroup = async () => {
-  if (!selectedStudentId.value) {
-    toast({
-      title: "Xatolik",
-      description: "Iltimos, talabani tanlang",
-      variant: "destructive",
-    });
-    return;
-  }
-
-  isAddingStudent.value = true;
-  try {
-    // Format the date to ISO format with time (2025-07-16T10:00:00Z)
-    const formattedDate = new Date(
-      `${enrollmentDate.value}T10:00:00Z`
-    ).toISOString();
-
-    const response = await api.post<GroupStudentWithData>(
-      apiService.value,
-      "/group-students",
-      {
-        group_id: groupId.value,
-        student_id: selectedStudentId.value,
-        enrolled_at: formattedDate,
-        status: initialStatus.value,
-      }
-    );
-
-    // Reload the list to get fresh data with nested relationships
-    await loadGroupStudents();
-
-    toast({
-      title: "Muvaffaqiyat",
-      description: "Talaba guruhga muvaffaqiyatli qo'shildi",
-    });
-
-    // Reset form and search
-    selectedStudentId.value = "";
-    studentSearch.value = "";
-    enrollmentDate.value = new Date().toISOString().split("T")[0];
-    initialStatus.value = "active";
-    addDialog.value = false;
-  } catch (error) {
-    console.error("Failed to add student to group:", error);
-    toast({
-      title: "Xatolik",
-      description:
-        "Talabani guruhga qo'shishda xatolik. Iltimos, qayta urinib ko'ring.",
-      variant: "destructive",
-    });
-  } finally {
-    isAddingStudent.value = false;
-  }
+const handleAddStudent = async () => {
+  await loadGroupStudents();
 };
 
 const changeStudentStatus = (groupStudent: GroupStudent) => {
   selectedGroupStudent.value = groupStudent;
-  newStatus.value = groupStudent.status;
   statusDialog.value = true;
 };
 
-const updateStudentStatus = async () => {
-  if (!selectedGroupStudent.value) return;
-
-  isUpdatingStatus.value = true;
-  try {
-    const response = await api.patch<GroupStudentWithData>(
-      apiService.value,
-      `/group-students/${selectedGroupStudent.value.id}`,
-      { status: newStatus.value }
-    );
-
-    // Reload the list to get fresh data
-    await loadGroupStudents();
-
-    toast({
-      title: "Muvaffaqiyat",
-      description: "Talaba holati muvaffaqiyatli yangilandi",
-    });
-
-    statusDialog.value = false;
-  } catch (error) {
-    console.error("Failed to update student status:", error);
-    toast({
-      title: "Xatolik",
-      description:
-        "Talaba holatini yangilashda xatolik. Iltimos, qayta urinib ko'ring.",
-      variant: "destructive",
-    });
-  } finally {
-    isUpdatingStatus.value = false;
-  }
-};
-
-const viewStudentDetails = async (groupStudent: GroupStudentWithData) => {
+const viewStudentDetails = (groupStudent: GroupStudent) => {
   if (!groupStudent.student) {
-    toast({
+    toast.add({
       title: "Xatolik",
       description: "Talaba ma'lumotlari topilmadi",
-      variant: "destructive",
+      color: "error",
     });
     return;
   }
@@ -686,32 +414,25 @@ const viewStudentDetails = async (groupStudent: GroupStudentWithData) => {
     username: groupStudent.student.username,
     first_name: groupStudent.student.first_name,
     last_name: groupStudent.student.last_name,
-    phone: "", // Not available in nested data
+    phone: groupStudent.student.phone || "",
     roles: [],
     is_active: true,
+    created_at: new Date().toISOString(),
   };
 
   selectedGroupStudent.value = groupStudent;
   studentDetailsDialog.value = true;
 };
 
-const confirmRemoveStudent = (groupStudent: GroupStudent) => {
-  groupStudentToRemove.value = groupStudent;
-  confirmDialog.value = true;
-};
-
-const removeStudentFromGroup = async () => {
-  if (!groupStudentToRemove.value) return;
-
-  isRemoving.value = true;
+const removeStudentFromGroup = async (groupStudent: GroupStudent) => {
   try {
     // Use fetch directly for delete to handle 204 No Content
     const response = await fetch(
-      `${apiService.value.baseUrl}/group-students/${groupStudentToRemove.value.id}`,
+      `${apiService.value.baseUrl}/group-students/${groupStudent.id}`,
       {
         method: "DELETE",
         headers: apiService.value.headers,
-      }
+      },
     );
 
     if (!response.ok) {
@@ -721,22 +442,18 @@ const removeStudentFromGroup = async () => {
     // Reload the list to get fresh data
     await loadGroupStudents();
 
-    toast({
+    toast.add({
       title: "Muvaffaqiyat",
       description: "Talaba guruhdan muvaffaqiyatli o'chirildi",
+      color: "success",
     });
-
-    confirmDialog.value = false;
   } catch (error) {
     console.error("Failed to remove student from group:", error);
-    toast({
+    toast.add({
       title: "Xatolik",
-      description:
-        "Talabani guruhdan o'chirishda xatolik. Iltimos, qayta urinib ko'ring.",
-      variant: "destructive",
+      description: "Talabani guruhdan o'chirishda xatolik",
+      color: "error",
     });
-  } finally {
-    isRemoving.value = false;
   }
 };
 
@@ -747,33 +464,80 @@ const getInitials = (firstName: string, lastName: string): string => {
 
 const formatDate = (dateString?: string): string => {
   if (!dateString) return "N/A";
-  return new Date(dateString).toLocaleDateString();
+  return new Date(dateString).toLocaleDateString("uz-UZ");
 };
 
-const capitalizeFirstLetter = (str?: string): string => {
-  if (!str) return "";
-  return str.charAt(0).toUpperCase() + str.slice(1);
+const getStatusLabel = (status: string): string => {
+  const statusMap: Record<string, string> = {
+    active: "Faol",
+    removed: "O'chirilgan",
+    completed: "Tugatgan",
+    frozen: "Muzlatilgan",
+  };
+  return statusMap[status] || status;
 };
 
-const getStatusVariant = (status?: string): string => {
-  if (!status) return "secondary";
+const getStatusColor = (status: string): string => {
+  const colorMap: Record<string, string> = {
+    active: "green",
+    removed: "red",
+    completed: "blue",
+    frozen: "gray",
+  };
+  return colorMap[status] || "gray";
+};
 
-  switch (status) {
-    case "active":
-      return "success";
-    case "removed":
-      return "destructive";
-    case "completed":
-      return "default";
-    case "frozen":
-      return "secondary";
-    default:
-      return "outline";
+// URL parameter management
+const updateUrlParams = () => {
+  const query: Record<string, string> = {
+    page: page.value.toString(),
+    limit: limit.value.toString(),
+  };
+
+  if (search.value) {
+    query.query = search.value;
   }
+
+  if (statusFilter.value !== "all") {
+    query.status = statusFilter.value;
+  }
+
+  router.push({ query });
 };
 
 // Load data on component mount
 onMounted(async () => {
+  // Initialize from URL parameters
+  if (route.query.page) {
+    page.value = parseInt(route.query.page as string) || 1;
+  }
+  if (route.query.limit) {
+    limit.value = parseInt(route.query.limit as string) || 10;
+  }
+  if (route.query.query) {
+    search.value = route.query.query as string;
+  }
+  if (route.query.status) {
+    statusFilter.value = route.query.status as string;
+  }
+
   await loadGroupStudents();
+});
+
+// Debounce search to avoid too many rerenders
+let searchTimeout: NodeJS.Timeout | null = null;
+watch(search, () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+  searchTimeout = setTimeout(() => {
+    page.value = 1;
+    updateUrlParams();
+  }, 300);
+});
+
+// Update URL when filters change
+watch([page, limit, statusFilter], () => {
+  updateUrlParams();
 });
 </script>
