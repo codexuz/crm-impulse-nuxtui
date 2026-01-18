@@ -107,125 +107,59 @@
 
           <div class="calendar-container h-125 overflow-auto">
             <!-- Calendar Header -->
-            <div class="grid grid-cols-7 gap-1 mb-2">
-              <template
-                v-if="
-                  dashboard.calendarView === 'week' ||
-                  dashboard.calendarView === 'month'
-                "
-              >
-                <div
-                  v-for="day in [
-                    'Yak',
-                    'Dush',
-                    'Sesh',
-                    'Chor',
-                    'Pay',
-                    'Jum',
-                    'Shan',
-                  ]"
-                  :key="day"
-                  class="text-center font-medium text-sm py-2"
-                >
-                  {{ day }}
-                </div>
-              </template>
-              <template v-else>
-                <div class="col-span-7 text-center font-medium">
-                  {{ formatCalendarDate(dashboard.currentDate) }}
-                </div>
-              </template>
+            <div class="mb-4 text-center">
+              <h4 class="text-lg font-medium">
+                {{ formatCalendarDate(dashboard.currentDate) }}
+              </h4>
             </div>
 
-            <!-- Calendar Body -->
-            <div
-              v-if="dashboard.calendarView === 'month'"
-              class="grid grid-cols-7 gap-1 h-100"
-            >
-              <template v-for="(day, index) in calendarDays" :key="index">
-                <div
-                  class="border rounded p-1 h-full overflow-auto"
-                  :class="
-                    isCurrentDay(day) ? 'bg-primary/10 border-primary' : ''
-                  "
-                >
-                  <div class="text-right text-xs mb-1">{{ day.getDate() }}</div>
-                  <div
-                    v-for="lesson in getLessonsForDay(day)"
-                    :key="lesson.id"
-                    class="mb-1 p-1 text-xs rounded bg-primary/20 cursor-pointer"
-                    @click="showLessonDetails(lesson)"
-                  >
-                    {{ formatTime(lesson.startTime) }} - {{ lesson.groupName }}
-                  </div>
-                </div>
-              </template>
-            </div>
-
-            <div
-              v-else-if="dashboard.calendarView === 'week'"
-              class="grid grid-cols-7 gap-1 h-100"
-            >
-              <template v-for="(day, index) in weekDays" :key="index">
-                <div
-                  class="border rounded p-1 h-full overflow-auto"
-                  :class="
-                    isCurrentDay(day) ? 'bg-primary/10 border-primary' : ''
-                  "
-                >
-                  <div class="text-center text-xs mb-2 font-medium">
-                    {{ formatDate(day) }}
-                  </div>
-                  <div
-                    v-for="lesson in getLessonsForDay(day)"
-                    :key="lesson.id"
-                    class="mb-1 p-2 text-xs rounded bg-primary/20 cursor-pointer"
-                    @click="showLessonDetails(lesson)"
-                  >
-                    <div class="font-bold">
-                      {{ formatTime(lesson.startTime) }} -
-                      {{ formatTime(lesson.endTime) }}
-                    </div>
-                    <div>{{ lesson.groupName }}</div>
-                    <div class="text-xs text-muted-foreground">
-                      {{ lesson.teacherName }}
-                    </div>
-                    <div class="text-xs text-muted-foreground">
-                      Xona: {{ lesson.roomNumber }}
-                    </div>
-                  </div>
-                </div>
-              </template>
-            </div>
-
-            <div
-              v-else
-              class="border border-gray-700 dark:border-gray-600 rounded p-2 h-100 overflow-auto"
-            >
+            <!-- Daily Schedule -->
+            <div class="space-y-2">
               <div
-                v-for="hour in Array.from({ length: 15 }, (_, i) => i + 8)"
-                :key="hour"
-                class="relative h-12 border-b border-gray-700 dark:border-gray-600"
+                v-if="todayLessons.length === 0"
+                class="text-center py-8 text-gray-500 dark:text-gray-400"
               >
-                <div class="absolute left-0 text-xs text-muted-foreground">
-                  {{ formatHour(hour) }}
-                </div>
-                <div
-                  v-for="lesson in getLessonsForHour(
-                    dashboard.currentDate,
-                    hour
-                  )"
-                  :key="lesson.id"
-                  class="absolute left-16 right-0 rounded px-2 py-1 bg-primary/20 cursor-pointer"
-                  :style="getLessonPositionStyle(lesson, hour)"
-                  @click="showLessonDetails(lesson)"
-                >
-                  <div class="font-bold text-xs">{{ lesson.groupName }}</div>
-                  <div class="text-xs">
-                    {{ formatTime(lesson.startTime) }} -
-                    {{ formatTime(lesson.endTime) }}
+                Bu kun uchun darslar yo'q
+              </div>
+              <div
+                v-for="lesson in todayLessons"
+                :key="lesson.id"
+                class="border rounded-lg p-4 bg-primary/5 hover:bg-primary/10 cursor-pointer transition-colors"
+                @click="showLessonDetails(lesson)"
+              >
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-2">
+                      <UIcon name="i-lucide-clock" class="size-4" />
+                      <span class="font-semibold">
+                        {{ lesson.startTime }} - {{ lesson.endTime }}
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-2 mb-1">
+                      <UIcon name="i-lucide-users" class="size-4" />
+                      <span class="font-medium">{{ lesson.groupName }}</span>
+                    </div>
+                    <div class="flex items-center gap-2 mb-1">
+                      <UIcon name="i-lucide-user" class="size-4" />
+                      <span class="text-sm text-gray-600 dark:text-gray-400">
+                        {{ lesson.teacherName }}
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <UIcon name="i-lucide-book-open" class="size-4" />
+                      <span class="text-lg text-gray-600 dark:text-gray-400">
+                        {{ lesson.lessonName }}
+                      </span>
+                    </div>
                   </div>
-                  <div class="text-xs">{{ lesson.teacherName }}</div>
+                  <div class="flex flex-col items-end gap-2">
+                    <UBadge
+                      :color="lesson.days === 'odd' ? 'blue' : 'green'"
+                      variant="soft"
+                    >
+                      {{ lesson.days === "odd" ? "Toq kunlar" : "Juft kunlar" }}
+                    </UBadge>
+                  </div>
                 </div>
               </div>
             </div>
@@ -338,7 +272,6 @@ const dashboard = reactive({
   recentLeads: [] as any[],
   lessonSchedules: [] as any[],
   currentDate: new Date(),
-  calendarView: "day" as "day" | "week" | "month",
 });
 
 // Reactive state for debitor students
@@ -354,7 +287,7 @@ const fetchDashboardData = async () => {
     try {
       const studentsResponse = await api.get<{ data: any[]; total: number }>(
         apiService.value,
-        "/users/students?limit=1000"
+        "/users/students?limit=1000",
       );
       const students = studentsResponse.data || [];
       dashboard.totalStudents = studentsResponse.total || students.length;
@@ -363,7 +296,7 @@ const fetchDashboardData = async () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       dashboard.newStudents = students.filter(
-        (s) => new Date(s.created_at) > thirtyDaysAgo
+        (s) => new Date(s.created_at) > thirtyDaysAgo,
       ).length;
     } catch (studentError) {
       console.error("Failed to fetch student data:", studentError);
@@ -376,7 +309,7 @@ const fetchDashboardData = async () => {
     try {
       const groupsResponse = await api.get<{ data: any[]; total: number }>(
         apiService.value,
-        "/groups?limit=1000"
+        "/groups?limit=1000",
       );
       groups = groupsResponse.data || [];
       dashboard.activeGroups = groupsResponse.total || groups.length;
@@ -385,7 +318,7 @@ const fetchDashboardData = async () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       dashboard.recentGroups = groups.filter(
-        (g) => new Date(g.createdAt) > thirtyDaysAgo
+        (g) => new Date(g.createdAt) > thirtyDaysAgo,
       ).length;
     } catch (groupError) {
       console.error("Failed to fetch group data:", groupError);
@@ -397,7 +330,7 @@ const fetchDashboardData = async () => {
     try {
       const upcomingResponse = await api.get<any[]>(
         apiService.value,
-        "/student-payments/upcoming?days=7"
+        "/student-payments/upcoming?days=7",
       );
 
       upcomingPayments.value = upcomingResponse || [];
@@ -405,7 +338,7 @@ const fetchDashboardData = async () => {
       // Calculate total pending amount
       dashboard.pendingPaymentsAmount = upcomingPayments.value.reduce(
         (total, payment) => total + (payment.amount || 0),
-        0
+        0,
       );
     } catch (upcomingError) {
       console.error("Failed to fetch upcoming payments:", upcomingError);
@@ -417,20 +350,20 @@ const fetchDashboardData = async () => {
     try {
       const leadsResponse = await api.get<{ leads: any[]; total: number }>(
         apiService.value,
-        "/leads?limit=1000"
+        "/leads?limit=1000",
       );
       const leads = leadsResponse.leads || [];
       dashboard.newLeads = leads.length;
       dashboard.leadsConverted = leads.filter(
         (l) =>
-          l.status === "O'qishga yozildi" || l.status === "O'qishga yozildi"
+          l.status === "O'qishga yozildi" || l.status === "O'qishga yozildi",
       ).length;
 
       // Get recent leads (up to 5)
       dashboard.recentLeads = leads
         .sort(
           (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         )
         .slice(0, 5)
         .map((lead) => ({
@@ -451,22 +384,20 @@ const fetchDashboardData = async () => {
     try {
       const lessonSchedules = await api.get<any[]>(
         apiService.value,
-        "/lesson-schedules"
+        "/lesson-schedules",
       );
 
-      // Process lesson schedules for the calendar view
+      // Process lesson schedules for the daily view
       dashboard.lessonSchedules = lessonSchedules.map((lesson) => {
-        // Parse dates using the Uzbekistan timezone
-        const startTime = new Date(lesson.start_time);
-        const endTime = new Date(lesson.end_time);
-
         return {
           id: lesson.id,
+          groupId: lesson.group_id,
           groupName: lesson.group?.name || "Unknown Group",
-          roomNumber: lesson.room_number,
-          dayTime: lesson.day_time, // odd/even days
-          startTime,
-          endTime,
+          lessonName: lesson.lesson_name || "No lesson name",
+          date: lesson.date,
+          days: lesson.group?.days || "",
+          startTime: lesson.group?.lesson_start || "",
+          endTime: lesson.group?.lesson_end || "",
           teacherName:
             `${lesson.group?.teacher?.first_name || ""} ${
               lesson.group?.teacher?.last_name || ""
@@ -551,121 +482,28 @@ const formatSimpleDate = (dateString: string): string => {
 // Calendar navigation functions
 const navigatePrevious = () => {
   const current = new Date(dashboard.currentDate);
-  if (dashboard.calendarView === "day") {
-    dashboard.currentDate = addDays(current, -1);
-  } else if (dashboard.calendarView === "week") {
-    dashboard.currentDate = addDays(current, -7);
-  } else {
-    const newDate = new Date(current);
-    newDate.setMonth(current.getMonth() - 1);
-    dashboard.currentDate = newDate;
-  }
+  dashboard.currentDate = addDays(current, -1);
 };
 
 const navigateNext = () => {
   const current = new Date(dashboard.currentDate);
-  if (dashboard.calendarView === "day") {
-    dashboard.currentDate = addDays(current, 1);
-  } else if (dashboard.calendarView === "week") {
-    dashboard.currentDate = addDays(current, 7);
-  } else {
-    const newDate = new Date(current);
-    newDate.setMonth(current.getMonth() + 1);
-    dashboard.currentDate = newDate;
-  }
+  dashboard.currentDate = addDays(current, 1);
 };
 
 const navigateToday = () => {
   dashboard.currentDate = new Date();
 };
 
-// Calendar utility functions
-const isCurrentDay = (date: Date): boolean => {
-  const today = new Date();
-  return (
-    date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear()
-  );
-};
-
-const isSameDay = (date1: Date, date2: Date): boolean => {
-  return (
-    date1.getDate() === date2.getDate() &&
-    date1.getMonth() === date2.getMonth() &&
-    date1.getFullYear() === date2.getFullYear()
-  );
-};
-
-// Calendar data computed properties
-const weekDays = computed(() => {
-  const date = new Date(dashboard.currentDate);
-  const day = date.getDay();
-
-  // Set to beginning of week (Sunday)
-  date.setDate(date.getDate() - day);
-
-  const days = [];
-  for (let i = 0; i < 7; i++) {
-    days.push(new Date(date));
-    date.setDate(date.getDate() + 1);
-  }
-
-  return days;
+// Get lessons for the selected day
+const todayLessons = computed(() => {
+  const currentDateStr = dashboard.currentDate.toISOString().split("T")[0];
+  return dashboard.lessonSchedules
+    .filter((lesson) => lesson.date === currentDateStr)
+    .sort((a, b) => {
+      // Sort by start time
+      return a.startTime.localeCompare(b.startTime);
+    });
 });
-
-const calendarDays = computed(() => {
-  const date = new Date(
-    dashboard.currentDate.getFullYear(),
-    dashboard.currentDate.getMonth(),
-    1
-  );
-  const days = [];
-
-  // Get to the first Sunday before or on the 1st of the month
-  while (date.getDay() !== 0) {
-    date.setDate(date.getDate() - 1);
-  }
-
-  // Generate 6 weeks of days (42 days)
-  for (let i = 0; i < 42; i++) {
-    days.push(new Date(date));
-    date.setDate(date.getDate() + 1);
-  }
-
-  return days;
-});
-
-// Get lessons for a specific day
-const getLessonsForDay = (day: Date) => {
-  return dashboard.lessonSchedules.filter((lesson) =>
-    isSameDay(new Date(lesson.startTime), day)
-  );
-};
-
-// Get lessons for a specific hour
-const getLessonsForHour = (day: Date, hour: number) => {
-  return dashboard.lessonSchedules.filter((lesson) => {
-    const lessonDate = new Date(lesson.startTime);
-    return isSameDay(lessonDate, day) && lessonDate.getHours() === hour;
-  });
-};
-
-// Get position and height for a lesson in day view
-const getLessonPositionStyle = (lesson: any, hour: number) => {
-  const startTime = new Date(lesson.startTime);
-  const endTime = new Date(lesson.endTime);
-
-  const minuteOffset = (startTime.getMinutes() / 60) * 100;
-  const durationMinutes =
-    (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-  const heightPercentage = (durationMinutes / 60) * 100;
-
-  return {
-    top: `${minuteOffset}%`,
-    height: `${heightPercentage}%`,
-  };
-};
 
 // Show lesson details in a modal or popup
 const showLessonDetails = (lesson: any) => {
@@ -673,11 +511,12 @@ const showLessonDetails = (lesson: any) => {
   console.log("Lesson details:", lesson);
   // For now, we'll just use an alert
   alert(`
-    Group: ${lesson.groupName}
-    Teacher: ${lesson.teacherName}
-    Room: ${lesson.roomNumber}
-    Time: ${formatTime(lesson.startTime)} - ${formatTime(lesson.endTime)}
-    Day type: ${lesson.dayTime}
+    Dars: ${lesson.lessonName}
+    Guruh: ${lesson.groupName}
+    O'qituvchi: ${lesson.teacherName}
+    Vaqt: ${lesson.startTime} - ${lesson.endTime}
+    Kun turi: ${lesson.days === "odd" ? "Toq kunlar" : "Juft kunlar"}
+    Sana: ${lesson.date}
   `);
 };
 
