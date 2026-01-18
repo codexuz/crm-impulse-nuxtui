@@ -1,243 +1,133 @@
 <template>
-  <div>
-    <!-- Page header section -->
-    <div class="flex items-center justify-between mb-6">
+  <UDashboardPanel id="courses">
+    <template #header>
+      <UDashboardNavbar title="Kurslar" :ui="{ right: 'gap-3' }">
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
+
+        <template #description>
+          Til kurslarini va darajalarini boshqarish
+        </template>
+
+        <template #right>
+          <UButton
+            icon="i-lucide-plus"
+            label="Yangi kurs qo'shish"
+            @click="openNewCourseDialog"
+          />
+        </template>
+      </UDashboardNavbar>
+
+      <UDashboardToolbar>
+        <template #left>
+          <UInput
+            v-model="search"
+            icon="i-lucide-search"
+            placeholder="Kurslarni qidirish..."
+            class="w-64"
+          />
+        </template>
+      </UDashboardToolbar>
+    </template>
+
+    <template #body>
       <div>
-        <h1 class="text-3xl font-bold">Courses</h1>
-        <p class="text-muted-foreground">
-          Manage and organize language courses and levels
-        </p>
+        <!-- Courses Table -->
+        <UCard>
+          <template #header>
+            <h3 class="text-base font-semibold">Kurslar ro'yxati</h3>
+          </template>
+
+          <UTable
+            ref="table"
+            v-model:sort="sort"
+            :data="filteredCourses"
+            :columns="columns"
+            :loading="isLoading"
+            :empty="'Kurslar topilmadi'"
+          />
+
+          <template #footer>
+            <div class="text-sm text-gray-500">
+              Jami <span class="font-medium">{{ totalItems }}</span> kurs
+            </div>
+          </template>
+        </UCard>
       </div>
-      <Button @click="openNewCourseDialog">
-        <Icon name="lucide:plus" class="h-4 w-4 mr-2" />
-        Add New Course
-      </Button>
-    </div>
 
-    <!-- Loading state -->
-    <div
-      v-if="isLoading"
-      class="flex flex-col items-center justify-center py-20"
-    >
-      <Icon
-        name="lucide:loader-2"
-        class="h-12 w-12 animate-spin text-primary mb-4"
-      />
-      <p class="text-lg text-muted-foreground">Loading courses...</p>
-    </div>
+      <!-- Create/Edit Course Modal -->
+      <UModal v-model:open="courseDialog" :ui="{ width: 'sm:max-w-[500px]' }">
+        <template #header>
+          <h3 class="text-lg font-semibold">
+            {{ isEditing ? "Kursni tahrirlash" : "Yangi kurs yaratish" }}
+          </h3>
+        </template>
 
-    <!-- Error state -->
-    <Alert v-else-if="error" variant="destructive" class="mb-6">
-      <AlertTitle>Error loading courses</AlertTitle>
-      <AlertDescription>
-        {{ error }}
-        <Button variant="link" class="p-0 h-auto" @click="loadCourses">
-          Try again
-        </Button>
-      </AlertDescription>
-    </Alert>
+        <template #body>
+          <div class="space-y-4">
+            <div>
+              <UFormField  label="Kurs nomi" required>
+                <UInput
+                  v-model="formData.title"
+                  placeholder="Masalan: Elementary (A2)"
+                  class="w-full"
+                />
+              </UFormField>
+            </div>
 
-    <!-- Empty state -->
-    <div v-else-if="!courses.length" class="border rounded-lg p-12 text-center">
-      <div class="flex justify-center mb-4">
-        <Icon name="lucide:book-x" class="h-12 w-12 text-muted-foreground" />
-      </div>
-      <h3 class="text-xl font-semibold mb-2">No courses found</h3>
-      <p class="text-muted-foreground mb-6 max-w-md mx-auto">
-        You haven't created any courses yet. Get started by adding your first
-        course to organize your language programs.
-      </p>
-      <Button @click="openNewCourseDialog">
-        <Icon name="lucide:plus" class="h-4 w-4 mr-2" />
-        Add Your First Course
-      </Button>
-    </div>
+            <div>
+              <UFormField  label="Daraja" required>
+                <USelect
+                  v-model="formData.level"
+                  :items="['A1', 'A2', 'B1', 'B2', 'C1']"
+                  placeholder="Darajani tanlang"
+                  class="w-full"
+                />
+              </UFormField>
+            </div>
 
-    <!-- Courses table -->
-    <div v-else>
-      <Card>
-        <CardContent class="p-0">
-          <div class="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Level</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Updated</TableHead>
-                  <TableHead class="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow v-for="course in courses" :key="course.id">
-                  <TableCell class="font-medium">
-                    <div class="flex items-center">
-                      <Icon
-                        name="lucide:book"
-                        class="h-4 w-4 mr-2 text-primary"
-                      />
-                      {{ course.title }}
-                    </div>
-                  </TableCell>
-                  <TableCell>{{ course.level }}</TableCell>
-                  <TableCell>
-                    <Badge :variant="course.isActive ? 'default' : 'outline'">
-                      {{ course.isActive ? "Active" : "Inactive" }}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{{ formatDate(course.createdAt) }}</TableCell>
-                  <TableCell>{{ formatDate(course.updatedAt) }}</TableCell>
-                  <TableCell class="text-right">
-                    <div class="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        @click="viewCourseDetails(course)"
-                        title="View groups in this level"
-                      >
-                        <Icon name="lucide:users" class="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        @click="editCourse(course)"
-                        title="Edit course"
-                      >
-                        <Icon name="lucide:pencil" class="h-4 w-4" />
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger as-child>
-                          <Button variant="ghost" size="icon">
-                            <Icon name="lucide:more-vertical" class="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem @click="toggleCourseStatus(course)">
-                            <Icon
-                              :name="
-                                course.isActive
-                                  ? 'lucide:eye-off'
-                                  : 'lucide:eye'
-                              "
-                              class="h-4 w-4 mr-2"
-                            />
-                            {{ course.isActive ? "Deactivate" : "Activate" }}
-                            Course
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            @click="confirmDeleteCourse(course)"
-                            class="text-destructive"
-                          >
-                            <Icon name="lucide:trash-2" class="h-4 w-4 mr-2" />
-                            Delete Course
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+            <div>
+              <UFormField  label="Ta'rif (ixtiyoriy)">
+                <UTextarea
+                  v-model="formData.description"
+                  placeholder="Kurs ta'rifini kiriting"
+                  :rows="3"
+                  class="w-full"
+                />
+              </UFormField>
+            </div>
+
+            <div>
+              <UFormField class="w-full">
+                <UCheckbox v-model="formData.isActive" label="Kurs faol" />
+              </UFormField>
+            </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </template>
 
-    <!-- Create/Edit Course Dialog -->
-    <Dialog v-model:open="courseDialog">
-      <DialogContent class="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>{{
-            isEditing ? "Edit Course" : "Create New Course"
-          }}</DialogTitle>
-          <DialogDescription>
-            {{
-              isEditing
-                ? "Update the course details below."
-                : "Add a new language course to your curriculum."
-            }}
-          </DialogDescription>
-        </DialogHeader>
-        <div class="grid gap-4 py-4">
-          <div class="grid gap-2">
-            <Label for="title">Course Title</Label>
-            <Input
-              id="title"
-              v-model="formData.title"
-              placeholder="e.g. Elementary (A2)"
+        <template #footer>
+          <div class="flex justify-end gap-3">
+            <UButton
+              color="neutral"
+              variant="subtle"
+              label="Bekor qilish"
+              @click="courseDialog = false"
+            />
+            <UButton
+              :label="isEditing ? 'Yangilash' : 'Yaratish'"
+              :loading="isSaving"
+              @click="saveCourse"
             />
           </div>
-          <div class="grid gap-2">
-            <Label for="level">Level</Label>
-            <Input
-              id="level"
-              v-model="formData.level"
-              placeholder="e.g. A2, B1, B2"
-            />
-          </div>
-          <div class="grid gap-2">
-            <Label for="description">Description (optional)</Label>
-            <Textarea
-              id="description"
-              v-model="formData.description"
-              placeholder="Enter course description"
-              rows="3"
-            />
-          </div>
-          <div class="flex items-center space-x-2">
-            <Checkbox id="isActive" v-model="formData.isActive" />
-            <Label for="isActive">Course is active</Label>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" @click="courseDialog = false">
-            Cancel
-          </Button>
-          <Button type="submit" @click="saveCourse" :disabled="isSaving">
-            <Icon
-              v-if="isSaving"
-              name="lucide:loader-2"
-              class="h-4 w-4 mr-2 animate-spin"
-            />
-            {{ isEditing ? "Update Course" : "Create Course" }}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    <!-- Delete Confirmation Dialog -->
-    <AlertDialog v-model:open="deleteDialog">
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This action will permanently delete the course
-            <span class="font-semibold">{{ selectedCourse?.title }}</span
-            >. This action cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            @click="deleteCourse"
-            class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
-            <Icon
-              v-if="isDeleting"
-              name="lucide:loader-2"
-              class="h-4 w-4 mr-2 animate-spin"
-            />
-            {{ isDeleting ? "Deleting..." : "Delete Course" }}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  </div>
+        </template>
+      </UModal>
+    </template>
+  </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
+import type { TableColumn } from "@nuxt/ui";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 
@@ -253,7 +143,12 @@ interface Course {
 
 // API and auth setup
 const { apiService } = useAuth();
-const { toast } = useToast();
+const toast = useToast();
+const table = useTemplateRef("table");
+const UBadge = resolveComponent("UBadge");
+const UButton = resolveComponent("UButton");
+const UDropdownMenu = resolveComponent("UDropdownMenu");
+const UPopover = resolveComponent("UPopover");
 
 // State variables
 const courses = ref<Course[]>([]);
@@ -265,12 +160,168 @@ const isEditing = ref(false);
 const isSaving = ref(false);
 const isDeleting = ref(false);
 const selectedCourse = ref<Course | null>(null);
+
+// Pagination and filtering
+const page = ref(1);
+const limit = ref(10);
+const totalItems = ref(0);
+const totalPages = ref(1);
+const search = ref("");
+const sort = ref({ column: "title", direction: "asc" as const });
+const deletePopoverOpen = ref<Record<string, boolean>>({});
+
 const formData = ref({
   id: "",
   title: "",
   level: "",
   description: "",
   isActive: true,
+});
+
+// Table columns with render functions
+const columns: TableColumn<Course>[] = [
+  {
+    accessorKey: "title",
+    header: "Nomi",
+    cell: ({ row }) => {
+      return h("div", { class: "flex items-center gap-2" }, [
+        h("i", { class: "i-lucide-book text-primary h-4 w-4" }),
+        h("span", { class: "font-medium" }, row.original.title),
+      ]);
+    },
+  },
+  {
+    accessorKey: "level",
+    header: "Daraja",
+  },
+  {
+    accessorKey: "isActive",
+    header: "Holat",
+    cell: ({ row }) => {
+      return h(
+        UBadge,
+        { variant: row.original.isActive ? "solid" : "subtle" },
+        () => (row.original.isActive ? "Faol" : "Faol emas"),
+      );
+    },
+  },
+  {
+    accessorKey: "createdAt",
+    header: "Yaratilgan",
+    cell: ({ row }) => formatDate(row.original.createdAt),
+  },
+  {
+    accessorKey: "updatedAt",
+    header: "Yangilangan",
+    cell: ({ row }) => formatDate(row.original.updatedAt),
+  },
+  {
+    id: "actions",
+    header: "Amallar",
+    cell: ({ row }) => {
+      const courseId = row.original.id;
+      return h("div", { class: "flex items-center gap-1" }, [
+        h(UButton, {
+          variant: "ghost",
+          icon: "i-lucide-pencil",
+          size: "sm",
+          square: true,
+          onClick: () => editCourse(row.original),
+        }),
+        h(
+          UPopover,
+          {
+            open: deletePopoverOpen.value[courseId] || false,
+            "onUpdate:open": (value: boolean) => {
+              deletePopoverOpen.value[courseId] = value;
+            },
+          },
+          {
+            default: () =>
+              h(UButton, {
+                color: "error",
+                variant: "ghost",
+                icon: "i-lucide-trash-2",
+                size: "sm",
+                square: true,
+              }),
+            content: () =>
+              h("div", { class: "p-4 max-w-sm space-y-3" }, [
+                h(
+                  "h4",
+                  { class: "font-semibold text-sm" },
+                  "Ishonchingiz komilmi?",
+                ),
+                h(
+                  "p",
+                  { class: "text-sm text-gray-600" },
+                  "Bu kursni butunlay o'chiradi va barcha bog'langan ma'lumotlarni olib tashlaydi.",
+                ),
+                h("div", { class: "flex justify-end gap-2 mt-3" }, [
+                  h(UButton, {
+                    color: "neutral",
+                    variant: "subtle",
+                    label: "Bekor qilish",
+                    size: "sm",
+                    onClick: () => {
+                      deletePopoverOpen.value[courseId] = false;
+                    },
+                  }),
+                  h(UButton, {
+                    color: "error",
+                    label: isDeleting.value ? "O'chirilmoqda..." : "O'chirish",
+                    loading: isDeleting.value,
+                    size: "sm",
+                    onClick: async () => {
+                      selectedCourse.value = row.original;
+                      await deleteCourse();
+                      deletePopoverOpen.value[courseId] = false;
+                    },
+                  }),
+                ]),
+              ]),
+          },
+        ),
+        h(
+          UDropdownMenu,
+          {
+            items: [
+              [
+                {
+                  label: row.original.isActive
+                    ? "Faolsizlantirish"
+                    : "Faollashtirish",
+                  icon: row.original.isActive
+                    ? "i-lucide-eye-off"
+                    : "i-lucide-eye",
+                  onSelect: () => toggleCourseStatus(row.original),
+                },
+              ],
+            ],
+          },
+          () =>
+            h(UButton, {
+              color: "neutral",
+              variant: "ghost",
+              icon: "i-lucide-more-vertical",
+              size: "sm",
+            }),
+        ),
+      ]);
+    },
+  },
+];
+
+// Computed properties
+const filteredCourses = computed(() => {
+  if (!search.value) return courses.value;
+
+  const searchLower = search.value.toLowerCase();
+  return courses.value.filter(
+    (course) =>
+      course.title.toLowerCase().includes(searchLower) ||
+      course.level.toLowerCase().includes(searchLower),
+  );
 });
 
 // Load courses on component mount
@@ -287,14 +338,22 @@ const loadCourses = async () => {
     const response = await api.get<Course[]>(apiService.value, "/courses");
 
     // Store courses and exclude units array
-    courses.value = response.map((course) => {
+    courses.value = response.map((course: any) => {
       // Create a new object without the units property
       const { units, ...courseWithoutUnits } = course;
       return courseWithoutUnits;
     });
+
+    totalItems.value = courses.value.length;
   } catch (err) {
     console.error("Error loading courses:", err);
-    error.value = "Failed to load courses. Please try again.";
+    error.value = "Kurslarni yuklashda xatolik. Iltimos, qayta urinib ko'ring.";
+    toast.add({
+      title: "Xatolik",
+      description:
+        "Kurslarni yuklashda xatolik. Iltimos, qayta urinib ko'ring.",
+      color: "error",
+    });
   } finally {
     isLoading.value = false;
   }
@@ -302,7 +361,7 @@ const loadCourses = async () => {
 
 // Format date for display
 const formatDate = (dateString: string) => {
-  if (!dateString) return "N/A";
+  if (!dateString) return "Mavjud emas";
   const date = new Date(dateString);
   return date.toLocaleDateString();
 };
@@ -337,7 +396,7 @@ const viewCourseDetails = (course: Course) => {
   navigateTo(`/courses/${course.id}`);
 };
 
-const confirmDeleteCourse = (course: Course) => {
+const confirmDeleteCourse = async (course: Course) => {
   selectedCourse.value = course;
   deleteDialog.value = true;
 };
@@ -345,10 +404,10 @@ const confirmDeleteCourse = (course: Course) => {
 // API actions
 const saveCourse = async () => {
   if (!formData.value.title || !formData.value.level) {
-    toast({
-      title: "Validation Error",
-      description: "Title and level are required fields.",
-      variant: "destructive",
+    toast.add({
+      title: "Validatsiya xatosi",
+      description: "Nomi va daraja majburiy maydonlardir.",
+      color: "error",
     });
     return;
   }
@@ -363,7 +422,7 @@ const saveCourse = async () => {
       response = await api.patch<Course>(
         apiService.value,
         `/courses/${formData.value.id}`,
-        formData.value
+        formData.value,
       );
 
       // Update the course in the local array
@@ -372,36 +431,39 @@ const saveCourse = async () => {
         courses.value[index] = { ...response };
       }
 
-      toast({
-        title: "Success",
-        description: "Course updated successfully.",
+      toast.add({
+        title: "Muvaffaqiyat",
+        description: "Kurs muvaffaqiyatli yangilandi.",
+        color: "success",
       });
     } else {
       // Create new course
       response = await api.post<Course>(
         apiService.value,
         "/courses",
-        formData.value
+        formData.value,
       );
 
       // Add the new course to the local array
       courses.value.push({ ...response });
 
-      toast({
-        title: "Success",
-        description: "New course created successfully.",
+      toast.add({
+        title: "Muvaffaqiyat",
+        description: "Yangi kurs muvaffaqiyatli yaratildi.",
+        color: "success",
       });
     }
 
     courseDialog.value = false;
+    totalItems.value = courses.value.length;
   } catch (err) {
     console.error("Error saving course:", err);
-    toast({
-      title: "Error",
+    toast.add({
+      title: "Xatolik",
       description: isEditing.value
-        ? "Failed to update course. Please try again."
-        : "Failed to create course. Please try again.",
-      variant: "destructive",
+        ? "Kursni yangilashda xatolik. Iltimos, qayta urinib ko'ring."
+        : "Kurs yaratishda xatolik. Iltimos, qayta urinib ko'ring.",
+      color: "error",
     });
   } finally {
     isSaving.value = false;
@@ -413,27 +475,32 @@ const toggleCourseStatus = async (course: Course) => {
     const updatedCourse = await api.patch<Course>(
       apiService.value,
       `/courses/${course.id}`,
-      { isActive: !course.isActive }
+      { isActive: !course.isActive },
     );
 
     // Update the course in the local array
     const index = courses.value.findIndex((c) => c.id === course.id);
     if (index !== -1 && updatedCourse) {
-      courses.value[index].isActive = updatedCourse.isActive;
-    }
+      const courseToUpdate = courses.value[index];
+      if (courseToUpdate) {
+        courseToUpdate.isActive = updatedCourse.isActive;
 
-    toast({
-      title: "Success",
-      description: updatedCourse.isActive
-        ? "Course activated successfully."
-        : "Course deactivated successfully.",
-    });
+        toast.add({
+          title: "Muvaffaqiyat",
+          description: updatedCourse.isActive
+            ? "Kurs muvaffaqiyatli faollashtirildi."
+            : "Kurs muvaffaqiyatli faolsizlantirildi.",
+          color: "success",
+        });
+      }
+    }
   } catch (err) {
     console.error("Error toggling course status:", err);
-    toast({
-      title: "Error",
-      description: "Failed to update course status. Please try again.",
-      variant: "destructive",
+    toast.add({
+      title: "Xatolik",
+      description:
+        "Kurs holatini yangilashda xatolik. Iltimos, qayta urinib ko'ring.",
+      color: "error",
     });
   }
 };
@@ -448,24 +515,37 @@ const deleteCourse = async () => {
 
     // Remove the course from the local array
     courses.value = courses.value.filter(
-      (c) => c.id !== selectedCourse.value?.id
+      (c) => c.id !== selectedCourse.value?.id,
     );
 
-    toast({
-      title: "Success",
-      description: "Course deleted successfully.",
+    toast.add({
+      title: "Muvaffaqiyat",
+      description: "Kurs muvaffaqiyatli o'chirildi.",
+      color: "success",
     });
 
     deleteDialog.value = false;
+    totalItems.value = courses.value.length;
   } catch (err) {
     console.error("Error deleting course:", err);
-    toast({
-      title: "Error",
-      description: "Failed to delete course. Please try again.",
-      variant: "destructive",
+    toast.add({
+      title: "Xatolik",
+      description: "Kursni o'chirishda xatolik. Iltimos, qayta urinib ko'ring.",
+      color: "error",
     });
   } finally {
     isDeleting.value = false;
   }
 };
+
+// Debounce search
+let searchTimeout: NodeJS.Timeout | null = null;
+watch(search, () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+  searchTimeout = setTimeout(() => {
+    // Search is handled by computed property
+  }, 300);
+});
 </script>

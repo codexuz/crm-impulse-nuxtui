@@ -1,263 +1,231 @@
 <template>
-  <div>
-    <div class="container py-8">
-      <div class="flex justify-between items-center mb-6">
-        <div>
-          <h2 class="text-3xl font-bold tracking-tight">Admin Profile</h2>
-          <p class="text-muted-foreground">
-            View and manage your profile information
-          </p>
+  <UDashboardPanel id="profile">
+    <template #header>
+      <UDashboardNavbar title="Profil" :ui="{ right: 'gap-3' }">
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
+
+        <template #description>
+          Profil ma'lumotlarini ko'rish va boshqarish
+        </template>
+      </UDashboardNavbar>
+    </template>
+
+    <template #body>
+      <div class="p-4 lg:p-6 space-y-6">
+        <!-- Loading State -->
+        <div v-if="isLoading" class="flex justify-center items-center py-12">
+          <Icon name="lucide:loader-2" class="h-8 w-8 animate-spin" />
         </div>
-        <Button @click="refreshProfile">
-          <Icon name="lucide:refresh-cw" class="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
-      </div>
 
-      <!-- Loading state -->
-      <div v-if="isLoading" class="py-12 flex justify-center">
-        <div class="text-center space-y-4">
-          <Icon
-            name="lucide:loader-2"
-            class="h-12 w-12 animate-spin text-primary mx-auto"
-          />
-          <p class="text-xl font-medium">Loading profile information...</p>
+        <!-- Error State -->
+        <div v-else-if="error" class="rounded-lg border border-red-500 p-4">
+          <p class="text-sm text-red-500">{{ error }}</p>
         </div>
-      </div>
 
-      <!-- Error state -->
-      <div v-else-if="error" class="py-12">
-        <Card class="border-destructive">
-          <CardHeader>
-            <CardTitle class="text-destructive flex items-center">
-              <Icon name="lucide:alert-circle" class="mr-2 h-5 w-5" />
-              Error Loading Profile
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>{{ error }}</p>
-          </CardContent>
-          <CardFooter>
-            <Button @click="refreshProfile" variant="outline">Try Again</Button>
-          </CardFooter>
-        </Card>
-      </div>
-
-      <!-- Profile information -->
-      <div v-else-if="adminProfile" class="max-w-xl mx-auto gap-6">
-        <!-- Profile summary card -->
-        <Card class="md:col-span-1">
-          <CardHeader class="pb-3">
-            <CardTitle>Profile</CardTitle>
-            <CardDescription>Your personal information</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div class="flex flex-col items-center mb-6">
-              <Avatar class="h-24 w-24 mb-4">
-                <AvatarFallback class="text-xl">
-                  {{
+        <!-- Profile Content -->
+        <div v-else-if="adminProfile" class="max-w-3xl mx-auto space-y-6">
+          <!-- Profile Summary Card -->
+          <UCard>
+            <template #header>
+              <div class="flex items-center gap-4">
+                <UAvatar
+                  :text="
                     getInitials(adminProfile.first_name, adminProfile.last_name)
-                  }}
-                </AvatarFallback>
-              </Avatar>
-              <h3 class="text-xl font-bold">
-                {{ adminProfile.first_name }} {{ adminProfile.last_name }}
-              </h3>
-              <p class="text-muted-foreground">{{ adminProfile.username }}</p>
-              <div class="mt-2 flex flex-wrap gap-1">
-                <Badge
-                  v-for="role in adminProfile.roles"
-                  :key="role.id"
-                  class="mr-1"
+                  "
+                  size="xl"
+                  class="text-2xl"
+                />
+                <div class="flex-1">
+                  <h2 class="text-2xl font-bold">
+                    {{ adminProfile.first_name }} {{ adminProfile.last_name }}
+                  </h2>
+                  <p class="text-base text-gray-500 dark:text-gray-400">
+                    @{{ adminProfile.username }}
+                  </p>
+                  <div class="flex gap-2 mt-2">
+                    <UBadge
+                      v-for="(role, index) in adminProfile.roles"
+                      :key="typeof role === 'string' ? index : role.id"
+                      color="primary"
+                    >
+                      {{ typeof role === "string" ? role : role.name }}
+                    </UBadge>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <!-- Profile Details -->
+            <div class="space-y-4">
+              <div class="flex justify-between items-center">
+                <span
+                  class="text-sm font-medium text-gray-500 dark:text-gray-400"
+                  >ID</span
                 >
-                  {{ role.name }}
-                </Badge>
+                <span class="text-sm">{{ adminProfile.user_id }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span
+                  class="text-sm font-medium text-gray-500 dark:text-gray-400"
+                  >Telefon</span
+                >
+                <span class="text-sm">{{ adminProfile.phone }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span
+                  class="text-sm font-medium text-gray-500 dark:text-gray-400"
+                  >Holat</span
+                >
+                <UBadge :color="adminProfile.is_active ? 'success' : 'info'">
+                  {{ adminProfile.is_active ? "Faol" : "Nofaol" }}
+                </UBadge>
+              </div>
+              <div class="flex justify-between items-center">
+                <span
+                  class="text-sm font-medium text-gray-500 dark:text-gray-400"
+                  >Yaratilgan</span
+                >
+                <span class="text-sm">{{
+                  formatDate(adminProfile.created_at)
+                }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span
+                  class="text-sm font-medium text-gray-500 dark:text-gray-400"
+                  >Oxirgi kirish</span
+                >
+                <span class="text-sm">{{
+                  formatDate(adminProfile.last_login)
+                }}</span>
               </div>
             </div>
-            <Separator class="my-4" />
-            <dl class="space-y-3 text-sm">
-              <div class="flex">
-                <dt class="w-1/3 font-medium text-muted-foreground">ID:</dt>
-                <dd class="w-2/3 font-mono text-xs truncate">
-                  {{ adminProfile.user_id }}
-                </dd>
+
+            <template #footer>
+              <div class="flex gap-2">
+                <UButton
+                  icon="i-lucide-edit"
+                  label="Profilni tahrirlash"
+                  @click="showEditDialog = true"
+                />
+                <UButton
+                  icon="i-lucide-key"
+                  label="Parolni o'zgartirish"
+                  variant="outline"
+                  @click="showPasswordDialog = true"
+                />
               </div>
-              <div class="flex">
-                <dt class="w-1/3 font-medium text-muted-foreground">Phone:</dt>
-                <dd class="w-2/3">{{ adminProfile.phone }}</dd>
-              </div>
-              <div class="flex">
-                <dt class="w-1/3 font-medium text-muted-foreground">Status:</dt>
-                <dd class="w-2/3">
-                  <Badge
-                    :variant="
-                      adminProfile.is_active ? 'default' : 'destructive'
-                    "
-                  >
-                    {{ adminProfile.is_active ? "Active" : "Inactive" }}
-                  </Badge>
-                </dd>
-              </div>
-              <div class="flex">
-                <dt class="w-1/3 font-medium text-muted-foreground">
-                  Created:
-                </dt>
-                <dd class="w-2/3">{{ formatDate(adminProfile.created_at) }}</dd>
-              </div>
-              <div class="flex">
-                <dt class="w-1/3 font-medium text-muted-foreground">
-                  Last Login:
-                </dt>
-                <dd class="w-2/3">
-                  {{
-                    adminProfile.last_login
-                      ? formatDate(adminProfile.last_login)
-                      : "Unknown"
-                  }}
-                </dd>
-              </div>
-            </dl>
-          </CardContent>
-          <CardFooter class="flex flex-col gap-2">
-            <Button
-              variant="outline"
-              class="w-full"
-              @click="showEditDialog = true"
-            >
-              <Icon name="lucide:pencil" class="mr-2 h-4 w-4" />
-              Edit Profile
-            </Button>
-            <Button
-              variant="outline"
-              class="w-full"
-              @click="showPasswordDialog = true"
-            >
-              <Icon name="lucide:lock" class="mr-2 h-4 w-4" />
-              Change Password
-            </Button>
-          </CardFooter>
-        </Card>
+            </template>
+          </UCard>
+        </div>
       </div>
-    </div>
 
-    <!-- Edit Profile Dialog -->
-    <Dialog v-model:open="showEditDialog">
-      <DialogContent class="sm:max-w-[525px]">
-        <DialogHeader>
-          <DialogTitle>Edit Profile</DialogTitle>
-          <DialogDescription>
-            Update your personal information below
-          </DialogDescription>
-        </DialogHeader>
-        <form @submit.prevent="updateProfile">
-          <div class="grid gap-4 py-4">
-            <div class="grid grid-cols-2 gap-4">
-              <div class="space-y-2">
-                <Label for="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  v-model="editForm.first_name"
-                  placeholder="First Name"
-                />
-              </div>
-              <div class="space-y-2">
-                <Label for="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  v-model="editForm.last_name"
-                  placeholder="Last Name"
-                />
-              </div>
-            </div>
-            <div class="space-y-2">
-              <Label for="username">Username</Label>
-              <Input
-                id="username"
-                v-model="editForm.username"
-                placeholder="Username"
-              />
-            </div>
-            <div class="space-y-2">
-              <Label for="phone">Phone Number</Label>
-              <Input id="phone" v-model="editForm.phone" placeholder="Phone" />
-            </div>
+        <!-- Edit Profile Modal -->
+    <UModal v-model:open="showEditDialog">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold">Profilni tahrirlash</h3>
           </div>
-          <DialogFooter>
-            <Button variant="outline" @click="showEditDialog = false">
-              Cancel
-            </Button>
-            <Button type="submit" :disabled="isUpdating">
-              <Icon
-                v-if="isUpdating"
-                name="lucide:loader-2"
-                class="mr-2 h-4 w-4 animate-spin"
-              />
-              {{ isUpdating ? "Updating..." : "Save Changes" }}
-            </Button>
-          </DialogFooter>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Profil ma'lumotlarini yangilash
+          </p>
+        </template>
+        <template #body>
+        <form @submit.prevent="updateProfile" class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <UFormField label="Ism" required>
+              <UInput v-model="editForm.first_name" placeholder="Ism" />
+            </UFormField>
+            <UFormField label="Familiya" required>
+              <UInput v-model="editForm.last_name" placeholder="Familiya" />
+            </UFormField>
+          </div>
+          <UFormField label="Foydalanuvchi nomi" required>
+            <UInput
+              v-model="editForm.username"
+              placeholder="Foydalanuvchi nomi"
+            />
+          </UFormField>
+          <UFormField label="Telefon" required>
+            <UInput v-model="editForm.phone" placeholder="Telefon" />
+          </UFormField>
         </form>
-      </DialogContent>
-    </Dialog>
+        </template>
 
-    <!-- Change Password Dialog -->
-    <Dialog v-model:open="showPasswordDialog">
-      <DialogContent class="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Change Password</DialogTitle>
-          <DialogDescription>
-            Update your password to maintain account security
-          </DialogDescription>
-        </DialogHeader>
-        <form @submit.prevent="changePassword">
-          <div class="grid gap-4 py-4">
-            <div class="space-y-2">
-              <Label for="currentPassword">Current Password</Label>
-              <Input
-                id="currentPassword"
-                v-model="passwordForm.currentPassword"
-                type="password"
-                placeholder="Current Password"
-              />
-            </div>
-            <div class="space-y-2">
-              <Label for="newPassword">New Password</Label>
-              <Input
-                id="newPassword"
-                v-model="passwordForm.newPassword"
-                type="password"
-                placeholder="New Password"
-              />
-            </div>
-            <div class="space-y-2">
-              <Label for="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                v-model="passwordForm.confirmPassword"
-                type="password"
-                placeholder="Confirm Password"
-              />
-              <p
-                v-if="
-                  passwordForm.newPassword &&
-                  passwordForm.confirmPassword &&
-                  passwordForm.newPassword !== passwordForm.confirmPassword
-                "
-                class="text-xs text-destructive mt-1"
-              >
-                Passwords don't match
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
+        <template #footer>
+          <div class="flex justify-end gap-2">
+            <UButton
               variant="outline"
-              @click="showPasswordDialog = false"
+              label="Bekor qilish"
+              @click="showEditDialog = false"
+            />
+            <UButton
+              :loading="isUpdating"
+              :disabled="isUpdating"
+              label="Saqlash"
+              @click="updateProfile"
+            />
+          </div>
+        </template>
+    </UModal>
+
+    <!-- Change Password Modal -->
+    <UModal v-model:open="showPasswordDialog">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold">Parolni o'zgartirish</h3>
+          </div>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Hisobingiz xavfsizligini saqlash uchun parolingizni yangilang
+          </p>
+        </template>
+
+     <template #body>
+         <form @submit.prevent="changePassword" class="space-y-4">
+          <UFormField label="Joriy parol" required>
+            <UInput
+              v-model="passwordForm.currentPassword"
+              type="password"
+              placeholder="Joriy parol"
+            />
+          </UFormField>
+          <UFormField label="Yangi parol" required>
+            <UInput
+              v-model="passwordForm.newPassword"
+              type="password"
+              placeholder="Yangi parol"
+            />
+          </UFormField>
+          <UFormField label="Parolni tasdiqlang" required>
+            <UInput
+              v-model="passwordForm.confirmPassword"
+              type="password"
+              placeholder="Parolni tasdiqlang"
+            />
+            <p
+              v-if="
+                passwordForm.newPassword &&
+                passwordForm.confirmPassword &&
+                passwordForm.newPassword !== passwordForm.confirmPassword
+              "
+              class="text-xs text-red-500 mt-1"
             >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
+              Parollar mos kelmaydi
+            </p>
+          </UFormField>
+        </form>
+      </template>
+
+        <template #footer>
+          <div class="flex justify-end gap-2">
+            <UButton
+              variant="outline"
+              label="Bekor qilish"
+              @click="showPasswordDialog = false"
+            />
+            <UButton
+              :loading="isChangingPassword"
               :disabled="
                 isChangingPassword ||
                 !passwordForm.currentPassword ||
@@ -265,19 +233,15 @@
                 !passwordForm.confirmPassword ||
                 passwordForm.newPassword !== passwordForm.confirmPassword
               "
-            >
-              <Icon
-                v-if="isChangingPassword"
-                name="lucide:loader-2"
-                class="mr-2 h-4 w-4 animate-spin"
-              />
-              {{ isChangingPassword ? "Updating..." : "Change Password" }}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  </div>
+              label="Parolni o'zgartirish"
+              @click="changePassword"
+            />
+          </div>
+        </template>
+    </UModal>
+
+    </template>
+  </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
@@ -289,7 +253,6 @@ import { api } from "~/lib/api";
 // Define interfaces
 interface AdminProfile extends User {
   last_login?: string;
-  // Add any admin-specific fields here
 }
 
 // Define page meta
@@ -299,7 +262,7 @@ definePageMeta({
 
 // Composables
 const { auth, apiService } = useAuth();
-const { toast } = useToast();
+const toast = useToast();
 
 // State
 const adminProfile = ref<AdminProfile | null>(null);
@@ -309,7 +272,6 @@ const showEditDialog = ref(false);
 const showPasswordDialog = ref(false);
 const isUpdating = ref(false);
 const isChangingPassword = ref(false);
-const twoFactorEnabled = ref(false);
 
 // Form state
 const editForm = reactive({
@@ -349,7 +311,7 @@ const loadProfile = async () => {
     // Fetch admin profile from API
     const response = await api.get<AdminProfile>(
       apiService.value,
-      `/users/${userId}`
+      `/users/${userId}`,
     );
 
     adminProfile.value = response;
@@ -377,7 +339,7 @@ const updateProfile = async () => {
     const response = await api.patch<AdminProfile>(
       apiService.value,
       `/users/${adminProfile.value.user_id}`,
-      editForm
+      editForm,
     );
 
     // Update profile state
@@ -386,21 +348,22 @@ const updateProfile = async () => {
       ...response,
     };
 
-    toast({
-      title: "Profile Updated",
-      description: "Your profile information has been updated successfully",
+    toast.add({
+      title: "Profil yangilandi",
+      description: "Profil ma'lumotlari muvaffaqiyatli yangilandi",
+      color: "success",
     });
 
     showEditDialog.value = false;
   } catch (err) {
     console.error("Failed to update profile:", err);
-    toast({
-      title: "Update Failed",
+    toast.add({
+      title: "Yangilanmadi",
       description:
         err instanceof Error
           ? err.message
-          : "Failed to update profile information",
-      variant: "destructive",
+          : "Profil ma'lumotlarini yangilab bo'lmadi",
+      color: "error",
     });
   } finally {
     isUpdating.value = false;
@@ -419,12 +382,13 @@ const changePassword = async () => {
       {
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword,
-      }
+      },
     );
 
-    toast({
-      title: "Password Changed",
-      description: "Your password has been changed successfully",
+    toast.add({
+      title: "Parol o'zgartirildi",
+      description: "Parolingiz muvaffaqiyatli o'zgartirildi",
+      color: "success",
     });
 
     // Reset form
@@ -435,13 +399,13 @@ const changePassword = async () => {
     showPasswordDialog.value = false;
   } catch (err) {
     console.error("Failed to change password:", err);
-    toast({
-      title: "Password Change Failed",
+    toast.add({
+      title: "Parol o'zgarmadi",
       description:
         err instanceof Error
           ? err.message
-          : "Failed to change password. Please check your current password and try again.",
-      variant: "destructive",
+          : "Parolni o'zgartirib bo'lmadi. Joriy parolni tekshiring va qayta urinib ko'ring.",
+      color: "error",
     });
   } finally {
     isChangingPassword.value = false;
@@ -456,7 +420,7 @@ const getInitials = (firstName: string, lastName: string): string => {
 // Format date helper
 const formatDate = (dateString?: string): string => {
   if (!dateString) return "N/A";
-  return new Date(dateString).toLocaleString();
+  return new Date(dateString).toLocaleString("uz-UZ", { timeZone: "UTC" });
 };
 
 // Refresh profile

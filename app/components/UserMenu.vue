@@ -9,8 +9,14 @@ defineProps<{
 const colorMode = useColorMode();
 const appConfig = useAppConfig();
 const { auth, logout } = useAuth();
+const { loadColors, setPrimaryColor, setNeutralColor } = useThemeColors();
 const toast = useToast();
 const router = useRouter();
+
+// Load saved colors on mount
+onMounted(() => {
+  loadColors();
+});
 
 const colors = [
   "red",
@@ -97,7 +103,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
             type: "checkbox",
             onSelect: (e) => {
               e.preventDefault();
-              appConfig.ui.colors.primary = color;
+              setPrimaryColor(color);
             },
           })),
         },
@@ -120,7 +126,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
             checked: appConfig.ui.colors.neutral === color,
             onSelect: (e) => {
               e.preventDefault();
-              appConfig.ui.colors.neutral = color;
+              setNeutralColor(color);
             },
           })),
         },
@@ -193,7 +199,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
           class="rounded-full ring ring-bg bg-(--chip-light) dark:bg-(--chip-dark) size-2"
           :style="{
             '--chip-light': `var(--color-${(item as any).chip}-500)`,
-            '--chip-dark': `var(--color-${(item as any).chip}-400)`
+            '--chip-dark': `var(--color-${(item as any).chip}-400)`,
           }"
         />
       </div>

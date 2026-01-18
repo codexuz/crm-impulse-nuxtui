@@ -1,237 +1,217 @@
 <template>
-  <div class="container mx-auto py-10 space-y-6">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold tracking-tight">SMS Hisobot</h1>
-        <p class="text-muted-foreground">
+  <UDashboardPanel id="sms-report">
+    <template #header>
+      <UDashboardNavbar title="SMS Hisobot">
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
+
+        <template #description>
           SMS xabarlar hisoboti va balans ma'lumotlari
-        </p>
-      </div>
-      <Button variant="outline" @click="refreshData">
-        <Icon name="lucide:refresh-cw" class="mr-2 h-4 w-4" />
-        Yangilash
-      </Button>
-    </div>
+        </template>
 
-    <!-- Balance Card -->
-    <Card>
-      <CardHeader>
-        <CardTitle class="flex items-center gap-2">
-          <Icon name="lucide:wallet" class="h-5 w-5" />
-          SMS Balans
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div
-          v-if="isLoadingBalance"
-          class="flex items-center justify-center py-8"
-        >
-          <Icon
-            name="lucide:loader-2"
-            class="h-8 w-8 animate-spin text-primary"
+        <template #right>
+          <UButton
+            icon="i-lucide-refresh-cw"
+            label="Yangilash"
+            variant="outline"
+            @click="refreshData"
           />
-        </div>
-        <div v-else-if="balance" class="space-y-2">
-          <div class="text-3xl font-bold">
-            {{ formatCurrency(balance.data?.data?.balance || 0) }}
-          </div>
-          <p class="text-sm text-muted-foreground">Joriy balans (UZS)</p>
-        </div>
-        <div v-else class="text-muted-foreground">
-          Balans ma'lumotlari yuklanmadi
-        </div>
-      </CardContent>
-    </Card>
+        </template>
+      </UDashboardNavbar>
+    </template>
 
-    <!-- Report Filters -->
-    <Card>
-      <CardHeader>
-        <CardTitle>Hisobot filtrlari</CardTitle>
-        <CardDescription>
-          Ma'lum vaqt oralig'i uchun SMS hisobotini olish
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form @submit.prevent="generateReport" class="space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="space-y-2">
-              <Label for="start_date">Boshlanish sanasi</Label>
-              <Input
-                id="start_date"
-                type="datetime-local"
-                v-model="reportFilters.start_date"
-                required
-              />
+    <template #body>
+      <div class="space-y-6">
+        <!-- Balance Card -->
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-2">
+              <Icon name="lucide:wallet" class="h-5 w-5" />
+              <h3 class="text-base font-semibold">SMS Balans</h3>
             </div>
-            <div class="space-y-2">
-              <Label for="end_date">Tugash sanasi</Label>
-              <Input
-                id="end_date"
-                type="datetime-local"
-                v-model="reportFilters.end_date"
-                required
-              />
-            </div>
-          </div>
+          </template>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="space-y-2">
-              <Label for="status">Holat</Label>
-              <Select v-model="reportFilters.status">
-                <SelectTrigger>
-                  <SelectValue placeholder="Holatni tanlang" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Barchasi</SelectItem>
-                  <SelectItem value="delivered">Yetkazilgan</SelectItem>
-                  <SelectItem value="failed">Muvaffaqiyatsiz</SelectItem>
-                  <SelectItem value="pending">Kutilmoqda</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div class="space-y-2">
-              <Label for="is_ad">Reklama</Label>
-              <Select v-model="reportFilters.is_ad">
-                <SelectTrigger>
-                  <SelectValue placeholder="Reklama turini tanlang" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Barchasi</SelectItem>
-                  <SelectItem value="true">Reklama</SelectItem>
-                  <SelectItem value="false">Reklama emas</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <Button type="submit" :disabled="isLoadingReport" class="w-full">
+          <div
+            v-if="isLoadingBalance"
+            class="flex items-center justify-center py-8"
+          >
             <Icon
-              v-if="isLoadingReport"
               name="lucide:loader-2"
-              class="mr-2 h-4 w-4 animate-spin"
+              class="h-8 w-8 animate-spin text-primary"
             />
-            {{
-              isLoadingReport ? "Hisobot tayyorlanmoqda..." : "Hisobot olish"
-            }}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+          </div>
+          <div v-else-if="balance" class="space-y-2">
+            <div class="text-3xl font-bold">
+              {{ formatCurrency(balance.data?.data?.balance || 0) }}
+            </div>
+            <p class="text-sm text-gray-500">Joriy balans (UZS)</p>
+          </div>
+          <div v-else class="text-gray-500">Balans ma'lumotlari yuklanmadi</div>
+        </UCard>
 
-    <!-- Report Results -->
-    <Card v-if="reportData">
-      <CardHeader>
-        <CardTitle class="flex items-center gap-2">
-          <Icon name="lucide:bar-chart-3" class="h-5 w-5" />
-          Hisobot natijalari
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <!-- Main Statistics -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div class="space-y-2">
-            <div class="text-2xl font-bold">
-              {{ reportData.data?.data?.total_parts || 0 }}
-            </div>
-            <p class="text-sm text-muted-foreground">Jami SMS qismlari</p>
-          </div>
-          <div class="space-y-2">
-            <div class="text-2xl font-bold text-blue-600">
-              {{ reportData.data?.data?.parts || 0 }}
-            </div>
-            <p class="text-sm text-muted-foreground">Oddiy SMS qismlari</p>
-          </div>
-          <div class="space-y-2">
-            <div class="text-2xl font-bold text-purple-600">
-              {{ reportData.data?.data?.ad_parts || 0 }}
-            </div>
-            <p class="text-sm text-muted-foreground">Reklama SMS qismlari</p>
-          </div>
-          <div class="space-y-2">
-            <div class="text-2xl font-bold">
-              {{ formatCurrency(reportData.data?.data?.total_spent || 0) }}
-            </div>
-            <p class="text-sm text-muted-foreground">Jami xarajat</p>
-          </div>
-        </div>
-
-        <!-- Detailed Cost Breakdown -->
-        <div class="mt-6 pt-6 border-t">
-          <h3 class="text-lg font-semibold mb-4">Xarajatlar tafsiloti</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="space-y-2">
-              <div class="text-xl font-bold text-blue-600">
-                {{ formatCurrency(reportData.data?.data?.spent || 0) }}
-              </div>
-              <p class="text-sm text-muted-foreground">Oddiy SMS xarajati</p>
-            </div>
-            <div class="space-y-2">
-              <div class="text-xl font-bold text-purple-600">
-                {{ formatCurrency(reportData.data?.data?.ad_spent || 0) }}
-              </div>
-              <p class="text-sm text-muted-foreground">Reklama SMS xarajati</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Statistics -->
-        <div class="mt-6 pt-6 border-t">
-          <h3 class="text-lg font-semibold mb-4">Statistika</h3>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="space-y-2">
-              <div class="text-lg font-semibold">
-                {{ calculateAdPercentage() }}%
-              </div>
-              <p class="text-sm text-muted-foreground">Reklama SMS ulushi</p>
-            </div>
-            <div class="space-y-2">
-              <div class="text-lg font-semibold">
-                {{ calculateRegularPercentage() }}%
-              </div>
-              <p class="text-sm text-muted-foreground">Oddiy SMS ulushi</p>
-            </div>
-            <div class="space-y-2">
-              <div class="text-lg font-semibold">
-                {{ calculateAverageCost() }}
-              </div>
-              <p class="text-sm text-muted-foreground">
-                O'rtacha xarajat (1 qism)
+        <!-- Report Filters -->
+        <UCard>
+          <template #header>
+            <div>
+              <h3 class="text-base font-semibold">Hisobot filtrlari</h3>
+              <p class="text-sm text-gray-500 mt-1">
+                Ma'lum vaqt oralig'i uchun SMS hisobotini olish
               </p>
             </div>
+          </template>
+
+          <form @submit.prevent="generateReport" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <UFormField  label="Boshlanish sanasi" required>
+                  <UInput
+                    type="datetime-local"
+                    v-model="reportFilters.start_date"
+                    required
+                  />
+                </UFormField>
+              </div>
+              <div>
+                <UFormField  label="Tugash sanasi" required>
+                  <UInput
+                    type="datetime-local"
+                    v-model="reportFilters.end_date"
+                    required
+                  />
+                </UFormField>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <UFormField  label="Holat">
+                  <USelect
+                    v-model="reportFilters.status"
+                    :items="statusOptions"
+                    placeholder="Holatni tanlang"
+                  />
+                </UFormField>
+              </div>
+              <div>
+                <UFormField  label="Reklama">
+                  <USelect
+                    v-model="reportFilters.is_ad"
+                    :items="adOptions"
+                    placeholder="Reklama turini tanlang"
+                  />
+                </UFormField>
+              </div>
+            </div>
+
+            <UButton
+              type="submit"
+              :loading="isLoadingReport"
+              :label="
+                isLoadingReport ? 'Hisobot tayyorlanmoqda...' : 'Hisobot olish'
+              "
+              block
+            />
+          </form>
+        </UCard>
+
+        <!-- Report Results -->
+        <UCard v-if="reportData">
+          <template #header>
+            <div class="flex items-center gap-2">
+              <Icon name="lucide:bar-chart-3" class="h-5 w-5" />
+              <h3 class="text-base font-semibold">Hisobot natijalari</h3>
+            </div>
+          </template>
+
+          <!-- Main Statistics -->
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+          >
+            <div class="space-y-2">
+              <div class="text-2xl font-bold">
+                {{ reportData.data?.data?.total_parts || 0 }}
+              </div>
+              <p class="text-sm text-gray-500">Jami SMS qismlari</p>
+            </div>
+            <div class="space-y-2">
+              <div class="text-2xl font-bold text-blue-600">
+                {{ reportData.data?.data?.parts || 0 }}
+              </div>
+              <p class="text-sm text-gray-500">Oddiy SMS qismlari</p>
+            </div>
+            <div class="space-y-2">
+              <div class="text-2xl font-bold text-purple-600">
+                {{ reportData.data?.data?.ad_parts || 0 }}
+              </div>
+              <p class="text-sm text-gray-500">Reklama SMS qismlari</p>
+            </div>
+            <div class="space-y-2">
+              <div class="text-2xl font-bold">
+                {{ formatCurrency(reportData.data?.data?.total_spent || 0) }}
+              </div>
+              <p class="text-sm text-gray-500">Jami xarajat</p>
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
-  </div>
+
+          <!-- Detailed Cost Breakdown -->
+          <div class="pt-6 border-t">
+            <h3 class="text-lg font-semibold mb-4">Xarajatlar tafsiloti</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <div class="text-xl font-bold text-blue-600">
+                  {{ formatCurrency(reportData.data?.data?.spent || 0) }}
+                </div>
+                <p class="text-sm text-gray-500">Oddiy SMS xarajati</p>
+              </div>
+              <div class="space-y-2">
+                <div class="text-xl font-bold text-purple-600">
+                  {{ formatCurrency(reportData.data?.data?.ad_spent || 0) }}
+                </div>
+                <p class="text-sm text-gray-500">Reklama SMS xarajati</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Statistics -->
+          <div class="mt-6 pt-6 border-t">
+            <h3 class="text-lg font-semibold mb-4">Statistika</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="space-y-2">
+                <div class="text-lg font-semibold">
+                  {{ calculateAdPercentage() }}%
+                </div>
+                <p class="text-sm text-gray-500">Reklama SMS ulushi</p>
+              </div>
+              <div class="space-y-2">
+                <div class="text-lg font-semibold">
+                  {{ calculateRegularPercentage() }}%
+                </div>
+                <p class="text-sm text-gray-500">Oddiy SMS ulushi</p>
+              </div>
+              <div class="space-y-2">
+                <div class="text-lg font-semibold">
+                  {{ calculateAverageCost() }}
+                </div>
+                <p class="text-sm text-gray-500">O'rtacha xarajat (1 qism)</p>
+              </div>
+            </div>
+          </div>
+        </UCard>
+      </div>
+    </template>
+  </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from "vue";
 import { useSMS } from "~/composables/useSMS";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
 definePageMeta({
   middleware: ["auth"],
 });
 
-const { toast } = useToast();
+const toast = useToast();
 
 // State
 const balance = ref<any>(null);
@@ -246,6 +226,19 @@ const reportFilters = reactive({
   status: "all",
   is_ad: "all",
 });
+
+const statusOptions = [
+  { label: "Barchasi", value: "all" },
+  { label: "Yetkazilgan", value: "delivered" },
+  { label: "Muvaffaqiyatsiz", value: "failed" },
+  { label: "Kutilmoqda", value: "pending" },
+];
+
+const adOptions = [
+  { label: "Barchasi", value: "all" },
+  { label: "Reklama", value: "true" },
+  { label: "Reklama emas", value: "false" },
+];
 
 // Initialize default date range (current and future - next 1 month)
 const initializeDateRange = () => {
@@ -266,10 +259,10 @@ const loadBalance = async () => {
     balance.value = await getSMSBalance();
   } catch (error) {
     console.error("Failed to load SMS balance:", error);
-    toast({
+    toast.add({
       title: "Xatolik",
       description: "SMS balansini yuklashda xatolik yuz berdi",
-      variant: "destructive",
+      color: "error",
     });
   } finally {
     isLoadingBalance.value = false;
@@ -301,18 +294,17 @@ const generateReport = async () => {
     const response = await getSMSReport(reportRequest);
     reportData.value = response;
 
-    toast({
+    toast.add({
       title: "Muvaffaqiyat",
       description: "Hisobot muvaffaqiyatli olindi",
+      color: "success",
     });
-
-    console.log("SMS Report Data:", response);
   } catch (error) {
     console.error("Failed to generate SMS report:", error);
-    toast({
+    toast.add({
       title: "Xatolik",
       description: "Hisobotni olishda xatolik yuz berdi",
-      variant: "destructive",
+      color: "error",
     });
   } finally {
     isLoadingReport.value = false;
@@ -327,7 +319,7 @@ const refreshData = async () => {
 };
 
 const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat("uz-UZ").format(amount);
+  return new Intl.NumberFormat("en-US").format(amount);
 };
 
 const calculateAdPercentage = (): string => {

@@ -66,14 +66,14 @@ const links = [
       defaultOpen: true,
       type: "trigger" as const,
       children: [
-        {
-          label: "SMS yuborish",
-          to: "/sms/sms-posting",
-          exact: true,
-          onSelect: () => {
-            open.value = false;
-          },
-        },
+        // {
+        //   label: "SMS yuborish",
+        //   to: "/sms/sms-posting",
+        //   exact: true,
+        //   onSelect: () => {
+        //     open.value = false;
+        //   },
+        // },
         {
           label: "Hisobot",
           to: "/sms/report",
@@ -100,14 +100,14 @@ const links = [
         open.value = false;
       },
     },
-    {
-      label: "Bildirishnomalar",
-      icon: "i-lucide-bell",
-      to: "/notifications",
-      onSelect: () => {
-        open.value = false;
-      },
-    },
+    // {
+    //   label: "Bildirishnomalar",
+    //   icon: "i-lucide-bell",
+    //   to: "/notifications",
+    //   onSelect: () => {
+    //     open.value = false;
+    //   },
+    // },
   ],
   [
     {
@@ -198,14 +198,6 @@ const links = [
       label: "Davomat",
       icon: "i-lucide-calendar-check",
       to: "/attendance",
-      onSelect: () => {
-        open.value = false;
-      },
-    },
-    {
-      label: "Jadvallar",
-      icon: "i-lucide-calendar",
-      to: "/schedules",
       onSelect: () => {
         open.value = false;
       },

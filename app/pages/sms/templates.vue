@@ -1,150 +1,99 @@
 <template>
-  <div class="container mx-auto py-10 space-y-6">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold tracking-tight">SMS Shablonlari</h1>
-        <p class="text-muted-foreground">
+  <UDashboardPanel id="sms-templates">
+    <template #header>
+      <UDashboardNavbar title="SMS Shablonlari">
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
+
+        <template #description>
           SMS xabarlar uchun shablonlarni boshqaring
-        </p>
-      </div>
-      <Button @click="openCreateModal">
-        <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
-        Yangi shablon
-      </Button>
-    </div>
+        </template>
 
-    <!-- Templates List -->
-    <Card>
-      <CardHeader>
-        <CardTitle class="flex items-center gap-2">
-          <Icon name="lucide:file-text" class="h-5 w-5" />
-          Mavjud shablonlar
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div v-if="isLoading" class="flex items-center justify-center py-8">
-          <Icon
-            name="lucide:loader-2"
-            class="h-8 w-8 animate-spin text-primary"
+        <template #right>
+          <UButton
+            icon="i-lucide-plus"
+            label="Yangi shablon"
+            @click="openCreateModal"
           />
-        </div>
-        <div
-          v-else-if="templates.length === 0"
-          class="text-center py-8 text-muted-foreground"
-        >
-          Hech qanday shablon topilmadi
-        </div>
-        <div v-else class="space-y-4">
-          <div
-            v-for="(template, index) in templates"
-            :key="template.id || index"
-            class="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-          >
-            <div class="flex items-start justify-between">
-              <div class="flex-1">
-                <div class="flex items-center gap-2 mb-2">
-                  <div class="font-medium">Shablon #{{ template.id }}</div>
-                  <div
-                    class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded"
-                  >
-                    {{ template.status }}
-                  </div>
-                </div>
-                <div class="space-y-2">
-                  <div v-if="template.original_text">
-                    <p class="text-xs font-medium text-muted-foreground mb-1">
-                      Shablon Matni:
-                    </p>
-                    <p class="text-sm text-muted-foreground leading-relaxed">
-                      {{ template.original_text }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="flex items-center gap-2 ml-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  @click="copyToClipboard(template.original_text)"
-                  title="Misol matnni nusxalash"
-                  v-if="template.original_text"
-                >
-                  <Icon name="lucide:file-text" class="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </template>
+      </UDashboardNavbar>
+    </template>
 
-    <!-- Create/Edit Template Modal -->
-    <Dialog v-model:open="isModalOpen">
-      <DialogContent class="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
+    <template #body>
+      <UCard>
+        <template #header>
+          <h3 class="text-base font-semibold">Mavjud shablonlar</h3>
+        </template>
+
+        <UTable
+          :loading="isLoading"
+          :columns="columns"
+          :data="templates"
+          :empty="'Hech qanday shablon topilmadi'"
+        />
+      </UCard>
+
+      <!-- Create/Edit Template Modal -->
+      <UModal v-model:open="isModalOpen">
+        <template #header>
+          <h3 class="text-lg font-semibold">
             {{ isEditMode ? "Shablonni tahrirlash" : "Yangi shablon yaratish" }}
-          </DialogTitle>
-        </DialogHeader>
+          </h3>
+        </template>
 
-        <form @submit.prevent="submitTemplate" class="space-y-4">
-          <div class="space-y-2">
-            <Label for="template">Shablon matni</Label>
-            <Textarea
-              id="template"
-              v-model="templateForm.template"
-              placeholder="Shu yerga kiriting...."
-              rows="4"
-              required
-            />
-          </div>
+        <template #body>
+          <form @submit.prevent="submitTemplate" class="space-y-4">
+            <div>
+              <UFormField  label="Shablon matni" required>
+                <UTextarea
+                  v-model="templateForm.template"
+                  placeholder="Shu yerga kiriting...."
+                  :rows="4"
+                  required
+                  class="w-full"
+                />
+              </UFormField>
+            </div>
 
-          <div class="flex justify-end gap-2">
-            <Button type="button" variant="outline" @click="closeModal">
-              Bekor qilish
-            </Button>
-            <Button type="submit" :disabled="isSubmitting">
-              <Icon
-                v-if="isSubmitting"
-                name="lucide:loader-2"
-                class="mr-2 h-4 w-4 animate-spin"
+            <div class="flex justify-end gap-2">
+              <UButton
+                type="button"
+                variant="outline"
+                label="Bekor qilish"
+                @click="closeModal"
               />
-              {{
-                isSubmitting
-                  ? "Saqlanmoqda..."
-                  : isEditMode
-                  ? "Yangilash"
-                  : "Yaratish"
-              }}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  </div>
+              <UButton
+                type="submit"
+                :loading="isSubmitting"
+                :label="
+                  isSubmitting
+                    ? 'Saqlanmoqda...'
+                    : isEditMode
+                      ? 'Yangilash'
+                      : 'Yaratish'
+                "
+              />
+            </div>
+          </form>
+        </template>
+      </UModal>
+    </template>
+  </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, h } from "vue";
+import type { TableColumn } from "@nuxt/ui";
 import { useSMS } from "~/composables/useSMS";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 definePageMeta({
   middleware: ["auth"],
 });
 
-const { toast } = useToast();
+const toast = useToast();
+const UBadge = resolveComponent("UBadge");
+const UButton = resolveComponent("UButton");
 
 // State
 const templates = ref<any[]>([]);
@@ -159,6 +108,53 @@ const templateForm = ref({
   template: "",
 });
 
+// Table columns
+const columns: TableColumn<any>[] = [
+  {
+    accessorKey: "id",
+    header: "ID",
+    cell: ({ row }) =>
+      h("div", { class: "font-medium" }, `#${row.original.id}`),
+  },
+  {
+    accessorKey: "original_text",
+    header: "Shablon Matni",
+    cell: ({ row }) =>
+      h(
+        "div",
+        {
+          class: "max-w-md text-sm break-words whitespace-normal line-clamp-3",
+        },
+        row.original.original_text,
+      ),
+  },
+  {
+    accessorKey: "status",
+    header: "Holat",
+    cell: ({ row }) =>
+      h(UBadge, {
+        label: row.original.status,
+        color: "blue",
+        variant: "subtle",
+      }),
+  },
+  {
+    id: "actions",
+    header: "Amallar",
+    cell: ({ row }) =>
+      h("div", { class: "flex items-center gap-2" }, [
+        h(UButton, {
+          variant: "ghost",
+          size: "sm",
+          icon: "i-lucide-copy",
+          square: true,
+          title: "Nusxalash",
+          onClick: () => copyToClipboard(row.original.original_text),
+        }),
+      ]),
+  },
+];
+
 // Functions
 const loadTemplates = async () => {
   isLoading.value = true;
@@ -166,13 +162,12 @@ const loadTemplates = async () => {
     const { getSMSTemplates } = useSMS();
     const response = await getSMSTemplates();
     templates.value = response.data?.result || [];
-    console.log("Templates loaded:", response);
   } catch (error) {
     console.error("Failed to load SMS templates:", error);
-    toast({
+    toast.add({
       title: "Xatolik",
       description: "Shablonlarni yuklashda xatolik yuz berdi",
-      variant: "destructive",
+      color: "error",
     });
   } finally {
     isLoading.value = false;
@@ -208,21 +203,22 @@ const submitTemplate = async () => {
       template: templateForm.value.template,
     });
 
-    toast({
+    toast.add({
       title: "Muvaffaqiyat",
       description: isEditMode.value
         ? "Shablon muvaffaqiyatli yangilandi"
         : "Yangi shablon muvaffaqiyatli yaratildi",
+      color: "success",
     });
 
     closeModal();
     await loadTemplates();
   } catch (error) {
     console.error("Failed to save template:", error);
-    toast({
+    toast.add({
       title: "Xatolik",
       description: "Shablonni saqlashda xatolik yuz berdi",
-      variant: "destructive",
+      color: "error",
     });
   } finally {
     isSubmitting.value = false;
@@ -232,16 +228,17 @@ const submitTemplate = async () => {
 const copyToClipboard = async (text: string) => {
   try {
     await navigator.clipboard.writeText(text);
-    toast({
+    toast.add({
       title: "Muvaffaqiyat",
       description: "Matn nusxalandi",
+      color: "success",
     });
   } catch (error) {
     console.error("Failed to copy text:", error);
-    toast({
+    toast.add({
       title: "Xatolik",
       description: "Matnni nusxalashda xatolik yuz berdi",
-      variant: "destructive",
+      color: "error",
     });
   }
 };

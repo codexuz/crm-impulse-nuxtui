@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Student } from "~/types";
 
-const open = defineModel<boolean>('open');
+const open = defineModel<boolean>("open");
 
 const props = defineProps<{
   student: Student | null;
@@ -139,15 +139,49 @@ const getStudentCourse = (student: Student | null) => {
             Hech qanday guruhga yozilmagan
           </div>
           <div v-else class="space-y-2">
-            <UCard v-for="group in studentGroups" :key="group.id">
-              <div class="flex justify-between items-center">
-                <div>
-                  <div class="font-medium">{{ group.name }}</div>
-                  <div class="text-xs text-gray-500">
-                    Yozilgan: {{ formatDate(group.enrolled_at) }}
+            <UCard v-for="groupItem in studentGroups" :key="groupItem.id">
+              <div class="space-y-2">
+                <div class="flex justify-between items-start">
+                  <div class="flex-1">
+                    <div class="font-medium">
+                      {{ groupItem.group?.name || "Noma'lum guruh" }}
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1 space-y-1">
+                      <div v-if="groupItem.group?.days">
+                        <span class="font-medium">Kunlar:</span>
+                        {{ groupItem.group.days }}
+                      </div>
+                      <div
+                        v-if="
+                          groupItem.group?.lesson_start &&
+                          groupItem.group?.lesson_end
+                        "
+                      >
+                        <span class="font-medium">Vaqt:</span>
+                        {{ groupItem.group.lesson_start }} -
+                        {{ groupItem.group.lesson_end }}
+                      </div>
+                      <div v-if="groupItem.group?.teacher">
+                        <span class="font-medium">O'qituvchi:</span>
+                        {{ groupItem.group.teacher.first_name }}
+                        {{ groupItem.group.teacher.last_name }}
+                      </div>
+                      <div>
+                        <span class="font-medium">Yozilgan:</span>
+                        {{ formatDate(groupItem.enrolled_at) }}
+                      </div>
+                    </div>
                   </div>
+                  <UBadge
+                    :color="
+                      groupItem.status === 'active' ? 'success' : 'neutral'
+                    "
+                  >
+                    {{
+                      groupItem.status === "active" ? "Faol" : groupItem.status
+                    }}
+                  </UBadge>
                 </div>
-                <UBadge>{{ group.status }}</UBadge>
               </div>
             </UCard>
           </div>

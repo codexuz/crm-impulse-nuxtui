@@ -20,6 +20,9 @@ const formData = ref({
   name: "",
   level_id: "",
   teacher_id: "",
+  days: "",
+  lesson_start: "",
+  lesson_end: "",
 });
 
 const courseOptions = computed(() => {
@@ -79,6 +82,9 @@ const resetForm = () => {
     name: "",
     level_id: "",
     teacher_id: "",
+    days: "",
+    lesson_start: "",
+    lesson_end: "",
   };
 };
 </script>
@@ -195,6 +201,94 @@ const resetForm = () => {
                 }}
               </template>
             </USelectMenu>
+          </div>
+        </div>
+
+        <!-- Schedule Information Section -->
+        <div class="space-y-4">
+          <div
+            class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-800"
+          >
+            <UIcon
+              name="i-lucide-calendar-clock"
+              class="w-4 h-4 text-primary"
+            />
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+              Dars jadvali
+            </h3>
+          </div>
+
+          <div class="space-y-2">
+            <label
+              class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1"
+            >
+              Dars kunlari
+            </label>
+            <USelectMenu
+              v-model="formData.days"
+              :items="[
+                {
+                  value: 'odd',
+                  label: 'Toq kunlar (Dushanba, Chorshanba, Juma)',
+                },
+                {
+                  value: 'even',
+                  label: 'Juft kunlar (Seshanba, Payshanba, Shanba)',
+                },
+                { value: 'every_day', label: 'Har kuni' },
+                { value: 'other_day', label: 'Boshqa kunlar' },
+              ]"
+              value-key="value"
+              placeholder="Dars kunlarini tanlang"
+              icon="i-lucide-calendar"
+              size="lg"
+            >
+              <template #label>
+                {{
+                  formData.days === "odd"
+                    ? "Toq kunlar (Dushanba, Chorshanba, Juma)"
+                    : formData.days === "even"
+                      ? "Juft kunlar (Seshanba, Payshanba, Shanba)"
+                      : formData.days === "every_day"
+                        ? "Har kuni"
+                        : formData.days === "other_day"
+                          ? "Boshqa kunlar"
+                          : "Dars kunlarini tanlang"
+                }}
+              </template>
+            </USelectMenu>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label
+                class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1"
+              >
+                Dars boshlanishi
+              </label>
+              <UInput
+                v-model="formData.lesson_start"
+                type="time"
+                placeholder="09:00"
+                icon="i-lucide-clock"
+                size="lg"
+              />
+            </div>
+
+            <div class="space-y-2">
+              <label
+                class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1"
+              >
+                Dars tugashi
+              </label>
+              <UInput
+                v-model="formData.lesson_end"
+                type="time"
+                placeholder="10:30"
+                icon="i-lucide-clock"
+                size="lg"
+              />
+            </div>
           </div>
         </div>
       </form>

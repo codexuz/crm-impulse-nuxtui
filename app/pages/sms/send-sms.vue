@@ -1,226 +1,133 @@
 <template>
-  <div class="container mx-auto py-10 space-y-6">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold tracking-tight">SMS Jo'natmalar</h1>
-        <p class="text-muted-foreground">
-          SMS xabarlarni jo'nating va jo'natilgan xabarlar tarixini ko'ring
-        </p>
-      </div>
-    </div>
+  <UDashboardPanel id="send-sms">
+    <template #header>
+      <UDashboardNavbar title="SMS Jo'natmalar">
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
 
-    <!-- Messages History -->
-    <Card>
-      <CardHeader>
-        <CardTitle class="flex items-center gap-2">
-          <Icon name="lucide:history" class="h-5 w-5" />
-          Jo'natilgan xabarlar tarixi
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <!-- Date Filter -->
-        <div class="mb-6">
-          <form @submit.prevent="searchMessages" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="space-y-2">
-                <Label for="start_date">Boshlanish sanasi</Label>
-                <Input
-                  id="start_date"
-                  type="datetime-local"
-                  v-model="messageFilters.start_date"
-                  required
-                />
+        <template #description>
+          SMS xabarlarni jo'nating va jo'natilgan xabarlar tarixini ko'ring
+        </template>
+      </UDashboardNavbar>
+    </template>
+
+    <template #body>
+      <div class="space-y-6">
+        <!-- Messages History -->
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-2">
+              <Icon name="lucide:history" class="h-5 w-5" />
+              <h3 class="text-base font-semibold">
+                Jo'natilgan xabarlar tarixi
+              </h3>
+            </div>
+          </template>
+
+          <!-- Date Filter -->
+          <div class="mb-6">
+            <form @submit.prevent="searchMessages" class="space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <UFormField  label="Boshlanish sanasi" required>
+                    <UInput
+                      type="datetime-local"
+                      v-model="messageFilters.start_date"
+                      required
+                    />
+                  </UFormField>
+                </div>
+                <div>
+                  <UFormField  label="Tugash sanasi" required>
+                    <UInput
+                      type="datetime-local"
+                      v-model="messageFilters.end_date"
+                      required
+                    />
+                  </UFormField>
+                </div>
+                <div>
+                  <UFormField  label="Holat">
+                    <USelectMenu
+                      v-model="messageFilters.status"
+                      :items="statusOptions"
+                      value-key="value"
+                      placeholder="Holatni tanlang"
+                    >
+                      <template #label>
+                        {{
+                          statusOptions.find(
+                            (s) => s.value === messageFilters.status,
+                          )?.label || "Holatni tanlang"
+                        }}
+                      </template>
+                    </USelectMenu>
+                  </UFormField>
+                </div>
               </div>
-              <div class="space-y-2">
-                <Label for="end_date">Tugash sanasi</Label>
-                <Input
-                  id="end_date"
-                  type="datetime-local"
-                  v-model="messageFilters.end_date"
-                  required
-                />
-              </div>
-              <div class="space-y-2">
-                <Label for="status">Holat</Label>
-                <Select v-model="messageFilters.status">
-                  <SelectTrigger>
-                    <SelectValue placeholder="Holatni tanlang" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Barchasi</SelectItem>
-                    <SelectItem value="delivered">Yetkazilgan</SelectItem>
-                    <SelectItem value="failed">Muvaffaqiyatsiz</SelectItem>
-                    <SelectItem value="pending">Kutilmoqda</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+
+              <UButton
+                type="submit"
+                :loading="isLoadingMessages"
+                :label="
+                  isLoadingMessages ? 'Yuklanmoqda...' : 'Xabarlarni yuklash'
+                "
+              />
+            </form>
+          </div>
+
+          <!-- Messages Table -->
+          <UTable
+            :loading="isLoadingMessages"
+            :columns="columns"
+            :data="userMessages"
+            :empty="'Hech qanday xabar topilmadi'"
+          />
+
+          <!-- Pagination -->
+          <div
+            v-if="totalPages > 1"
+            class="flex items-center justify-between mt-4 pt-4 border-t"
+          >
+            <div class="text-sm text-gray-500">
+              <span class="font-medium">{{ paginationStart }}</span> dan
+              <span class="font-medium">{{ paginationEnd }}</span> gacha, jami
+              <span class="font-medium">{{ totalMessages }}</span> xabar
             </div>
 
-            <Button type="submit" :disabled="isLoadingMessages">
-              <Icon
-                v-if="isLoadingMessages"
-                name="lucide:loader-2"
-                class="mr-2 h-4 w-4 animate-spin"
-              />
-              {{ isLoadingMessages ? "Yuklanmoqda..." : "Xabarlarni yuklash" }}
-            </Button>
-          </form>
-        </div>
-
-        <!-- Messages Table -->
-        <div
-          v-if="isLoadingMessages"
-          class="flex items-center justify-center py-8"
-        >
-          <Icon
-            name="lucide:loader-2"
-            class="h-8 w-8 animate-spin text-primary"
-          />
-        </div>
-        <div
-          v-else-if="userMessages.length === 0"
-          class="text-center py-8 text-muted-foreground"
-        >
-          Hech qanday xabar topilmadi
-        </div>
-        <div v-else class="border rounded-lg overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead class="bg-muted/50">
-                <tr>
-                  <th class="text-left p-4 font-semibold">Telefon raqami</th>
-                  <th class="text-left p-4 font-semibold">Xabar</th>
-                  <th class="text-left p-4 font-semibold">Qismlar</th>
-                  <th class="text-left p-4 font-semibold">Xarajat</th>
-                  <th class="text-left p-4 font-semibold">Holat</th>
-                  <th class="text-left p-4 font-semibold">Sana</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="(message, index) in userMessages"
-                  :key="message.id || index"
-                  class="border-t hover:bg-muted/25"
-                >
-                  <td class="p-4">
-                    <div class="font-medium">+{{ message.to }}</div>
-                  </td>
-                  <td class="p-4">
-                    <div class="max-w-md leading-relaxed whitespace-pre-wrap">
-                      {{ message.message }}
-                    </div>
-                  </td>
-                  <td class="p-4">
-                    <div class="text-sm">{{ message.parts_count }} qism</div>
-                  </td>
-                  <td class="p-4">
-                    <div class="font-medium">
-                      {{ formatCurrency(message.total_price) }}
-                    </div>
-                  </td>
-                  <td class="p-4">
-                    <div
-                      class="px-2 py-1 text-xs rounded inline-block"
-                      :class="getStatusClass(message.status)"
-                    >
-                      {{ getStatusText(message.status) }}
-                    </div>
-                  </td>
-                  <td class="p-4">
-                    <div class="text-sm text-muted-foreground">
-                      {{ formatDate(message.sent_at) }}
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <UPagination
+              :model-value="currentPage"
+              :total="totalMessages"
+              :items-per-page="pageSize"
+              show-last
+              show-first
+              @update:page="(p: number) => (currentPage = p)"
+            />
           </div>
-        </div>
-
-        <!-- Pagination -->
-        <div
-          v-if="totalPages > 1"
-          class="flex items-center justify-between mt-4 py-4"
-        >
-          <div class="text-sm text-muted-foreground">
-            <span class="font-medium">{{ paginationStart }}</span> dan
-            <span class="font-medium">{{ paginationEnd }}</span> gacha, jami
-            <span class="font-medium">{{ totalMessages }}</span> xabar
-          </div>
-
-          <Pagination
-            :items-per-page="pageSize"
-            :total="totalMessages"
-            :default-page="currentPage"
-            @update:page="onPageChange"
-          >
-            <PaginationContent>
-              <PaginationPrevious
-                :disabled="currentPage === 1"
-                @click="navigatePage(currentPage - 1)"
-              />
-
-              <PaginationItem
-                v-for="pageNum in displayedPages"
-                :key="pageNum"
-                :value="pageNum"
-                :is-active="pageNum === currentPage"
-                @click="navigatePage(pageNum)"
-              >
-                {{ pageNum }}
-              </PaginationItem>
-
-              <PaginationEllipsis v-if="showEndEllipsis" />
-
-              <PaginationNext
-                :disabled="currentPage === totalPages"
-                @click="navigatePage(currentPage + 1)"
-              />
-            </PaginationContent>
-          </Pagination>
-        </div>
-      </CardContent>
-    </Card>
-  </div>
+        </UCard>
+      </div>
+    </template>
+  </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from "vue";
+import { ref, reactive, onMounted, computed, watch, h } from "vue";
+import type { TableColumn } from "@nuxt/ui";
 import { useSMS } from "~/composables/useSMS";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationNext,
-  PaginationPrevious,
-} from "~/components/ui/pagination";
 
 definePageMeta({
   middleware: ["auth"],
 });
 
-const { toast } = useToast();
+const UBadge = resolveComponent("UBadge");
+
+const toast = useToast();
 
 // State
 const templates = ref<any[]>([]);
 const userMessages = ref<any[]>([]);
-const isSending = ref(false);
 const isLoadingMessages = ref(false);
-const selectedTemplate = ref("none");
 
 // Pagination state
 const currentPage = ref(1);
@@ -240,6 +147,63 @@ const messageFilters = reactive({
   status: "all",
 });
 
+const statusOptions = [
+  { label: "Barchasi", value: "all" },
+  { label: "Yetkazilgan", value: "delivered" },
+  { label: "Muvaffaqiyatsiz", value: "rejected" },
+];
+
+// Table columns
+const columns: TableColumn<any>[] = [
+  {
+    accessorKey: "to",
+    header: "Telefon raqami",
+    cell: ({ row }) =>
+      h("div", { class: "font-medium" }, `+${row.original.to}`),
+  },
+  {
+    accessorKey: "message",
+    header: "Xabar",
+    cell: ({ row }) =>
+      h(
+        "div",
+        {
+          class: "max-w-md text-sm break-words whitespace-normal line-clamp-3",
+        },
+        row.original.message,
+      ),
+  },
+  {
+    accessorKey: "total_price",
+    header: "Xarajat",
+    cell: ({ row }) =>
+      h(
+        "div",
+        { class: "font-medium" },
+        formatCurrency(row.original.total_price),
+      ),
+  },
+  {
+    accessorKey: "status",
+    header: "Holat",
+    cell: ({ row }) =>
+      h(UBadge, {
+        label: getStatusText(row.original.status),
+        color: getStatusColor(row.original.status),
+      }),
+  },
+  {
+    accessorKey: "sent_at",
+    header: "Sana",
+    cell: ({ row }) =>
+      h(
+        "div",
+        { class: "text-sm text-gray-500" },
+        formatDate(row.original.sent_at),
+      ),
+  },
+];
+
 // Initialize default date range (beginning of current month to beginning of next month)
 const initializeDateRange = () => {
   const now = new Date();
@@ -254,16 +218,7 @@ const initializeDateRange = () => {
   messageFilters.end_date = startOfNextMonth.toISOString().slice(0, 16);
 };
 
-// Functions
-const loadTemplates = async () => {
-  try {
-    const { getSMSTemplates } = useSMS();
-    const response = await getSMSTemplates();
-    templates.value = response.data?.result || [];
-  } catch (error) {
-    console.error("Failed to load templates:", error);
-  }
-};
+
 
 const loadUserMessages = async () => {
   isLoadingMessages.value = true;
@@ -294,76 +249,30 @@ const loadUserMessages = async () => {
     userMessages.value = response.data?.data?.result || [];
     totalPages.value = response.data?.data?.last_page || 1;
     totalMessages.value = response.data?.data?.total || 0;
-    console.log("User messages loaded:", response);
   } catch (error) {
     console.error("Failed to load user messages:", error);
-    toast({
+    toast.add({
       title: "Xatolik",
       description: "Xabarlar tarixini yuklashda xatolik yuz berdi",
-      variant: "destructive",
+      color: "error",
     });
   } finally {
     isLoadingMessages.value = false;
   }
 };
 
-const sendSMS = async () => {
-  isSending.value = true;
-  try {
-    const { sendSMS: sendSMSMessage } = useSMS();
-
-    await sendSMSMessage({
-      mobile_phone: smsForm.mobile_phone,
-      message: smsForm.message,
-    });
-
-    toast({
-      title: "Muvaffaqiyat",
-      description: "SMS muvaffaqiyatli jo'natildi",
-    });
-
-    // Reset form
-    smsForm.mobile_phone = "";
-    smsForm.message = "";
-    selectedTemplate.value = "none";
-
-    // Reload messages
-    await loadUserMessages();
-  } catch (error) {
-    console.error("Failed to send SMS:", error);
-    toast({
-      title: "Xatolik",
-      description: "SMS jo'natishda xatolik yuz berdi",
-      variant: "destructive",
-    });
-  } finally {
-    isSending.value = false;
-  }
-};
-
-const onTemplateSelect = (templateId: string) => {
-  if (templateId && templateId !== "none") {
-    const template = templates.value.find((t) => t.id == templateId);
-    if (template) {
-      smsForm.message = template.template;
-    }
-  } else if (templateId === "none") {
-    smsForm.message = "";
-  }
-};
-
-const getStatusClass = (status: string) => {
+const getStatusColor = (status: string) => {
   switch (status?.toUpperCase()) {
     case "DELIVERED":
     case "SUCCESS":
-      return "bg-green-100 text-green-800";
+      return "success";
     case "REJECTED":
     case "ERROR":
-      return "bg-red-100 text-red-800";
+      return "error";
     case "ACCEPTED":
-      return "bg-yellow-100 text-yellow-800";
+      return "warning";
     default:
-      return "bg-gray-100 text-gray-800";
+      return "info";
   }
 };
 
@@ -384,7 +293,7 @@ const getStatusText = (status: string) => {
 const formatDate = (dateString: string) => {
   if (!dateString) return "";
   const date = new Date(dateString);
-  return date.toLocaleString("uz-UZ");
+  return date.toLocaleString("uz-UZ", { timeZone: "UTC" });
 };
 
 const formatCurrency = (amount: number): string => {
@@ -402,59 +311,20 @@ const paginationEnd = computed(() => {
   return Math.min(currentPage.value * pageSize.value, totalMessages.value);
 });
 
-const displayedPages = computed(() => {
-  if (totalPages.value <= 7) {
-    return Array.from({ length: totalPages.value }, (_, i) => i + 1);
-  }
-
-  const pages = [];
-  pages.push(1);
-
-  if (currentPage.value <= 3) {
-    pages.push(2, 3, 4);
-  } else if (currentPage.value >= totalPages.value - 2) {
-    pages.push(
-      totalPages.value - 3,
-      totalPages.value - 2,
-      totalPages.value - 1
-    );
-  } else {
-    pages.push(currentPage.value - 1, currentPage.value, currentPage.value + 1);
-  }
-
-  if (!pages.includes(totalPages.value)) {
-    pages.push(totalPages.value);
-  }
-
-  return [...new Set(pages)].sort((a, b) => a - b);
-});
-
-const showEndEllipsis = computed(() => {
-  const lastDisplayedPage = Math.max(...displayedPages.value);
-  return lastDisplayedPage < totalPages.value;
-});
-
 // Search messages (when filters change)
 const searchMessages = () => {
   currentPage.value = 1; // Reset to first page
   loadUserMessages();
 };
 
-// Pagination navigation
-const navigatePage = (newPage: number) => {
-  if (newPage < 1 || newPage > totalPages.value) return;
-  currentPage.value = newPage;
+// Watch for page changes
+watch(currentPage, () => {
   loadUserMessages();
-};
-
-const onPageChange = (newPage: number) => {
-  navigatePage(newPage);
-};
+});
 
 // Initialize
 onMounted(() => {
   initializeDateRange();
-  loadTemplates();
   loadUserMessages();
 });
 </script>

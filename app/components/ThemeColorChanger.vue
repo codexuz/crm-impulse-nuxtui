@@ -2,20 +2,11 @@
 import type { DropdownMenuItem } from "@nuxt/ui";
 
 const appConfig = useAppConfig();
+const { loadColors, setPrimaryColor, setNeutralColor } = useThemeColors();
 
-// Load saved colors from localStorage on mount
+// Load saved colors on mount
 onMounted(() => {
-  if (process.client) {
-    const savedPrimary = localStorage.getItem("theme-color-primary");
-    const savedNeutral = localStorage.getItem("theme-color-neutral");
-
-    if (savedPrimary) {
-      appConfig.ui.colors.primary = savedPrimary;
-    }
-    if (savedNeutral) {
-      appConfig.ui.colors.neutral = savedNeutral;
-    }
-  }
+  loadColors();
 });
 
 const colors = [
@@ -58,10 +49,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
         type: "checkbox",
         onSelect: (e) => {
           e.preventDefault();
-          appConfig.ui.colors.primary = color;
-          if (process.client) {
-            localStorage.setItem("theme-color-primary", color);
-          }
+          setPrimaryColor(color);
         },
       })),
     },
@@ -85,10 +73,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
         checked: appConfig.ui.colors.neutral === color,
         onSelect: (e) => {
           e.preventDefault();
-          appConfig.ui.colors.neutral = color;
-          if (process.client) {
-            localStorage.setItem("theme-color-neutral", color);
-          }
+          setNeutralColor(color);
         },
       })),
     },

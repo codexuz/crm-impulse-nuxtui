@@ -19,7 +19,7 @@ export interface SMSTemplate {
 
 export interface SMSReportRequest {
   start_date: string;
-  to_date: string;
+  end_date: string;
   status?: string;
   is_ad?: string;
 }
@@ -72,7 +72,7 @@ export const useSMS = () => {
     const response = await api.post<any>(
       apiService.value,
       "/sms/send",
-      smsData
+      smsData,
     );
     return response;
   };
@@ -84,7 +84,7 @@ export const useSMS = () => {
     const response = await api.post<any>(
       apiService.value,
       "/sms/send-verification",
-      verificationData
+      verificationData,
     );
     return response;
   };
@@ -95,7 +95,7 @@ export const useSMS = () => {
   const getSMSBalance = async (): Promise<SMSBalance> => {
     const response = await api.get<SMSBalance>(
       apiService.value,
-      "/sms/balance"
+      "/sms/balance",
     );
     return response;
   };
@@ -106,7 +106,7 @@ export const useSMS = () => {
   const getSMSTemplates = async (): Promise<SMSTemplate[]> => {
     const response = await api.get<SMSTemplate[]>(
       apiService.value,
-      "/sms/templates"
+      "/sms/templates",
     );
     return response;
   };
@@ -118,7 +118,7 @@ export const useSMS = () => {
     const response = await api.post<any>(
       apiService.value,
       "/sms/templates",
-      templateData
+      templateData,
     );
     return response;
   };
@@ -127,12 +127,12 @@ export const useSMS = () => {
    * Get SMS report by date range
    */
   const getSMSReport = async (
-    reportRequest: SMSReportRequest
+    reportRequest: SMSReportRequest,
   ): Promise<SMSReport> => {
     const response = await api.post<SMSReport>(
       apiService.value,
       "/sms/report/total-by-range",
-      reportRequest
+      reportRequest,
     );
     return response;
   };
@@ -144,7 +144,7 @@ export const useSMS = () => {
     const response = await api.post<any>(
       apiService.value,
       "/payment-actions",
-      actionData
+      actionData,
     );
     return response;
   };
@@ -154,12 +154,12 @@ export const useSMS = () => {
    */
   const updatePaymentAction = async (
     actionId: string,
-    actionData: PaymentAction
+    actionData: PaymentAction,
   ) => {
     const response = await api.patch<any>(
       apiService.value,
       `/payment-actions/${actionId}`,
-      actionData
+      actionData,
     );
     return response;
   };
@@ -170,7 +170,7 @@ export const useSMS = () => {
   const checkPaymentContact = async (paymentId: string) => {
     const response = await api.get<any[]>(
       apiService.value,
-      `/payment-actions/by-payment/${paymentId}`
+      `/payment-actions/by-payment/${paymentId}`,
     );
     return response;
   };
@@ -182,7 +182,7 @@ export const useSMS = () => {
     const response = await api.post<any>(
       apiService.value,
       "/sms/send-bulk",
-      requestData
+      requestData,
     );
     return response;
   };
@@ -194,7 +194,7 @@ export const useSMS = () => {
     const response = await api.post<any>(
       apiService.value,
       "/sms/messages/get-user-messages",
-      requestData
+      requestData,
     );
     return response;
   };
