@@ -88,10 +88,37 @@
         <!-- Leads Table -->
         <UCard>
           <template #header>
-            <h3 class="text-base font-semibold">Leadlar ro'yxati</h3>
+            <div class="flex items-center justify-between">
+              <h3 class="text-base font-semibold">Leadlar ro'yxati</h3>
+              <div v-if="selectedRowsCount > 0" class="flex items-center gap-2">
+                <span class="text-sm text-muted"
+                  >{{ selectedRowsCount }} ta tanlandi</span
+                >
+                <UButton
+                  color="error"
+                  variant="outline"
+                  icon="i-lucide-trash-2"
+                  label="O'chirish"
+                  size="sm"
+                  :loading="isBulkDeleting"
+                  @click="bulkDeleteLeads"
+                />
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  icon="i-lucide-archive"
+                  label="Arxivlash"
+                  size="sm"
+                  :loading="isBulkArchiving"
+                  @click="bulkArchiveLeads"
+                />
+              </div>
+            </div>
           </template>
 
           <UTable
+            ref="table"
+            v-model:row-selection="rowSelection"
             :data="filteredLeads"
             :columns="columns"
             :loading="isLoading"
@@ -167,6 +194,7 @@ import type { TableColumn } from "@nuxt/ui";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 
+const UCheckbox = resolveComponent("UCheckbox");
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
@@ -214,6 +242,8 @@ const courses = ref<any[]>([]);
 const teachers = ref<any[]>([]);
 const isLoading = ref(true);
 const isDeleting = ref(false);
+const isBulkDeleting = ref(false);
+const isBulkArchiving = ref(false);
 
 // Pagination
 const currentPage = ref(1);
@@ -247,9 +277,30 @@ const showPassword = ref(false);
 const deletePopoverOpen = ref<Record<string, boolean>>({});
 
 const selectedLead = ref<Lead | null>(null);
+const rowSelection = ref({});
+const table = useTemplateRef<{ tableApi?: any }>("table");
 
 // Table columns with render functions
 const columns: TableColumn<Lead>[] = [
+  {
+    id: "select",
+    header: ({ table }): any =>
+      h(UCheckbox, {
+        modelValue: table.getIsSomePageRowsSelected()
+          ? "indeterminate"
+          : table.getIsAllPageRowsSelected(),
+        "onUpdate:modelValue": (value: boolean | "indeterminate") =>
+          table.toggleAllPageRowsSelected(!!value),
+        "aria-label": "Select all",
+      }),
+    cell: ({ row }) =>
+      h(UCheckbox, {
+        modelValue: row.getIsSelected(),
+        "onUpdate:modelValue": (value: boolean | "indeterminate") =>
+          row.toggleSelected(!!value),
+        "aria-label": "Select row",
+      }),
+  },
   {
     accessorKey: "first_name",
     header: "Ism",
@@ -452,6 +503,10 @@ const teacherOptions = computed(() =>
 // Using server-side filtering, so filteredLeads just returns leads
 const filteredLeads = computed(() => leads.value);
 
+const selectedRowsCount = computed((): number => {
+  return table.value?.tableApi?.getFilteredSelectedRowModel().rows.length || 0;
+});
+
 // Helper functions
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {
@@ -643,28 +698,92 @@ const archiveLead = async (lead: Lead) => {
   }
 };
 
+const bulkDeleteLeads = async () => {
+  const selectedRows =
+    table.value?.tableApi?.getFilteredSelectedRowModel().rows || [];
+  if (selectedRows.length === 0) return;
+
+  isBulkDeleting.value = true;
+  try {
+    const deletePromises = selectedRows.map((row: any) =>
+      api.delete(apiService.value, `/leads/${row.original.id}`),
+    );
+    await Promise.all(deletePromises);
+
+    toast.add({
+      title: "Muvaffaqiyatli",
+      description: `${selectedRows.length} ta lead o'chirildi`,
+      color: "success",
+    });
+
+    rowSelection.value = {};
+    loadLeads();
+  } catch (error) {
+    console.error("Failed to bulk delete leads:", error);
+    toast.add({
+      title: "Xatolik",
+      description: "Leadlarni o'chirishda xatolik yuz berdi",
+      color: "error",
+    });
+  } finally {
+    isBulkDeleting.value = false;
+  }
+};
+
+const bulkArchiveLeads = async () => {
+  const selectedRows =
+    table.value?.tableApi?.getFilteredSelectedRowModel().rows || [];
+  if (selectedRows.length === 0) return;
+
+  isBulkArchiving.value = true;
+  try {
+    const archivePromises = selectedRows.map((row: any) =>
+      api.patch(apiService.value, `/leads/${row.original.id}/archive`, {}),
+    );
+    await Promise.all(archivePromises);
+
+    toast.add({
+      title: "Muvaffaqiyatli",
+      description: `${selectedRows.length} ta lead arxivlandi`,
+      color: "success",
+    });
+
+    rowSelection.value = {};
+    loadLeads();
+  } catch (error) {
+    console.error("Failed to bulk archive leads:", error);
+    toast.add({
+      title: "Xatolik",
+      description: "Leadlarni arxivlashda xatolik yuz berdi",
+      color: "error",
+    });
+  } finally {
+    isBulkArchiving.value = false;
+  }
+};
+
 const refreshLeads = () => {
   loadLeads();
 };
 
 const exportLeadsToExcel = async () => {
   try {
-    const XLSX = await import('xlsx');
-    
+    const XLSX = await import("xlsx");
+
     const data = filteredLeads.value.map((lead) => ({
-      "Ism": lead.first_name,
-      "Familiya": lead.last_name,
-      "Telefon": lead.phone,
-      "Holat": lead.status,
-      "Manba": lead.source,
-      "Kurs": getCourseTitle(lead.course_id || ""),
-      "Yaratilgan": formatDate(lead.createdAt),
+      Ism: lead.first_name,
+      Familiya: lead.last_name,
+      Telefon: lead.phone,
+      Holat: lead.status,
+      Manba: lead.source,
+      Kurs: getCourseTitle(lead.course_id || ""),
+      Yaratilgan: formatDate(lead.createdAt),
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Leadlar");
-    
+
     // Set column widths
     const colWidths = [
       { wch: 15 }, // Ism
@@ -675,10 +794,13 @@ const exportLeadsToExcel = async () => {
       { wch: 25 }, // Kurs
       { wch: 15 }, // Yaratilgan
     ];
-    worksheet['!cols'] = colWidths;
+    worksheet["!cols"] = colWidths;
 
-    XLSX.writeFile(workbook, `leads_${new Date().toISOString().split('T')[0]}.xlsx`);
-    
+    XLSX.writeFile(
+      workbook,
+      `leads_${new Date().toISOString().split("T")[0]}.xlsx`,
+    );
+
     toast.add({
       title: "Muvaffaqiyatli",
       description: "Leadlar Excel faylga eksport qilindi",
