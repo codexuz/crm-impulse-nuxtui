@@ -116,6 +116,7 @@
       <LeadsViewLeadModal
         v-model:open="viewLeadDialog"
         :lead="selectedLead"
+        :courses="courses"
         @edit="editFromView"
       />
 
@@ -125,7 +126,23 @@
         :lead="selectedLead"
         :status-options="statusOptions"
         :source-options="sourceOptions"
+        :courses="courses"
         @updated="loadLeads"
+      />
+
+      <!-- Change Status Modal -->
+      <LeadsChangeLeadStatusModal
+        v-model:open="changeStatusDialog"
+        :lead="selectedLead"
+        :status-options="statusOptions"
+        @updated="loadLeads"
+      />
+
+      <!-- Trial Lesson Modal -->
+      <LeadsLeadTrialLessonModal
+        v-model:open="trialLessonDialog"
+        :lead="selectedLead"
+        @created="loadLeads"
       />
 
       <!-- Convert to Student Modal -->
@@ -185,6 +202,7 @@ const router = useRouter();
 
 // State
 const leads = ref<Lead[]>([]);
+const courses = ref<any[]>([]);
 const teachers = ref<any[]>([]);
 const isLoading = ref(true);
 const isDeleting = ref(false);
@@ -214,6 +232,8 @@ const endDate = ref("");
 // Modals
 const viewLeadDialog = ref(false);
 const editLeadDialog = ref(false);
+const changeStatusDialog = ref(false);
+const trialLessonDialog = ref(false);
 const convertToStudentDialog = ref(false);
 const showPassword = ref(false);
 const deletePopoverOpen = ref<Record<string, boolean>>({});
@@ -261,7 +281,7 @@ const columns: TableColumn<Lead>[] = [
   {
     accessorKey: "course",
     header: "Qiziqayotgan kurs",
-    cell: ({ row }) => row.original.course_id || "N/A",
+    cell: ({ row }) => getCourseTitle(row.original.course_id),
   },
   {
     accessorKey: "createdAt",
@@ -406,6 +426,7 @@ const trialStatusOptions = [
 ];
 
 // Computed
+const courseOptions = computed(() => courses.value);
 const teacherOptions = computed(() =>
   teachers.value.map((t) => ({
     ...t,
@@ -431,6 +452,12 @@ const getStatusColor = (status: string) => {
 
 const getStatusDisplay = (status: string) => status;
 const getSourceDisplay = (source: string) => source;
+
+const getCourseTitle = (courseId?: string) => {
+  if (!courseId) return "N/A";
+  const course = courses.value.find((c) => c.id === courseId);
+  return course ? course.title : "N/A";
+};
 
 const formatDate = (dateString: string) => {
   if (!dateString) return "N/A";
@@ -472,6 +499,15 @@ const loadLeads = async () => {
     });
   } finally {
     isLoading.value = false;
+  }
+};
+
+const loadCourses = async () => {
+  try {
+    const response = await api.get<any[]>(apiService.value, "/courses");
+    courses.value = response;
+  } catch (error) {
+    console.error("Failed to load courses:", error);
   }
 };
 
@@ -524,6 +560,16 @@ const editFromView = (lead: Lead) => {
   viewLeadDialog.value = false;
   selectedLead.value = lead;
   editLeadDialog.value = true;
+};
+
+const changeLeadStatus = (lead: Lead) => {
+  selectedLead.value = lead;
+  changeStatusDialog.value = true;
+};
+
+const scheduleTrialLesson = (lead: Lead) => {
+  selectedLead.value = lead;
+  trialLessonDialog.value = true;
 };
 
 const convertToStudent = (lead: Lead) => {
@@ -607,6 +653,7 @@ onMounted(() => {
   }
 
   loadLeads();
+  loadCourses();
   loadTeachers();
 });
 </script>
