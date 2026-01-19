@@ -617,7 +617,7 @@ const loadTeachers = async () => {
   try {
     const response = await api.get<{ data: any[] }>(
       apiService.value,
-      "/users/teachers?limit=100",
+      "/users/teachers",
     );
     teachers.value = response.data || [];
   } catch (error) {

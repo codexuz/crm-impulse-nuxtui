@@ -50,7 +50,7 @@ const loadTeachers = async () => {
   try {
     const response = await api.get<{ data: any[] }>(
       apiService.value,
-      "/users/teachers",
+      "/users/teachers?limit=100",
     );
     teachers.value = response.data || [];
   } catch (error) {
