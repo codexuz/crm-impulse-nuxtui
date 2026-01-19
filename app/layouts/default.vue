@@ -54,6 +54,13 @@ const links = [
             open.value = false;
           },
         },
+        {
+          label: "Arxiv leadlar",
+          to: "/leads/archive",
+          onSelect: () => {
+            open.value = false;
+          },
+        },
       ],
       onSelect: () => {
         open.value = false;
@@ -198,6 +205,25 @@ const links = [
       label: "Davomat",
       icon: "i-lucide-calendar-check",
       to: "/attendance",
+      defaultOpen: true,
+      type: "trigger" as const,
+      children: [
+        {
+          label: "Davomat olish",
+          to: "/attendance",
+          exact: true,
+          onSelect: () => {
+            open.value = false;
+          },
+        },
+        {
+          label: "Qoldirilgan darslar",
+          to: "/attendance/compensated-lessons",
+          onSelect: () => {
+            open.value = false;
+          },
+        },
+      ],
       onSelect: () => {
         open.value = false;
       },

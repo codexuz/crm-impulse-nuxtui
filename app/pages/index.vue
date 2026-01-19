@@ -105,65 +105,66 @@
             </div>
           </template>
 
-          <div class="calendar-container h-125 overflow-auto">
-            <!-- Calendar Header -->
-            <div class="mb-4 text-center">
-              <h4 class="text-lg font-medium">
-                {{ formatCalendarDate(dashboard.currentDate) }}
-              </h4>
-            </div>
+          <!-- Calendar Header -->
+          <div class="mb-4 text-center">
+            <h4 class="text-lg font-medium">
+              {{ formatCalendarDate(dashboard.currentDate) }}
+            </h4>
+          </div>
 
-            <!-- Daily Schedule -->
-            <div class="space-y-2">
-              <div
-                v-if="todayLessons.length === 0"
-                class="text-center py-8 text-gray-500 dark:text-gray-400"
-              >
-                Bu kun uchun darslar yo'q
-              </div>
-              <div
-                v-for="lesson in todayLessons"
-                :key="lesson.id"
-                class="border rounded-lg p-4 bg-primary/5 hover:bg-primary/10 cursor-pointer transition-colors"
-                @click="showLessonDetails(lesson)"
-              >
-                <div class="flex items-start justify-between">
-                  <div class="flex-1">
-                    <div class="flex items-center gap-2 mb-2">
-                      <UIcon name="i-lucide-clock" class="size-4" />
-                      <span class="font-semibold">
-                        {{ lesson.startTime }} - {{ lesson.endTime }}
-                      </span>
-                    </div>
-                    <div class="flex items-center gap-2 mb-1">
-                      <UIcon name="i-lucide-users" class="size-4" />
-                      <span class="font-medium">{{ lesson.groupName }}</span>
-                    </div>
-                    <div class="flex items-center gap-2 mb-1">
-                      <UIcon name="i-lucide-user" class="size-4" />
-                      <span class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ lesson.teacherName }}
-                      </span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <UIcon name="i-lucide-book-open" class="size-4" />
-                      <span class="text-lg text-gray-600 dark:text-gray-400">
-                        {{ lesson.lessonName }}
-                      </span>
-                    </div>
+          <!-- Daily Schedule -->
+          <div
+            v-if="todayLessons.length === 0"
+            class="text-center py-8 text-gray-500 dark:text-gray-400"
+          >
+            Bu kun uchun darslar yo'q
+          </div>
+          <UScrollArea
+            v-else
+            v-slot="{ item: lesson }"
+            :items="todayLessons"
+            class="w-full h-96"
+          >
+            <div
+              class="border rounded-lg p-4 bg-primary/5 hover:bg-primary/10 cursor-pointer transition-colors mb-2"
+              @click="showLessonDetails(lesson)"
+            >
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-2">
+                    <UIcon name="i-lucide-clock" class="size-4" />
+                    <span class="font-semibold">
+                      {{ lesson.startTime }} - {{ lesson.endTime }}
+                    </span>
                   </div>
-                  <div class="flex flex-col items-end gap-2">
-                    <UBadge
-                      :color="lesson.days === 'odd' ? 'blue' : 'green'"
-                      variant="soft"
-                    >
-                      {{ lesson.days === "odd" ? "Toq kunlar" : "Juft kunlar" }}
-                    </UBadge>
+                  <div class="flex items-center gap-2 mb-1">
+                    <UIcon name="i-lucide-users" class="size-4" />
+                    <span class="font-medium">{{ lesson.groupName }}</span>
                   </div>
+                  <div class="flex items-center gap-2 mb-1">
+                    <UIcon name="i-lucide-user" class="size-4" />
+                    <span class="text-sm text-gray-600 dark:text-gray-400">
+                      {{ lesson.teacherName }}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <UIcon name="i-lucide-book-open" class="size-4" />
+                    <span class="text-lg text-gray-600 dark:text-gray-400">
+                      {{ lesson.lessonName }}
+                    </span>
+                  </div>
+                </div>
+                <div class="flex flex-col items-end gap-2">
+                  <UBadge
+                    :color="lesson.days === 'odd' ? 'blue' : 'green'"
+                    variant="soft"
+                  >
+                    {{ lesson.days === "odd" ? "Toq kunlar" : "Juft kunlar" }}
+                  </UBadge>
                 </div>
               </div>
             </div>
-          </div>
+          </UScrollArea>
         </UCard>
       </div>
       <!-- Recent Leads and Quick Actions -->
@@ -245,6 +246,98 @@
           </div>
         </UCard>
       </div>
+
+      <!-- Lesson Details Modal -->
+      <UModal v-model:open="lessonDetailsModal">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold">Dars tafsilotlari</h3>
+          </div>
+        </template>
+
+        <template #body>
+          <div v-if="selectedLesson" class="space-y-4">
+            <div>
+              <label
+                class="text-sm font-medium text-gray-500 dark:text-gray-400"
+                >Dars nomi</label
+              >
+              <p class="text-base mt-1">{{ selectedLesson.lessonName }}</p>
+            </div>
+
+            <div>
+              <label
+                class="text-sm font-medium text-gray-500 dark:text-gray-400"
+                >Guruh</label
+              >
+              <p class="text-base mt-1">{{ selectedLesson.groupName }}</p>
+            </div>
+
+            <div>
+              <label
+                class="text-sm font-medium text-gray-500 dark:text-gray-400"
+                >O'qituvchi</label
+              >
+              <p class="text-base mt-1">{{ selectedLesson.teacherName }}</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label
+                  class="text-sm font-medium text-gray-500 dark:text-gray-400"
+                  >Boshlanish vaqti</label
+                >
+                <p class="text-base mt-1">{{ selectedLesson.startTime }}</p>
+              </div>
+              <div>
+                <label
+                  class="text-sm font-medium text-gray-500 dark:text-gray-400"
+                  >Tugash vaqti</label
+                >
+                <p class="text-base mt-1">{{ selectedLesson.endTime }}</p>
+              </div>
+            </div>
+
+            <div>
+              <label
+                class="text-sm font-medium text-gray-500 dark:text-gray-400"
+                >Dars kunlari</label
+              >
+              <div class="mt-1">
+                <UBadge
+                  :color="selectedLesson.days === 'odd' ? 'blue' : 'green'"
+                  variant="soft"
+                >
+                  {{
+                    selectedLesson.days === "odd" ? "Toq kunlar" : "Juft kunlar"
+                  }}
+                </UBadge>
+              </div>
+            </div>
+
+            <div>
+              <label
+                class="text-sm font-medium text-gray-500 dark:text-gray-400"
+                >Sana</label
+              >
+              <p class="text-base mt-1">
+                {{ formatSimpleDate(selectedLesson.date) }}
+              </p>
+            </div>
+          </div>
+        </template>
+        <template #footer>
+          <div class="flex justify-end gap-2">
+            <UButton
+              color="neutral"
+              variant="outline"
+              @click="lessonDetailsModal = false"
+            >
+              Yopish
+            </UButton>
+          </div>
+        </template>
+      </UModal>
     </template>
   </UDashboardPanel>
 </template>
@@ -279,6 +372,10 @@ const debitorStudents = ref<any[]>([]);
 
 // Reactive state for upcoming payments
 const upcomingPayments = ref<any[]>([]);
+
+// Modal state
+const lessonDetailsModal = ref(false);
+const selectedLesson = ref<any>(null);
 
 // Fetch dashboard data from API
 const fetchDashboardData = async () => {
@@ -505,19 +602,10 @@ const todayLessons = computed(() => {
     });
 });
 
-// Show lesson details in a modal or popup
+// Show lesson details in a modal
 const showLessonDetails = (lesson: any) => {
-  // In a real app, you would show a modal or popup with details
-  console.log("Lesson details:", lesson);
-  // For now, we'll just use an alert
-  alert(`
-    Dars: ${lesson.lessonName}
-    Guruh: ${lesson.groupName}
-    O'qituvchi: ${lesson.teacherName}
-    Vaqt: ${lesson.startTime} - ${lesson.endTime}
-    Kun turi: ${lesson.days === "odd" ? "Toq kunlar" : "Juft kunlar"}
-    Sana: ${lesson.date}
-  `);
+  selectedLesson.value = lesson;
+  lessonDetailsModal.value = true;
 };
 
 // Navigation helper
