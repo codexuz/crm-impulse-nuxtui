@@ -217,6 +217,7 @@
                 ignore-filter
                 searchable-placeholder="Talaba ismi yoki telefon raqami..."
                 placeholder="Talabani tanlang"
+                class="w-full"
               />
               <p class="text-xs text-gray-500">
                 Qidirish uchun kamida 2 ta harf kiriting
@@ -235,6 +236,7 @@
                   step="0.01"
                   placeholder="Summa"
                   required
+                  class="w-full"
                 />
               </div>
 
@@ -248,24 +250,12 @@
                   :items="paymentMethodOptions.filter((m) => m.value !== null)"
                   value-key="value"
                   placeholder="Usulni tanlang"
+                  class="w-full"
                 />
               </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
-              <div class="space-y-2">
-                <label class="block text-sm font-medium">
-                  Holat
-                  <span class="text-red-500">*</span>
-                </label>
-                <USelectMenu
-                  v-model="newPayment.status"
-                  :items="statusOptions.filter((s) => s.value !== null)"
-                  value-key="value"
-                  placeholder="Holatni tanlang"
-                />
-              </div>
-
               <div class="space-y-2">
                 <label class="block text-sm font-medium">
                   To'lov sanasi
@@ -275,15 +265,34 @@
                   v-model="newPayment.payment_date"
                   type="date"
                   required
+                  class="w-full"
+                />
+              </div>
+
+              <div class="space-y-2">
+                <label class="block text-sm font-medium">
+                  Keyingi to'lov sanasi
+                </label>
+                <UInput
+                  v-model="newPayment.next_payment_date"
+                  type="date"
+                  class="w-full"
                 />
               </div>
             </div>
 
             <div class="space-y-2">
               <label class="block text-sm font-medium">
-                Keyingi to'lov sanasi
+                Holat
+                <span class="text-red-500">*</span>
               </label>
-              <UInput v-model="newPayment.next_payment_date" type="date" />
+              <USelectMenu
+                v-model="newPayment.status"
+                :items="statusOptions.filter((s) => s.value !== null)"
+                value-key="value"
+                placeholder="Holatni tanlang"
+                class="w-full"
+              />
             </div>
 
             <div class="space-y-2">
@@ -292,7 +301,7 @@
                 v-model="newPayment.notes"
                 placeholder="To'lov tafsilotlari"
                 rows="3"
-                 class="w-full"
+                class="w-full"
               />
             </div>
           </form>
@@ -333,6 +342,7 @@
                 ignore-filter
                 searchable-placeholder="Talaba ismi yoki telefon raqami..."
                 placeholder="Talabani tanlang"
+                class="w-full"
               />
               <p class="text-xs text-gray-500">
                 Qidirish uchun kamida 2 ta harf kiriting
@@ -351,6 +361,7 @@
                   step="0.01"
                   placeholder="Summa"
                   required
+                  class="w-full"
                 />
               </div>
 
@@ -364,24 +375,12 @@
                   :items="paymentMethodOptions.filter((m) => m.value !== null)"
                   value-key="value"
                   placeholder="Usulni tanlang"
+                  class="w-full"
                 />
               </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
-              <div class="space-y-2">
-                <label class="block text-sm font-medium">
-                  Holat
-                  <span class="text-red-500">*</span>
-                </label>
-                <USelectMenu
-                  v-model="editPayment.status"
-                  :items="statusOptions.filter((s) => s.value !== null)"
-                  value-key="value"
-                  placeholder="Holatni tanlang"
-                />
-              </div>
-
               <div class="space-y-2">
                 <label class="block text-sm font-medium">
                   To'lov sanasi
@@ -391,15 +390,29 @@
                   v-model="editPayment.payment_date"
                   type="date"
                   required
+                  class="w-full"
                 />
               </div>
-            </div>
 
+              <div class="space-y-2">
+                <label class="block text-sm font-medium">
+                  Keyingi to'lov sanasi
+                </label>
+                <UInput v-model="editPayment.next_payment_date" type="date" class="w-full"/>
+              </div>
+            </div>
             <div class="space-y-2">
               <label class="block text-sm font-medium">
-                Keyingi to'lov sanasi
+                Holat
+                <span class="text-red-500">*</span>
               </label>
-              <UInput v-model="editPayment.next_payment_date" type="date" />
+              <USelectMenu
+                v-model="editPayment.status"
+                :items="statusOptions.filter((s) => s.value !== null)"
+                value-key="value"
+                placeholder="Holatni tanlang"
+                class="w-full"
+              />
             </div>
 
             <div class="space-y-2">
@@ -613,7 +626,7 @@ const newPayment = reactive({
   amount: 0,
   payment_method: "",
   status: "completed",
-  payment_date: new Date().toISOString().split("T")[0],
+  payment_date: "",
   next_payment_date: "",
   notes: "",
 });
@@ -934,7 +947,7 @@ const openEditPayment = (payment: Payment) => {
   editPayment.payment_date = payment.payment_date;
   editPayment.next_payment_date = payment.next_payment_date || "";
   editPayment.notes = payment.notes || "";
-  
+
   // Set selected student for display
   if (payment.student) {
     selectedStudent.value = {
@@ -942,7 +955,7 @@ const openEditPayment = (payment: Payment) => {
       label: `${payment.student.first_name} ${payment.student.last_name} (${payment.student.phone})`,
     };
   }
-  
+
   editPaymentDialog.value = true;
 };
 
@@ -1239,10 +1252,10 @@ const resetForm = () => {
   newPayment.amount = 0;
   newPayment.payment_method = "";
   newPayment.status = "completed";
-  newPayment.payment_date = new Date().toISOString().split("T")[0];
+  newPayment.payment_date = "";
   newPayment.next_payment_date = "";
   newPayment.notes = "";
-  
+
   editPayment.id = "";
   editPayment.student_id = "";
   editPayment.amount = 0;
@@ -1251,7 +1264,7 @@ const resetForm = () => {
   editPayment.payment_date = "";
   editPayment.next_payment_date = "";
   editPayment.notes = "";
-  
+
   selectedStudent.value = null;
 };
 

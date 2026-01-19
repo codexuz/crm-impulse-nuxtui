@@ -380,7 +380,6 @@ const route = useRoute();
 const UAvatar = resolveComponent("UAvatar");
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
-const UDropdown = resolveComponent("UDropdown");
 
 // State variables
 const debitors = ref<any[]>([]);
@@ -463,6 +462,11 @@ const columns = [
         h("span", { class: "font-medium" }, row.original.student_name),
       ]);
     },
+  },
+  {
+    accessorKey: "student_phone",
+    header: "Telefon",
+    cell: ({ row }: { row: any }) => row.original.student_phone || "N/A",
   },
   {
     accessorKey: "amount",
