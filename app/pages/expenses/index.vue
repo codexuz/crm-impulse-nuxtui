@@ -1,493 +1,385 @@
 <template>
-  <div class="container py-10 space-y-6">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold tracking-tight">Xarajatlar</h1>
-        <p class="text-muted-foreground">
-          Barcha xarajatlarni boshqarish va kuzatish
-        </p>
-      </div>
-      <div class="flex gap-2">
-        <Button variant="outline" @click="refreshData">
-          <Icon name="lucide:refresh-cw" class="mr-2 h-4 w-4" />
-          Yangilash
-        </Button>
-        <Button @click="openCreateDialog">
-          <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
-          Yangi xarajat
-        </Button>
-      </div>
-    </div>
-
-    <!-- Stats Overview -->
-    <div class="grid gap-4 md:grid-cols-4">
-      <Card>
-        <CardHeader
-          class="flex flex-row items-center justify-between space-y-0 pb-2"
-        >
-          <CardTitle class="text-sm font-medium">Jami xarajatlar</CardTitle>
-          <Icon name="lucide:receipt" class="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div class="text-2xl font-bold">{{ expensesCount }}</div>
-          <p class="text-xs text-muted-foreground">Umumiy xarajatlar soni</p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader
-          class="flex flex-row items-center justify-between space-y-0 pb-2"
-        >
-          <CardTitle class="text-sm font-medium">Jami summa</CardTitle>
-          <Icon name="lucide:banknote" class="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div class="text-2xl font-bold">
-            {{ formatCurrency(totalAmount) }}
-          </div>
-          <p class="text-xs text-muted-foreground">Umumiy xarajatlar</p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader
-          class="flex flex-row items-center justify-between space-y-0 pb-2"
-        >
-          <CardTitle class="text-sm font-medium">Bu oy</CardTitle>
-          <Icon name="lucide:calendar" class="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div class="text-2xl font-bold">
-            {{ formatCurrency(currentMonthAmount) }}
-          </div>
-          <p class="text-xs text-muted-foreground">Shu oylik xarajatlar</p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader
-          class="flex flex-row items-center justify-between space-y-0 pb-2"
-        >
-          <CardTitle class="text-sm font-medium">O'rtacha</CardTitle>
-          <Icon
-            name="lucide:trending-up"
-            class="h-4 w-4 text-muted-foreground"
-          />
-        </CardHeader>
-        <CardContent>
-          <div class="text-2xl font-bold">
-            {{ formatCurrency(averageAmount) }}
-          </div>
-          <p class="text-xs text-muted-foreground">O'rtacha xarajat</p>
-        </CardContent>
-      </Card>
-    </div>
-
-    <!-- Filters -->
-    <div class="flex flex-col sm:flex-row gap-4">
-      <Input
-        v-model="searchQuery"
-        placeholder="Qidirish..."
-        class="sm:max-w-xs"
-      >
+  <UDashboardPanel id="expenses">
+    <template #header>
+      <UDashboardNavbar title="Xarajatlar" :ui="{ right: 'gap-3' }">
         <template #leading>
-          <Icon name="lucide:search" class="h-4 w-4" />
+          <UDashboardSidebarCollapse />
         </template>
-      </Input>
-      <Select v-model="categoryFilter">
-        <SelectTrigger class="sm:max-w-[200px]">
-          <SelectValue placeholder="Kategoriya" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Barcha kategoriyalar</SelectItem>
-          <SelectItem
-            v-for="category in categories"
-            :key="category.id"
-            :value="category.id"
-          >
-            {{ category.name }}
-          </SelectItem>
-        </SelectContent>
-      </Select>
-      <Input
-        v-model="startDate"
-        type="date"
-        placeholder="Boshlanish sanasi"
-        class="sm:max-w-[180px]"
-      />
-      <Input
-        v-model="endDate"
-        type="date"
-        placeholder="Tugash sanasi"
-        class="sm:max-w-[180px]"
-      />
-      <div class="flex flex-wrap gap-2 sm:ml-auto">
-        <Button variant="outline" @click="exportToCSV">
-          <Icon name="lucide:download" class="mr-2 h-4 w-4" />
-          Eksport
-        </Button>
+
+        <template #description>
+          Barcha xarajatlarni boshqarish va kuzatish
+        </template>
+
+        <template #right>
+          <UButton
+            icon="i-lucide-plus"
+            label="Yangi xarajat"
+            @click="openCreateDialog"
+          />
+        </template>
+      </UDashboardNavbar>
+    </template>
+
+    <template #body>
+      <div class="space-y-6">
+        <!-- Stats Overview -->
+        <div class="grid gap-4 md:grid-cols-4">
+          <UCard>
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-500">Jami xarajatlar</p>
+                <p class="text-2xl font-bold mt-1">{{ expensesCount }}</p>
+                <p class="text-xs text-gray-500 mt-1">Umumiy xarajatlar soni</p>
+              </div>
+              <span class="i-lucide-receipt text-gray-400 text-2xl"></span>
+            </div>
+          </UCard>
+
+          <UCard>
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-500">Jami summa</p>
+                <p class="text-2xl font-bold mt-1">
+                  {{ formatCurrency(totalAmount) }}
+                </p>
+                <p class="text-xs text-gray-500 mt-1">Umumiy xarajatlar</p>
+              </div>
+              <span class="i-lucide-banknote text-gray-400 text-2xl"></span>
+            </div>
+          </UCard>
+
+          <UCard>
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-500">Bu oy</p>
+                <p class="text-2xl font-bold mt-1">
+                  {{ formatCurrency(currentMonthAmount) }}
+                </p>
+                <p class="text-xs text-gray-500 mt-1">Shu oylik xarajatlar</p>
+              </div>
+              <span class="i-lucide-calendar text-gray-400 text-2xl"></span>
+            </div>
+          </UCard>
+
+          <UCard>
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-500">O'rtacha</p>
+                <p class="text-2xl font-bold mt-1">
+                  {{ formatCurrency(averageAmount) }}
+                </p>
+                <p class="text-xs text-gray-500 mt-1">O'rtacha xarajat</p>
+              </div>
+              <span class="i-lucide-trending-up text-gray-400 text-2xl"></span>
+            </div>
+          </UCard>
+        </div>
+
+        <!-- Filters Section -->
+        <UDashboardToolbar>
+          <template #left>
+            <UInput
+              v-model="searchQuery"
+              icon="i-lucide-search"
+              placeholder="Qidirish..."
+              class="w-64"
+            />
+          </template>
+
+          <template #right>
+            <USelectMenu
+              v-model="categoryFilter"
+              :items="categoryOptions"
+              value-key="value"
+              placeholder="Kategoriya"
+              class="w-48"
+            >
+              <template #label>
+                {{
+                  categoryOptions.find((c) => c.value === categoryFilter)
+                    ?.label || "Kategoriya"
+                }}
+              </template>
+            </USelectMenu>
+
+            <UPopover :popper="{ placement: 'bottom-end' }">
+              <UButton
+                icon="i-lucide-calendar-range"
+                label="Sana oralig'i"
+                variant="outline"
+                trailing
+              />
+
+              <template #content>
+                <div class="p-4 space-y-3 w-80">
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium">Boshlanish</label>
+                    <UInput
+                      v-model="startDate"
+                      type="date"
+                      placeholder="Boshlanish sanasi"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium">Tugash</label>
+                    <UInput
+                      v-model="endDate"
+                      type="date"
+                      placeholder="Tugash sanasi"
+                    />
+                  </div>
+                </div>
+              </template>
+            </UPopover>
+
+            <UButton
+              icon="i-lucide-download"
+              label="Eksport"
+              variant="outline"
+              @click="exportToCSV"
+            />
+
+            <UButton
+              icon="i-lucide-refresh-cw"
+              label="Yangilash"
+              variant="outline"
+              @click="refreshData"
+            />
+          </template>
+        </UDashboardToolbar>
+
+        <!-- Expenses Table -->
+        <UCard>
+          <template #header>
+            <h3 class="text-base font-semibold">Xarajatlar ro'yxati</h3>
+          </template>
+
+          <UTable
+            :data="paginatedExpenses"
+            :columns="columns"
+            :loading="loading"
+            :empty="'Xarajatlar topilmadi'"
+          />
+
+          <template #footer>
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-gray-500">
+                <span class="font-medium">{{ paginationStart }}</span> dan
+                <span class="font-medium">{{ paginationEnd }}</span> gacha, jami
+                <span class="font-medium">{{ filteredExpenses.length }}</span>
+                ta xarajat
+              </div>
+
+              <UPagination
+                :model-value="currentPage"
+                :total="filteredExpenses.length"
+                :items-per-page="itemsPerPage"
+                show-last
+                show-first
+                @update:page="onPageChange"
+              />
+            </div>
+          </template>
+        </UCard>
       </div>
-    </div>
 
-    <!-- Expenses Table -->
-    <Card>
-      <CardContent class="p-0">
-        <div class="p-2 border-b">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Sarlavha</TableHead>
-                <TableHead>Kategoriya</TableHead>
-                <TableHead>Summa</TableHead>
-                <TableHead>O'qituvchi</TableHead>
-                <TableHead>Tavsif</TableHead>
-                <TableHead>Sana</TableHead>
-                <TableHead class="text-right">Amallar</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow v-if="loading">
-                <TableCell colspan="7" class="text-center py-10">
-                  <div class="flex justify-center items-center">
-                    <Icon
-                      name="lucide:loader-2"
-                      class="h-8 w-8 animate-spin text-muted-foreground"
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
-              <TableRow v-else-if="paginatedExpenses.length === 0">
-                <TableCell colspan="7" class="text-center py-10">
-                  <div class="flex justify-center">
-                    <Icon
-                      name="lucide:search-x"
-                      class="h-8 w-8 text-muted-foreground"
-                    />
-                  </div>
-                  <p class="text-muted-foreground mt-2">Xarajatlar topilmadi</p>
-                </TableCell>
-              </TableRow>
-              <TableRow
-                v-for="expense in paginatedExpenses"
-                :key="expense.id"
-                class="hover:bg-muted/50"
-              >
-                <TableCell>
-                  <div class="font-medium">{{ expense.title }}</div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">
-                    {{ getCategoryName(expense.category_id) }}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <span class="font-semibold text-red-600">
-                    {{ formatCurrency(expense.amount) }}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  {{ expense.teacher_name || "-" }}
-                </TableCell>
-                <TableCell class="max-w-[200px] truncate">
-                  {{ expense.description || "-" }}
-                </TableCell>
-                <TableCell>{{ formatDate(expense.expense_date) }}</TableCell>
-                <TableCell class="text-right">
-                  <div class="flex justify-end space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      @click="viewExpense(expense)"
-                      title="Ko'rish"
-                    >
-                      <Icon name="lucide:eye" class="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      @click="editExpense(expense)"
-                      title="Tahrirlash"
-                    >
-                      <Icon name="lucide:pencil" class="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      @click="deleteExpense(expense)"
-                      title="O'chirish"
-                    >
-                      <Icon
-                        name="lucide:trash-2"
-                        class="h-4 w-4 text-red-500"
-                      />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
-
-        <!-- Pagination -->
-        <div class="flex items-center justify-between p-4">
-          <div class="text-sm text-muted-foreground">
-            Ko'rsatilmoqda
-            <span class="font-medium">{{ paginationStart }}</span> dan
-            <span class="font-medium">{{ paginationEnd }}</span> gacha
-            <span class="font-medium">{{ filteredExpenses.length }}</span> ta
-            xarajat
-          </div>
-
-          <Pagination
-            v-model:page="currentPage"
-            :total="filteredExpenses.length"
-            :items-per-page="itemsPerPage"
-            :sibling-count="1"
-            @update:page="onPageChange"
-          >
-            <PaginationContent>
-              <PaginationPrevious
-                :disabled="currentPage === 1"
-                @click="navigatePage(currentPage - 1)"
+      <!-- Create/Edit Modal -->
+      <UModal
+        v-model:open="showExpenseDialog"
+        :title="isEditMode ? 'Xarajatni tahrirlash' : 'Yangi xarajat'"
+      >
+        <template #body>
+          <form @submit.prevent="saveExpense" class="space-y-4">
+            <div class="space-y-2">
+              <label class="block text-sm font-medium">
+                Sarlavha
+                <span class="text-red-500">*</span>
+              </label>
+              <UInput
+                v-model="expenseForm.title"
+                placeholder="Xarajat sarlavhasi"
+                required
+                class="w-full"
               />
+            </div>
 
-              <PaginationItem
-                v-for="pageNum in displayedPages"
-                :key="pageNum"
-                :value="pageNum"
-                :is-active="pageNum === currentPage"
-                @click="navigatePage(pageNum)"
-              >
-                {{ pageNum }}
-              </PaginationItem>
-
-              <PaginationEllipsis v-if="showEndEllipsis" />
-
-              <PaginationNext
-                :disabled="currentPage === totalPages"
-                @click="navigatePage(currentPage + 1)"
+            <div class="space-y-2">
+              <label class="block text-sm font-medium">
+                Kategoriya
+                <span class="text-red-500">*</span>
+              </label>
+              <USelectMenu
+                v-model="expenseForm.category_id"
+                :items="categorySelectOptions"
+                value-key="value"
+                placeholder="Kategoriyani tanlang"
+                class="w-full"
               />
-            </PaginationContent>
-          </Pagination>
-        </div>
-      </CardContent>
-    </Card>
+            </div>
 
-    <!-- Create/Edit Dialog -->
-    <Dialog v-model:open="showExpenseDialog">
-      <DialogContent class="sm:max-w-[525px]">
-        <DialogHeader>
-          <DialogTitle>
-            {{ isEditMode ? "Xarajatni tahrirlash" : "Yangi xarajat" }}
-          </DialogTitle>
-          <DialogDescription>
-            {{
-              isEditMode
-                ? "Xarajat ma'lumotlarini tahrirlang"
-                : "Yangi xarajat qo'shing"
-            }}
-          </DialogDescription>
-        </DialogHeader>
-        <div class="grid gap-4 py-4">
-          <div class="grid grid-cols-4 items-center gap-4">
-            <Label for="title" class="text-right">Sarlavha *</Label>
-            <Input
-              id="title"
-              v-model="expenseForm.title"
-              placeholder="Xarajat sarlavhasi"
-              class="col-span-3"
+            <div class="space-y-2">
+              <label class="block text-sm font-medium">
+                Summa
+                <span class="text-red-500">*</span>
+              </label>
+              <UInput
+                v-model="expenseForm.amount"
+                type="number"
+                placeholder="0"
+                required
+                class="w-full"
+              />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-medium">O'qituvchi</label>
+              <USelectMenu
+                v-model="expenseForm.teacher_id"
+                :items="teacherOptions"
+                value-key="value"
+                placeholder="O'qituvchini tanlang"
+                class="w-full"
+              />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-medium">
+                Sana
+                <span class="text-red-500">*</span>
+              </label>
+              <UInput
+                v-model="expenseForm.expense_date"
+                type="datetime-local"
+                required
+                class="w-full"
+              />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-medium">Tavsif</label>
+              <UTextarea
+                v-model="expenseForm.description"
+                placeholder="Xarajat haqida ma'lumot"
+                rows="3"
+                class="w-full"
+              />
+            </div>
+          </form>
+        </template>
+
+        <template #footer="{ close }">
+          <div class="flex justify-end gap-2">
+            <UButton
+              color="neutral"
+              variant="outline"
+              label="Bekor qilish"
+              @click="close"
+            />
+            <UButton
+              :label="isSaving ? 'Saqlanmoqda...' : 'Saqlash'"
+              :loading="isSaving"
+              @click="saveExpense"
             />
           </div>
-          <div class="grid grid-cols-4 items-center gap-4">
-            <Label for="category" class="text-right">Kategoriya *</Label>
-            <div class="col-span-3">
-              <Select v-model="expenseForm.category_id">
-                <SelectTrigger id="category">
-                  <SelectValue placeholder="Kategoriyani tanlang" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem
-                    v-for="category in categories"
-                    :key="category.id"
-                    :value="category.id"
-                  >
-                    {{ category.name }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+        </template>
+      </UModal>
+
+      <!-- View Modal -->
+      <UModal v-model:open="showViewDialog" title="Xarajat tafsilotlari">
+        <template #body>
+          <div v-if="selectedExpense" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <h4 class="text-sm font-medium text-gray-500 mb-1">Sarlavha</h4>
+                <p class="font-medium">{{ selectedExpense.title }}</p>
+              </div>
+              <div>
+                <h4 class="text-sm font-medium text-gray-500 mb-1">
+                  Kategoriya
+                </h4>
+                <UBadge variant="outline">
+                  {{ getCategoryName(selectedExpense) }}
+                </UBadge>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <h4 class="text-sm font-medium text-gray-500 mb-1">Summa</h4>
+                <p class="font-semibold text-red-600">
+                  {{ formatCurrency(selectedExpense.amount) }}
+                </p>
+              </div>
+              <div>
+                <h4 class="text-sm font-medium text-gray-500 mb-1">
+                  O'qituvchi
+                </h4>
+                <p>{{ selectedExpense.teacher_name || "-" }}</p>
+              </div>
+            </div>
+
+            <div>
+              <h4 class="text-sm font-medium text-gray-500 mb-1">Tavsif</h4>
+              <p class="text-sm">{{ selectedExpense.description || "-" }}</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <h4 class="text-sm font-medium text-gray-500 mb-1">
+                  Xarajat sanasi
+                </h4>
+                <p class="text-sm">
+                  {{ formatDate(selectedExpense.expense_date) }}
+                </p>
+              </div>
+              <div>
+                <h4 class="text-sm font-medium text-gray-500 mb-1">
+                  Yaratilgan
+                </h4>
+                <p class="text-sm">
+                  {{ formatDate(selectedExpense.created_at) }}
+                </p>
+              </div>
             </div>
           </div>
-          <div class="grid grid-cols-4 items-center gap-4">
-            <Label for="amount" class="text-right">Summa *</Label>
-            <Input
-              id="amount"
-              v-model="expenseForm.amount"
-              type="number"
-              placeholder="0"
-              class="col-span-3"
-            />
-          </div>
-          <div class="grid grid-cols-4 items-center gap-4">
-            <Label for="teacher" class="text-right">O'qituvchi</Label>
-            <div class="col-span-3">
-              <Select v-model="expenseForm.teacher_id">
-                <SelectTrigger id="teacher">
-                  <SelectValue placeholder="O'qituvchini tanlang" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem :value="null">Yo'q</SelectItem>
-                  <SelectItem
-                    v-for="teacher in teachers"
-                    :key="teacher.user_id"
-                    :value="teacher.user_id"
-                  >
-                    {{ teacher.first_name }} {{ teacher.last_name }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div class="grid grid-cols-4 items-center gap-4">
-            <Label for="expense_date" class="text-right">Sana *</Label>
-            <Input
-              id="expense_date"
-              v-model="expenseForm.expense_date"
-              type="datetime-local"
-              class="col-span-3"
-            />
-          </div>
-          <div class="grid grid-cols-4 items-center gap-4">
-            <Label for="description" class="text-right">Tavsif</Label>
-            <Textarea
-              id="description"
-              v-model="expenseForm.description"
-              placeholder="Xarajat haqida ma'lumot"
-              class="col-span-3"
-              rows="3"
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" @click="showExpenseDialog = false">
-            Bekor qilish
-          </Button>
-          <Button @click="saveExpense" :disabled="isSaving">
-            <Icon
-              v-if="isSaving"
-              name="lucide:loader-2"
-              class="mr-2 h-4 w-4 animate-spin"
-            />
-            {{ isSaving ? "Saqlanmoqda..." : "Saqlash" }}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </template>
 
-    <!-- View Dialog -->
-    <Dialog v-model:open="showViewDialog">
-      <DialogContent class="sm:max-w-[525px]">
-        <DialogHeader>
-          <DialogTitle>Xarajat tafsilotlari</DialogTitle>
-        </DialogHeader>
-        <div v-if="selectedExpense" class="grid gap-4 py-4">
-          <div class="grid grid-cols-3 items-center gap-4">
-            <span class="font-semibold">Sarlavha:</span>
-            <span class="col-span-2">{{ selectedExpense.title }}</span>
+        <template #footer="{ close }">
+          <div class="flex justify-end">
+            <UButton label="Yopish" @click="close" />
           </div>
-          <div class="grid grid-cols-3 items-center gap-4">
-            <span class="font-semibold">Kategoriya:</span>
-            <span class="col-span-2">
-              <Badge variant="outline">
-                {{ getCategoryName(selectedExpense.category_id) }}
-              </Badge>
-            </span>
-          </div>
-          <div class="grid grid-cols-3 items-center gap-4">
-            <span class="font-semibold">Summa:</span>
-            <span class="col-span-2 font-semibold text-red-600">
-              {{ formatCurrency(selectedExpense.amount) }}
-            </span>
-          </div>
-          <div class="grid grid-cols-3 items-center gap-4">
-            <span class="font-semibold">O'qituvchi:</span>
-            <span class="col-span-2">
-              {{ selectedExpense.teacher_name || "-" }}
-            </span>
-          </div>
-          <div class="grid grid-cols-3 items-center gap-4">
-            <span class="font-semibold">Tavsif:</span>
-            <span class="col-span-2">
-              {{ selectedExpense.description || "-" }}
-            </span>
-          </div>
-          <div class="grid grid-cols-3 items-center gap-4">
-            <span class="font-semibold">Xarajat sanasi:</span>
-            <span class="col-span-2">
-              {{ formatDate(selectedExpense.expense_date) }}
-            </span>
-          </div>
-          <div class="grid grid-cols-3 items-center gap-4">
-            <span class="font-semibold">Yaratilgan:</span>
-            <span class="col-span-2">
-              {{ formatDate(selectedExpense.created_at) }}
-            </span>
-          </div>
-          <div class="grid grid-cols-3 items-center gap-4">
-            <span class="font-semibold">Yangilangan:</span>
-            <span class="col-span-2">
-              {{ formatDate(selectedExpense.updated_at) }}
-            </span>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button @click="showViewDialog = false">Yopish</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    <!-- Delete Confirmation Dialog -->
-    <AlertDialog v-model:open="showDeleteDialog">
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Ishonchingiz komilmi?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Ushbu xarajatni o'chirmoqchimisiz? Bu amalni bekor qilib bo'lmaydi.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
-          <AlertDialogAction
-            @click="confirmDelete"
-            class="bg-red-600 hover:bg-red-700"
-          >
-            O'chirish
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  </div>
+        </template>
+      </UModal>
+    </template>
+  </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import type { TableColumn } from "@nuxt/ui";
+import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 
-import { api } from "~/lib/api";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
-} from "@/components/ui/pagination";
+const UBadge = resolveComponent("UBadge");
+const UButton = resolveComponent("UButton");
+const UPopover = resolveComponent("UPopover");
 
 definePageMeta({
   middleware: ["auth"],
 });
 
+interface Category {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
 interface Expense {
   id: string;
   title: string;
   category_id: string;
+  category?: Category;
   description: string | null;
   amount: number;
   expense_date: string;
@@ -497,11 +389,6 @@ interface Expense {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
-}
-
-interface Category {
-  id: string;
-  name: string;
 }
 
 interface Teacher {
@@ -531,10 +418,11 @@ const currentPage = ref(1);
 const itemsPerPage = 10;
 const showExpenseDialog = ref(false);
 const showViewDialog = ref(false);
-const showDeleteDialog = ref(false);
 const selectedExpense = ref<Expense | null>(null);
 const isEditMode = ref(false);
 const isSaving = ref(false);
+const isDeleting = ref(false);
+const deletePopoverOpen = ref<Record<string, boolean>>({});
 
 // Form data
 const expenseForm = reactive({
@@ -546,6 +434,162 @@ const expenseForm = reactive({
   reported_by: "",
   description: "",
 });
+
+// Table columns
+const columns: TableColumn<Expense>[] = [
+  {
+    accessorKey: "title",
+    header: "Sarlavha",
+    cell: ({ row }) => {
+      return h("div", { class: "font-medium" }, row.original.title);
+    },
+  },
+  {
+    accessorKey: "category_id",
+    header: "Kategoriya",
+    cell: ({ row }) => {
+      return h(
+        UBadge,
+        {
+          variant: "outline",
+        },
+        () => getCategoryName(row.original),
+      );
+    },
+  },
+  {
+    accessorKey: "amount",
+    header: "Summa",
+    cell: ({ row }) => {
+      return h(
+        "span",
+        { class: "font-semibold text-red-600" },
+        formatCurrency(row.original.amount),
+      );
+    },
+  },
+  {
+    accessorKey: "teacher_name",
+    header: "O'qituvchi",
+    cell: ({ row }) => row.original.teacher_name || "-",
+  },
+  {
+    accessorKey: "description",
+    header: "Tavsif",
+    cell: ({ row }) => {
+      return h(
+        "div",
+        { class: "max-w-[200px] truncate" },
+        row.original.description || "-",
+      );
+    },
+  },
+  {
+    accessorKey: "expense_date",
+    header: "Sana",
+    cell: ({ row }) => formatDate(row.original.expense_date),
+  },
+  {
+    id: "actions",
+    header: "Amallar",
+    cell: ({ row }) => {
+      const expenseId = row.original.id;
+      return h("div", { class: "flex justify-end gap-1" }, [
+        h(UButton, {
+          variant: "ghost",
+          icon: "i-lucide-eye",
+          size: "sm",
+          square: true,
+          onClick: () => viewExpense(row.original),
+        }),
+        h(UButton, {
+          variant: "ghost",
+          icon: "i-lucide-pencil",
+          size: "sm",
+          square: true,
+          onClick: () => editExpense(row.original),
+        }),
+        h(
+          UPopover,
+          {
+            open: deletePopoverOpen.value[expenseId] || false,
+            "onUpdate:open": (value: boolean) => {
+              deletePopoverOpen.value[expenseId] = value;
+            },
+          },
+          {
+            default: () =>
+              h(UButton, {
+                color: "error",
+                variant: "ghost",
+                icon: "i-lucide-trash-2",
+                size: "sm",
+                square: true,
+              }),
+            content: () =>
+              h("div", { class: "p-4 max-w-sm space-y-3" }, [
+                h(
+                  "h4",
+                  { class: "font-semibold text-sm" },
+                  "Ishonchingiz komilmi?",
+                ),
+                h(
+                  "p",
+                  { class: "text-sm text-gray-600" },
+                  "Bu xarajatni butunlay o'chiradi. Bu amalni qaytarib bo'lmaydi.",
+                ),
+                h("div", { class: "flex justify-end gap-2 mt-3" }, [
+                  h(UButton, {
+                    color: "neutral",
+                    variant: "subtle",
+                    label: "Bekor qilish",
+                    size: "sm",
+                    onClick: () => {
+                      deletePopoverOpen.value[expenseId] = false;
+                    },
+                  }),
+                  h(UButton, {
+                    color: "red",
+                    label: isDeleting.value ? "O'chirilmoqda..." : "O'chirish",
+                    loading: isDeleting.value,
+                    size: "sm",
+                    onClick: async () => {
+                      await confirmDelete(row.original);
+                      deletePopoverOpen.value[expenseId] = false;
+                    },
+                  }),
+                ]),
+              ]),
+          },
+        ),
+      ]);
+    },
+  },
+];
+
+// Options
+const categoryOptions = computed(() => [
+  { label: "Barcha kategoriyalar", value: "all" },
+  ...categories.value.map((cat) => ({
+    label: cat.name,
+    value: cat.id,
+  })),
+]);
+
+const categorySelectOptions = computed(() =>
+  categories.value.map((cat) => ({
+    label: cat.name,
+    value: cat.id,
+  })),
+);
+
+const teacherOptions = computed(() => [
+  { label: "Yo'q", value: null },
+  ...teachers.value.map((teacher) => ({
+    label: `${teacher.first_name} ${teacher.last_name}`,
+    value: teacher.user_id,
+  })),
+]);
 
 // Computed properties
 const filteredExpenses = computed(() => {
@@ -571,7 +615,7 @@ const expensesCount = computed(() => filteredExpenses.value.length);
 const totalAmount = computed(() => {
   return filteredExpenses.value.reduce(
     (sum, expense) => sum + expense.amount,
-    0
+    0,
   );
 });
 
@@ -615,41 +659,8 @@ const paginationStart = computed(() => {
 const paginationEnd = computed(() => {
   return Math.min(
     currentPage.value * itemsPerPage,
-    filteredExpenses.value.length
+    filteredExpenses.value.length,
   );
-});
-
-// Pagination display helpers
-const displayedPages = computed(() => {
-  if (totalPages.value <= 7) {
-    return Array.from({ length: totalPages.value }, (_, i) => i + 1);
-  }
-
-  const pages = [];
-  pages.push(1);
-
-  if (currentPage.value <= 3) {
-    pages.push(2, 3, 4);
-  } else if (currentPage.value >= totalPages.value - 2) {
-    pages.push(
-      totalPages.value - 3,
-      totalPages.value - 2,
-      totalPages.value - 1
-    );
-  } else {
-    pages.push(currentPage.value - 1, currentPage.value, currentPage.value + 1);
-  }
-
-  if (!pages.includes(totalPages.value)) {
-    pages.push(totalPages.value);
-  }
-
-  return [...new Set(pages)].sort((a, b) => a - b);
-});
-
-const showEndEllipsis = computed(() => {
-  const lastDisplayedPage = Math.max(...displayedPages.value);
-  return lastDisplayedPage < totalPages.value;
 });
 
 // Fetch data
@@ -667,14 +678,37 @@ const fetchExpenses = async () => {
       endpoint = `/expenses/reports/date-range?${params.toString()}`;
     }
 
-    const response = await api.get<Expense[]>(apiService.value, endpoint);
-    expenses.value = response || [];
+    const response = await api.get<{
+      data: Expense[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    }>(apiService.value, endpoint);
+
+    // Map expenses to include teacher names from teachers array
+    const expensesWithTeachers = (response.data || []).map((expense) => {
+      if (expense.teacher_id) {
+        const teacher = teachers.value.find(
+          (t) => t.user_id === expense.teacher_id,
+        );
+        if (teacher) {
+          return {
+            ...expense,
+            teacher_name: `${teacher.first_name} ${teacher.last_name}`,
+          };
+        }
+      }
+      return expense;
+    });
+
+    expenses.value = expensesWithTeachers;
   } catch (error) {
     console.error("Failed to fetch expenses:", error);
-    toast.toast({
+    toast.add({
       title: "Xatolik",
       description: "Xarajatlarni yuklashda xatolik yuz berdi",
-      variant: "destructive",
+      color: "error",
     });
     expenses.value = [];
   } finally {
@@ -686,7 +720,7 @@ const fetchCategories = async () => {
   try {
     const response = await api.get<Category[]>(
       apiService.value,
-      "/expense-categories"
+      "/expense-categories",
     );
     categories.value = response || [];
   } catch (error) {
@@ -697,11 +731,14 @@ const fetchCategories = async () => {
 
 const fetchTeachers = async () => {
   try {
-    const response = await api.get<Teacher[]>(
-      apiService.value,
-      "/users/teachers"
-    );
-    teachers.value = response || [];
+    const response = await api.get<{
+      data: Teacher[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    }>(apiService.value, "/users/teachers?limit=100");
+    teachers.value = response.data || [];
   } catch (error) {
     console.error("Failed to fetch teachers:", error);
     teachers.value = [];
@@ -712,11 +749,11 @@ const fetchTeachers = async () => {
 const formatDate = (dateString: string) => {
   if (!dateString) return "N/A";
   const date = new Date(dateString);
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const year = date.getUTCFullYear();
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
   return `${day}-${month}-${year} ${hours}:${minutes}`;
 };
 
@@ -741,8 +778,13 @@ const formatDateForInput = (dateString: string) => {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
-const getCategoryName = (categoryId: string) => {
-  const category = categories.value.find((c) => c.id === categoryId);
+const getCategoryName = (expense: Expense) => {
+  // First try to get from nested category object
+  if (expense.category?.name) {
+    return expense.category.name;
+  }
+  // Fallback to looking up in categories array
+  const category = categories.value.find((c) => c.id === expense.category_id);
   return category?.name || "Noma'lum";
 };
 
@@ -774,11 +816,6 @@ const editExpense = (expense: Expense) => {
   showExpenseDialog.value = true;
 };
 
-const deleteExpense = (expense: Expense) => {
-  selectedExpense.value = expense;
-  showDeleteDialog.value = true;
-};
-
 const saveExpense = async () => {
   // Validation
   if (
@@ -787,10 +824,10 @@ const saveExpense = async () => {
     !expenseForm.amount ||
     !expenseForm.expense_date
   ) {
-    toast.toast({
+    toast.add({
       title: "Xatolik",
       description: "Iltimos, barcha majburiy maydonlarni to'ldiring",
-      variant: "destructive",
+      color: "error",
     });
     return;
   }
@@ -812,17 +849,19 @@ const saveExpense = async () => {
       await api.patch(
         apiService.value,
         `/expenses/${selectedExpense.value.id}`,
-        data
+        data,
       );
-      toast.toast({
+      toast.add({
         title: "Muvaffaqiyat",
         description: "Xarajat muvaffaqiyatli yangilandi",
+        color: "success",
       });
     } else {
       await api.post(apiService.value, "/expenses", data);
-      toast.toast({
+      toast.add({
         title: "Muvaffaqiyat",
         description: "Xarajat muvaffaqiyatli qo'shildi",
+        color: "success",
       });
     }
 
@@ -831,34 +870,37 @@ const saveExpense = async () => {
     fetchExpenses();
   } catch (error) {
     console.error("Failed to save expense:", error);
-    toast.toast({
+    toast.add({
       title: "Xatolik",
       description: "Xarajatni saqlashda xatolik yuz berdi",
-      variant: "destructive",
+      color: "error",
     });
   } finally {
     isSaving.value = false;
   }
 };
 
-const confirmDelete = async () => {
-  if (!selectedExpense.value) return;
+const confirmDelete = async (expense: Expense) => {
+  if (!expense) return;
 
+  isDeleting.value = true;
   try {
-    await api.delete(apiService.value, `/expenses/${selectedExpense.value.id}`);
-    toast.toast({
+    await api.delete(apiService.value, `/expenses/${expense.id}`);
+    toast.add({
       title: "Muvaffaqiyat",
       description: "Xarajat muvaffaqiyatli o'chirildi",
+      color: "success",
     });
-    showDeleteDialog.value = false;
     fetchExpenses();
   } catch (error) {
     console.error("Failed to delete expense:", error);
-    toast.toast({
+    toast.add({
       title: "Xatolik",
       description: "Xarajatni o'chirishda xatolik yuz berdi",
-      variant: "destructive",
+      color: "error",
     });
+  } finally {
+    isDeleting.value = false;
   }
 };
 
@@ -883,7 +925,7 @@ const exportToCSV = () => {
   ];
   const rows = filteredExpenses.value.map((expense) => [
     expense.title,
-    getCategoryName(expense.category_id),
+    getCategoryName(expense),
     expense.amount,
     expense.teacher_name || "-",
     expense.description || "-",
@@ -901,27 +943,21 @@ const exportToCSV = () => {
   link.setAttribute("href", url);
   link.setAttribute(
     "download",
-    `xarajatlar-${new Date().toISOString().split("T")[0]}.csv`
+    `xarajatlar-${new Date().toISOString().split("T")[0]}.csv`,
   );
   link.style.visibility = "hidden";
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 
-  toast.toast({
+  toast.add({
     title: "Muvaffaqiyat",
     description: `${filteredExpenses.value.length} ta xarajat eksport qilindi`,
+    color: "success",
   });
 };
 
 // Navigation functions for pagination
-const navigatePage = (newPage: number) => {
-  if (newPage >= 1 && newPage <= totalPages.value) {
-    currentPage.value = newPage;
-    updateUrlParams();
-  }
-};
-
 const onPageChange = (newPage: number) => {
   if (newPage >= 1 && newPage <= totalPages.value) {
     currentPage.value = newPage;
@@ -963,8 +999,8 @@ onMounted(() => {
     searchQuery.value = route.query.search as string;
   }
 
-  if (route.query.category) {
-    categoryFilter.value = route.query.category as string;
+  if (route.query.category_id) {
+    categoryFilter.value = route.query.category_id as string;
   }
 
   if (route.query.start_date) {
@@ -975,9 +1011,11 @@ onMounted(() => {
     endDate.value = route.query.end_date as string;
   }
 
-  fetchExpenses();
+  // Fetch teachers first, then expenses
   fetchCategories();
-  fetchTeachers();
+  Promise.all([fetchTeachers()]).then(() => {
+    fetchExpenses();
+  });
 });
 
 // Watch for filter changes and reset to page 1

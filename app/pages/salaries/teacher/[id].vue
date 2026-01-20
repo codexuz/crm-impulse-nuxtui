@@ -1,539 +1,436 @@
 <template>
-  <div>
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
-      <div class="flex items-center gap-4">
-        <Button variant="ghost" size="icon" @click="router.back()">
-          <Icon name="lucide:arrow-left" class="h-5 w-5" />
-        </Button>
-        <div>
-          <h2 class="text-3xl font-bold tracking-tight">Maoshni hisoblash</h2>
-          <p class="text-muted-foreground">
-            O'qituvchi hamyon va tranzaksiyalar
-          </p>
+  <UDashboardPanel id="teacher-salary">
+    <template #header>
+      <UDashboardNavbar title="Maoshni hisoblash" :ui="{ right: 'gap-3' }">
+        <template #leading>
+          <UButton
+            variant="ghost"
+            icon="i-lucide-arrow-left"
+            square
+            @click="router.back()"
+          />
+        </template>
+
+        <template #description> O'qituvchi hamyon va tranzaksiyalar </template>
+
+        <template #right>
+          <UButton
+            icon="i-lucide-wallet"
+            label="To'lov / Bonus"
+            @click="paymentDialog = true"
+          />
+        </template>
+      </UDashboardNavbar>
+    </template>
+
+    <template #body>
+      <!-- Loading State -->
+      <div v-if="isLoading" class="flex justify-center items-center py-20">
+        <span
+          class="i-lucide-loader-2 text-5xl animate-spin text-primary"
+        ></span>
+      </div>
+
+      <!-- Content -->
+      <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left Sidebar: Profile Card -->
+        <aside class="lg:col-span-3 space-y-6">
+          <!-- Teacher Profile Card -->
+          <UCard class="overflow-hidden">
+            <!-- Profile Header -->
+            <div class="relative">
+              <div class="h-24 bg-linear-to-r from-primary to-blue-400"></div>
+              <div
+                class="px-6 pb-6 -mt-12 flex flex-col items-center text-center"
+              >
+                <UAvatar
+                  size="2xl"
+                  :alt="teacher?.first_name + ' ' + teacher?.last_name"
+                  class="ring-4 ring-white dark:ring-gray-900 mb-4"
+                >
+                  <template #fallback>
+                    <span class="text-xl">
+                      {{
+                        teacher
+                          ? getInitials(teacher.first_name, teacher.last_name)
+                          : ""
+                      }}
+                    </span>
+                  </template>
+                </UAvatar>
+
+                <UBadge
+                  :color="teacher?.is_active ? 'green' : 'gray'"
+                  class="mb-2"
+                >
+                  {{ teacher?.is_active ? "FAOL" : "NOFAOL" }}
+                </UBadge>
+
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white">
+                  {{ teacher?.first_name }} {{ teacher?.last_name }}
+                </h3>
+                <p class="text-sm text-gray-500 mb-4">
+                  {{ teacher?.username }}
+                </p>
+
+                <!-- Wallet Balance Highlight -->
+                <div
+                  class="w-full pt-6 border-t border-gray-200 dark:border-gray-700"
+                >
+                  <div class="flex flex-col items-center mb-6">
+                    <span
+                      class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1"
+                    >
+                      Hamyon balansi
+                    </span>
+                    <span class="text-3xl font-black text-primary">
+                      {{ wallet ? formatCurrency(wallet.amount) : "0 so'm" }}
+                    </span>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-4 text-left">
+                    <div>
+                      <p class="text-[10px] font-bold text-gray-500 uppercase">
+                        Telefon
+                      </p>
+                      <p class="text-sm font-bold">{{ teacher?.phone }}</p>
+                    </div>
+                    <div>
+                      <p class="text-[10px] font-bold text-gray-500 uppercase">
+                        Username
+                      </p>
+                      <p class="text-sm font-bold">{{ teacher?.username }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </UCard>
+
+          <!-- Wallet Info Card -->
+          <UCard v-if="wallet">
+            <template #header>
+              <h4 class="text-sm font-bold flex items-center gap-2">
+                <span class="i-lucide-info text-primary text-lg"></span>
+                Hamyon ma'lumotlari
+              </h4>
+            </template>
+
+            <ul class="space-y-3 text-sm">
+              <li class="flex justify-between">
+                <span class="text-gray-500">Hamyon ID</span>
+                <span class="font-mono text-xs"
+                  >{{ wallet.id?.substring(0, 8) }}...</span
+                >
+              </li>
+              <li class="flex justify-between">
+                <span class="text-gray-500">Yaratilgan</span>
+                <span class="font-medium">{{
+                  formatDate(wallet.created_at)
+                }}</span>
+              </li>
+              <li class="flex justify-between">
+                <span class="text-gray-500">Yangilangan</span>
+                <span class="font-medium">{{
+                  formatDate(wallet.updated_at)
+                }}</span>
+              </li>
+            </ul>
+          </UCard>
+        </aside>
+
+        <!-- Right Column: Tabs and Content -->
+        <div class="lg:col-span-9 space-y-6">
+          <!-- Quick Stats Summary -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <UCard>
+              <div class="flex justify-between items-start mb-2">
+                <span class="text-xs font-bold text-gray-500 uppercase">
+                  Jami tranzaksiyalar
+                </span>
+                <span class="i-lucide-trending-up text-primary text-xl"></span>
+              </div>
+              <div class="text-2xl font-black text-gray-900 dark:text-white">
+                {{ formatCurrency(totalTransactionsAmount) }}
+              </div>
+              <div class="text-[10px] text-gray-500 font-bold mt-1">
+                {{ totalTransactions }} ta tranzaksiya
+              </div>
+            </UCard>
+
+            <UCard>
+              <div class="flex justify-between items-start mb-2">
+                <span class="text-xs font-bold text-gray-500 uppercase">
+                  O'quvchilar
+                </span>
+                <span class="i-lucide-users text-blue-500 text-xl"></span>
+              </div>
+              <div class="text-2xl font-black text-gray-900 dark:text-white">
+                {{ students.length }}
+              </div>
+              <div class="text-[10px] text-gray-500 font-bold mt-1">
+                Aktiv o'quvchilar
+              </div>
+            </UCard>
+
+            <UCard>
+              <div class="flex justify-between items-start mb-2">
+                <span class="text-xs font-bold text-gray-500 uppercase">
+                  Oxirgi tranzaksiya
+                </span>
+                <span class="i-lucide-calendar text-gray-500 text-xl"></span>
+              </div>
+              <div class="text-2xl font-black text-gray-900 dark:text-white">
+                {{
+                  transactions.length > 0
+                    ? formatCurrency(transactions[0]?.amount || 0)
+                    : "0 so'm"
+                }}
+              </div>
+              <div class="text-[10px] text-gray-500 font-bold mt-1">
+                {{
+                  transactions.length > 0 && transactions[0]?.created_at
+                    ? formatDate(transactions[0].created_at)
+                    : "Ma'lumot yo'q"
+                }}
+              </div>
+            </UCard>
+          </div>
+
+          <!-- Tabs Card -->
+          <UCard>
+            <UTabs :items="tabItems">
+              <!-- Transactions Tab -->
+              <template #transactions>
+                <div class="space-y-4">
+                  <!-- Filters -->
+                  <UDashboardToolbar>
+                    <template #left>
+                      <UInput
+                        v-model="transactionSearch"
+                        icon="i-lucide-search"
+                        placeholder="Tranzaksiyalarni qidirish..."
+                        class="w-64"
+                      />
+                    </template>
+
+                    <template #right>
+                      <USelectMenu
+                        v-model="transactionFilter"
+                        :items="transactionTypeOptions"
+                        value-key="value"
+                        placeholder="Turi"
+                        class="w-40"
+                      >
+                        <template #label>
+                          {{
+                            transactionTypeOptions.find(
+                              (t) => t.value === transactionFilter,
+                            )?.label || "Turi"
+                          }}
+                        </template>
+                      </USelectMenu>
+
+                      <div class="flex items-center gap-2">
+                        <UInput
+                          v-model="dateFrom"
+                          type="date"
+                          placeholder="Dan"
+                          class="w-40"
+                        />
+                        <UInput
+                          v-model="dateTo"
+                          type="date"
+                          placeholder="Gacha"
+                          class="w-40"
+                        />
+                      </div>
+
+                      <UButton
+                        v-if="dateFrom || dateTo"
+                        icon="i-lucide-x"
+                        label="Tozalash"
+                        variant="ghost"
+                        @click="clearDateFilters"
+                      />
+
+                      <UButton
+                        icon="i-lucide-refresh-cw"
+                        label="Yangilash"
+                        variant="outline"
+                        @click="loadTransactions"
+                      />
+                    </template>
+                  </UDashboardToolbar>
+
+                  <!-- Transactions Table -->
+                  <UTable
+                    :data="filteredTransactions"
+                    :columns="transactionColumns"
+                    :loading="loadingTransactions"
+                    :empty="'Tranzaksiyalar topilmadi'"
+                  />
+
+                  <!-- Pagination -->
+                  <div
+                    v-if="totalTransactions > 0"
+                    class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-4"
+                  >
+                    <div class="text-sm text-gray-500">
+                      <span class="font-medium">{{ paginationStart }}</span> dan
+                      <span class="font-medium">{{ paginationEnd }}</span>
+                      gacha, jami
+                      <span class="font-medium">{{ totalTransactions }}</span>
+                      ta tranzaksiya
+                    </div>
+
+                    <UPagination
+                      :model-value="currentPage"
+                      :total="totalTransactions"
+                      :items-per-page="transactionsPerPage"
+                      show-last
+                      show-first
+                      @update:page="(p: number) => (currentPage = p)"
+                    />
+                  </div>
+                </div>
+              </template>
+
+              <!-- Attendance Tab -->
+              <template #attendance>
+                <div class="space-y-4">
+                  <!-- Filters -->
+                  <UDashboardToolbar>
+                    <template #left>
+                      <UInput
+                        v-model="studentSearch"
+                        icon="i-lucide-search"
+                        placeholder="O'quvchilarni qidirish..."
+                        class="w-64"
+                      />
+                    </template>
+
+                    <template #right>
+                      <div class="flex items-center gap-2">
+                        <UInput
+                          v-model="studentDateFrom"
+                          type="date"
+                          placeholder="Dan"
+                          class="w-40"
+                        />
+                        <UInput
+                          v-model="studentDateTo"
+                          type="date"
+                          placeholder="Gacha"
+                          class="w-40"
+                        />
+                      </div>
+
+                      <UButton
+                        icon="i-lucide-calendar-check"
+                        label="Davomat yuklash"
+                        @click="loadAllStudentsAttendance"
+                      />
+
+                      <UButton
+                        icon="i-lucide-refresh-cw"
+                        label="Yangilash"
+                        variant="outline"
+                        @click="loadStudents"
+                      />
+                    </template>
+                  </UDashboardToolbar>
+
+                  <!-- Students Table -->
+                  <UTable
+                    :data="filteredStudents"
+                    :columns="studentColumns"
+                    :loading="loadingStudents"
+                    :empty="'O\'quvchilar topilmadi'"
+                  />
+
+                  <div
+                    v-if="filteredStudents.length > 0"
+                    class="flex justify-end text-sm text-gray-500"
+                  >
+                    Jami {{ filteredStudents.length }} ta o'quvchi
+                  </div>
+                </div>
+              </template>
+            </UTabs>
+          </UCard>
         </div>
       </div>
-      <Dialog v-model:open="paymentDialog">
-        <DialogTrigger as-child>
-          <Button>
-            <Icon name="lucide:wallet" class="mr-2 h-4 w-4" />
-            To'lov / Bonus
-          </Button>
-        </DialogTrigger>
-        <DialogContent class="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>O'qituvchiga to'lov</DialogTitle>
-            <DialogDescription>
-              Oylik to'lovi yoki bonus berish
-            </DialogDescription>
-          </DialogHeader>
-          <form @submit.prevent="submitPayment">
-            <div class="grid gap-4 py-4">
-              <div class="grid gap-2">
-                <Label for="category">Tur</Label>
-                <Select v-model="paymentForm.category_id" required>
-                  <SelectTrigger id="category">
-                    <SelectValue placeholder="Tur tanlang" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem
-                      v-for="category in filteredCategories"
-                      :key="category.id"
-                      :value="category.id"
-                    >
-                      {{ category.name }}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div class="grid gap-2">
-                <Label for="amount">Summa</Label>
-                <Input
-                  id="amount"
-                  v-model.number="paymentForm.amount"
-                  type="number"
-                  placeholder="Summa kiriting"
-                  required
-                />
-              </div>
-              <div class="grid gap-2">
-                <Label for="description">Izoh</Label>
-                <Textarea
-                  id="description"
-                  v-model="paymentForm.description"
-                  placeholder="Izoh kiriting..."
-                  rows="3"
-                />
-              </div>
-              <div class="grid gap-2">
-                <Label for="expense_date">Sana</Label>
-                <Input
-                  id="expense_date"
-                  v-model="paymentForm.expense_date"
-                  type="date"
-                  required
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                @click="paymentDialog = false"
-              >
-                Bekor qilish
-              </Button>
-              <Button type="submit" :disabled="isSubmittingPayment">
-                <Icon
-                  v-if="isSubmittingPayment"
-                  name="lucide:loader-2"
-                  class="mr-2 h-4 w-4 animate-spin"
-                />
-                Saqlash
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
 
-    <!-- Loading State -->
-    <div v-if="isLoading" class="flex justify-center items-center py-20">
-      <Icon
-        name="lucide:loader-2"
-        class="h-12 w-12 animate-spin text-primary"
-      />
-    </div>
-
-    <!-- Content -->
-    <div v-else class="space-y-6">
-      <!-- Teacher Info & Wallet -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Teacher Info Card -->
-        <Card>
-          <CardHeader>
-            <CardTitle>O'qituvchi ma'lumotlari</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div v-if="teacher" class="space-y-4">
-              <div class="flex items-center gap-4">
-                <Avatar class="h-16 w-16">
-                  <AvatarFallback class="text-lg">
-                    {{ getInitials(teacher.first_name, teacher.last_name) }}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 class="font-semibold text-lg">
-                    {{ teacher.first_name }} {{ teacher.last_name }}
-                  </h3>
-                  <p class="text-sm text-muted-foreground">
-                    {{ teacher.phone }}
-                  </p>
-                </div>
-              </div>
-              <div class="border-t pt-4 space-y-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-muted-foreground">Username:</span>
-                  <span class="font-medium">{{ teacher.username }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-muted-foreground">Holat:</span>
-                  <Badge :variant="teacher.is_active ? 'default' : 'secondary'">
-                    {{ teacher.is_active ? "Faol" : "Nofaol" }}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <!-- Wallet Card -->
-        <Card>
-          <CardHeader>
-            <CardTitle>Hamyon</CardTitle>
-            <CardDescription>Joriy balans va to'lovlar</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div v-if="wallet" class="space-y-4">
-              <div class="text-center py-6">
-                <p class="text-sm text-muted-foreground mb-2">
-                  Jami tranzaksiyalar
-                </p>
-                <p class="text-5xl font-bold text-primary mb-3">
-                  {{ formatCurrency(totalTransactionsAmount) }}
-                </p>
-                <div class="border-t pt-3 mt-3">
-                  <p class="text-xs text-muted-foreground mb-1">
-                    Hamyon balansi
-                  </p>
-                  <p class="text-2xl font-semibold text-muted-foreground">
-                    {{ formatCurrency(wallet.amount) }}
-                  </p>
-                </div>
-              </div>
-              <div class="border-t pt-4 space-y-2 text-sm">
-                <div class="flex justify-between">
-                  <span class="text-muted-foreground">Hamyon ID:</span>
-                  <span class="font-mono text-xs">{{ wallet.id }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-muted-foreground">Yaratilgan:</span>
-                  <span>{{ formatDateTime(wallet.created_at) }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-muted-foreground">Yangilangan:</span>
-                  <span>{{ formatDateTime(wallet.updated_at) }}</span>
-                </div>
-              </div>
-            </div>
-            <div v-else class="text-center py-8">
-              <Icon
-                name="lucide:wallet"
-                class="h-12 w-12 text-muted-foreground mx-auto mb-3"
+      <!-- Payment Modal -->
+      <UModal v-model:open="paymentDialog" title="O'qituvchiga to'lov">
+        <template #body>
+          <form @submit.prevent="submitPayment" class="space-y-4">
+            <div class="space-y-2">
+              <label class="text-sm font-medium">Tur</label>
+              <USelectMenu
+                v-model="paymentForm.category_id"
+                :items="filteredCategories"
+                value-key="id"
+                option-label="name"
+                placeholder="Tur tanlang"
+                required
               />
-              <p class="text-muted-foreground">Hamyon topilmadi</p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      <!-- Tabs -->
-      <Tabs v-model="activeTab" class="w-full">
-        <TabsList class="grid w-full grid-cols-2 max-w-[400px]">
-          <TabsTrigger value="transactions">
-            <Icon name="lucide:receipt" class="mr-2 h-4 w-4" />
-            Tranzaksiyalar
-          </TabsTrigger>
-          <TabsTrigger value="students">
-            <Icon name="lucide:users" class="mr-2 h-4 w-4" />
-            O'quvchilar
-          </TabsTrigger>
-        </TabsList>
+            <div class="space-y-2">
+              <label class="text-sm font-medium">Summa</label>
+              <UInput
+                v-model.number="paymentForm.amount"
+                type="number"
+                placeholder="Summa kiriting"
+                required
+              />
+            </div>
 
-        <!-- Transactions Tab -->
-        <TabsContent value="transactions">
-          <Card>
-            <CardHeader>
-              <div class="flex items-center justify-between">
-                <div>
-                  <CardTitle>Tranzaksiyalar</CardTitle>
-                  <CardDescription
-                    >To'lovlar va hisob-kitoblar tarixi</CardDescription
-                  >
-                </div>
-                <Button @click="loadTransactions" variant="outline" size="sm">
-                  <Icon name="lucide:refresh-cw" class="mr-2 h-4 w-4" />
-                  Yangilash
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <!-- Filters -->
-              <div class="space-y-4 mb-4">
-                <div class="flex items-center gap-4">
-                  <Input
-                    v-model="transactionSearch"
-                    placeholder="Tranzaksiyalarni qidirish..."
-                    class="max-w-sm"
-                  />
-                  <Select v-model="transactionFilter">
-                    <SelectTrigger class="w-[180px]">
-                      <SelectValue placeholder="Turi" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Barchasi</SelectItem>
-                      <SelectItem value="kirim">Kirim</SelectItem>
-                      <SelectItem value="oylik">Oylik</SelectItem>
-                      <SelectItem value="avans">Avans</SelectItem>
-                      <SelectItem value="bonus">Bonus</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div class="flex items-center gap-4">
-                  <div class="flex items-center gap-2">
-                    <Label class="text-sm whitespace-nowrap">Dan:</Label>
-                    <Input v-model="dateFrom" type="date" class="w-[180px]" />
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <Label class="text-sm whitespace-nowrap">Gacha:</Label>
-                    <Input v-model="dateTo" type="date" class="w-[180px]" />
-                  </div>
-                  <Button
-                    v-if="dateFrom || dateTo"
-                    variant="outline"
-                    size="sm"
-                    @click="clearDateFilters"
-                  >
-                    <Icon name="lucide:x" class="mr-2 h-4 w-4" />
-                    Sanalarni tozalash
-                  </Button>
-                </div>
-              </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium">Izoh</label>
+              <UTextarea
+                v-model="paymentForm.description"
+                placeholder="Izoh kiriting..."
+                :rows="3"
+              />
+            </div>
 
-              <!-- Transactions Table -->
-              <div class="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Sana</TableHead>
-                      <TableHead>Tur</TableHead>
-                      <TableHead class="text-right">Summa</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow v-if="loadingTransactions">
-                      <TableCell colspan="3" class="text-center py-10">
-                        <div class="flex justify-center">
-                          <Icon
-                            name="lucide:loader-2"
-                            class="h-8 w-8 animate-spin text-primary"
-                          />
-                        </div>
-                        <p class="text-muted-foreground mt-2">
-                          Tranzaksiyalar yuklanmoqda...
-                        </p>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow v-else-if="filteredTransactions.length === 0">
-                      <TableCell colspan="3" class="text-center py-10">
-                        <div class="flex justify-center">
-                          <Icon
-                            name="lucide:inbox"
-                            class="h-8 w-8 text-muted-foreground"
-                          />
-                        </div>
-                        <p class="text-muted-foreground mt-2">
-                          Tranzaksiyalar topilmadi
-                        </p>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow
-                      v-for="transaction in filteredTransactions"
-                      :key="transaction.id"
-                    >
-                      <TableCell>
-                        {{ formatDateTime(transaction.created_at) }}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          :variant="
-                            getTransactionBadgeVariant(transaction.type)
-                          "
-                        >
-                          <Icon
-                            :name="getTransactionIcon(transaction.type)"
-                            class="mr-1 h-3 w-3"
-                          />
-                          {{ getTransactionLabel(transaction.type) }}
-                        </Badge>
-                      </TableCell>
-                      <TableCell class="text-right">
-                        <span
-                          :class="getTransactionAmountClass(transaction.type)"
-                        >
-                          {{ getTransactionSign(transaction.type) }}
-                          {{ formatCurrency(transaction.amount) }}
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium">Sana</label>
+              <UInput v-model="paymentForm.expense_date" type="date" required />
+            </div>
+          </form>
+        </template>
 
-              <!-- Pagination -->
-              <div
-                v-if="filteredTransactions.length > 0"
-                class="flex items-center justify-between mt-4"
-              >
-                <div class="text-sm text-muted-foreground">
-                  Jami {{ filteredTransactions.length }} ta tranzaksiya
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <!-- Students Tab -->
-        <TabsContent value="students">
-          <Card>
-            <CardHeader>
-              <div class="flex items-center justify-between">
-                <div>
-                  <CardTitle>O'quvchilar</CardTitle>
-                  <CardDescription
-                    >O'qituvchining barcha o'quvchilari</CardDescription
-                  >
-                </div>
-                <Button @click="loadStudents" variant="outline" size="sm">
-                  <Icon name="lucide:refresh-cw" class="mr-2 h-4 w-4" />
-                  Yangilash
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <!-- Filters -->
-              <div class="space-y-4 mb-4">
-                <div class="flex items-center gap-4">
-                  <Input
-                    v-model="studentSearch"
-                    placeholder="O'quvchilarni qidirish..."
-                    class="max-w-sm"
-                  />
-                </div>
-                <div class="flex items-center gap-4">
-                  <div class="flex items-center gap-2">
-                    <Label class="text-sm whitespace-nowrap">Dan:</Label>
-                    <Input
-                      v-model="studentDateFrom"
-                      type="date"
-                      class="w-[180px]"
-                    />
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <Label class="text-sm whitespace-nowrap">Gacha:</Label>
-                    <Input
-                      v-model="studentDateTo"
-                      type="date"
-                      class="w-[180px]"
-                    />
-                  </div>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    @click="loadAllStudentsAttendance"
-                  >
-                    <Icon name="lucide:calendar-check" class="mr-2 h-4 w-4" />
-                    Davomat yuklash
-                  </Button>
-                </div>
-              </div>
-
-              <!-- Students Table -->
-              <div class="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead class="w-[50px]">No</TableHead>
-                      <TableHead>O'quvchi</TableHead>
-                      <TableHead>Guruh</TableHead>
-                      <TableHead class="text-center">Davomat</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow v-if="loadingStudents">
-                      <TableCell colspan="4" class="text-center py-10">
-                        <div class="flex justify-center">
-                          <Icon
-                            name="lucide:loader-2"
-                            class="h-8 w-8 animate-spin text-primary"
-                          />
-                        </div>
-                        <p class="text-muted-foreground mt-2">
-                          O'quvchilar yuklanmoqda...
-                        </p>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow v-else-if="filteredStudents.length === 0">
-                      <TableCell colspan="4" class="text-center py-10">
-                        <div class="flex justify-center">
-                          <Icon
-                            name="lucide:users-x"
-                            class="h-8 w-8 text-muted-foreground"
-                          />
-                        </div>
-                        <p class="text-muted-foreground mt-2">
-                          O'quvchilar topilmadi
-                        </p>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow
-                      v-for="(student, index) in filteredStudents"
-                      :key="student.id"
-                    >
-                      <TableCell class="text-muted-foreground">
-                        {{ index + 1 }}
-                      </TableCell>
-                      <TableCell class="font-medium">
-                        <div class="flex items-center">
-                          <Avatar class="h-8 w-8 mr-2">
-                            <AvatarFallback>{{
-                              getInitials(
-                                student.student.first_name,
-                                student.student.last_name
-                              )
-                            }}</AvatarFallback>
-                          </Avatar>
-                          {{ student.student.first_name }}
-                          {{ student.student.last_name }}
-                        </div>
-                      </TableCell>
-                      <TableCell>{{ student.group.name }}</TableCell>
-                      <TableCell class="text-center">
-                        <div
-                          v-if="loadingAttendance.has(student.student.user_id)"
-                          class="flex justify-center"
-                        >
-                          <Icon
-                            name="lucide:loader-2"
-                            class="h-4 w-4 animate-spin"
-                          />
-                        </div>
-                        <div
-                          v-else-if="studentAttendance[student.student.user_id]"
-                          class="flex justify-center gap-2"
-                        >
-                          <Badge variant="default">
-                            <Icon name="lucide:check" class="mr-1 h-3 w-3" />
-                            {{
-                              studentAttendance[student.student.user_id]
-                                ?.present || 0
-                            }}
-                          </Badge>
-                          <Badge variant="secondary">
-                            <Icon name="lucide:x" class="mr-1 h-3 w-3" />
-                            {{
-                              studentAttendance[student.student.user_id]
-                                ?.absent || 0
-                            }}
-                          </Badge>
-                        </div>
-                        <div v-else class="text-muted-foreground text-sm">
-                          -
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-
-              <!-- Students Count -->
-              <div
-                v-if="filteredStudents.length > 0"
-                class="flex items-center justify-between mt-4"
-              >
-                <div class="text-sm text-muted-foreground">
-                  Jami {{ filteredStudents.length }} ta o'quvchi
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  </div>
+        <template #footer="{ close }">
+          <div class="flex justify-end gap-2">
+            <UButton label="Bekor qilish" variant="outline" @click="close" />
+            <UButton
+              label="Saqlash"
+              :loading="isSubmittingPayment"
+              @click="submitPayment"
+            />
+          </div>
+        </template>
+      </UModal>
+    </template>
+  </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import type { TableColumn } from "@nuxt/ui";
+import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 
-import { api } from "~/lib/api";
+const UBadge = resolveComponent("UBadge");
+const UButton = resolveComponent("UButton");
+const UAvatar = resolveComponent("UAvatar");
 
-const route = useRoute();
-const router = useRouter();
-const { apiService } = useAuth();
-const { toast } = useToast();
+definePageMeta({
+  middleware: ["auth"],
+});
 
 interface Teacher {
   user_id: string;
@@ -595,6 +492,11 @@ interface ExpenseCategory {
   updated_at: string;
 }
 
+const route = useRoute();
+const router = useRouter();
+const { apiService } = useAuth();
+const toast = useToast();
+
 // Helper functions for default dates
 const getDefaultDateFrom = () => {
   const date = new Date();
@@ -628,6 +530,13 @@ const studentDateTo = ref(getDefaultDateTo());
 const studentAttendance = ref<Record<string, AttendanceRecord>>({});
 const loadingAttendance = ref(new Set<string>());
 
+// Pagination state
+const currentPage = ref(1);
+const totalPages = ref(1);
+const totalTransactions = ref(0);
+const transactionsPerPage = ref(10);
+const totalTransactionsAmount = ref(0);
+
 // Payment modal state
 const paymentDialog = ref(false);
 const isSubmittingPayment = ref(false);
@@ -642,58 +551,178 @@ const paymentForm = reactive({
 const dateFrom = ref(getDefaultDateFrom());
 const dateTo = ref(getDefaultDateTo());
 
+// Tab items
+const tabItems = [
+  {
+    label: "Tranzaksiyalar",
+    icon: "i-lucide-receipt",
+    slot: "transactions",
+  },
+  {
+    label: "Davomat",
+    icon: "i-lucide-calendar-check",
+    slot: "attendance",
+  },
+];
+
+// Transaction type options
+const transactionTypeOptions = [
+  { label: "Barchasi", value: "all" },
+  { label: "Kirim", value: "kirim" },
+  { label: "Oylik", value: "oylik" },
+  { label: "Avans", value: "avans" },
+  { label: "Bonus", value: "bonus" },
+];
+
+// Table columns for transactions
+const transactionColumns: TableColumn<Transaction>[] = [
+  {
+    accessorKey: "created_at",
+    header: "Sana",
+    cell: ({ row }) => formatDateTime(row.original.created_at),
+  },
+  {
+    accessorKey: "type",
+    header: "Tur",
+    cell: ({ row }) => {
+      return h(
+        UBadge,
+        {
+          color: getTransactionBadgeColor(row.original.type),
+        },
+        () => [
+          h("span", {
+            class: `${getTransactionIcon(row.original.type)} mr-1`,
+          }),
+          getTransactionLabel(row.original.type),
+        ],
+      );
+    },
+  },
+  {
+    accessorKey: "student",
+    header: "O'quvchi",
+    cell: ({ row }) => {
+      const student = row.original.student;
+      if (student) {
+        return h("div", { class: "flex flex-col" }, [
+          h(
+            "span",
+            { class: "font-medium" },
+            `${student.first_name} ${student.last_name}`,
+          ),
+          h("span", { class: "text-xs text-gray-500" }, student.phone),
+        ]);
+      }
+      return h("span", { class: "text-gray-400 text-sm" }, "-");
+    },
+  },
+  {
+    accessorKey: "amount",
+    header: "Summa",
+    cell: ({ row }) => {
+      return h(
+        "span",
+        { class: getTransactionAmountClass(row.original.type) },
+        `${getTransactionSign(row.original.type)} ${formatCurrency(row.original.amount)}`,
+      );
+    },
+  },
+];
+
+// Table columns for students
+const studentColumns: TableColumn<Student>[] = [
+  {
+    id: "index",
+    header: "No",
+    cell: ({ row, table }) => {
+      const index = table.getRowModel().rows.indexOf(row);
+      return h("span", { class: "text-gray-500" }, (index + 1).toString());
+    },
+  },
+  {
+    accessorKey: "student",
+    header: "O'quvchi",
+    cell: ({ row }) => {
+      return h("div", { class: "flex items-center" }, [
+        h(
+          UAvatar,
+          {
+            size: "sm",
+            alt: `${row.original.student.first_name} ${row.original.student.last_name}`,
+          },
+          {
+            fallback: () =>
+              h(
+                "span",
+                {},
+                getInitials(
+                  row.original.student.first_name,
+                  row.original.student.last_name,
+                ),
+              ),
+          },
+        ),
+        h(
+          "span",
+          { class: "ml-2 font-medium" },
+          `${row.original.student.first_name} ${row.original.student.last_name}`,
+        ),
+      ]);
+    },
+  },
+  {
+    accessorKey: "group",
+    header: "Guruh",
+    cell: ({ row }) => row.original.group.name,
+  },
+  {
+    id: "attendance",
+    header: "Davomat",
+    cell: ({ row }) => {
+      const studentId = row.original.student.user_id;
+      const isLoading = loadingAttendance.value.has(studentId);
+      const attendance = studentAttendance.value[studentId];
+
+      if (isLoading) {
+        return h("div", { class: "flex justify-center" }, [
+          h("span", { class: "i-lucide-loader-2 animate-spin" }),
+        ]);
+      }
+
+      if (attendance) {
+        return h("div", { class: "flex justify-center gap-2" }, [
+          h(UBadge, { color: "green" }, () => [
+            h("span", { class: "i-lucide-check mr-1" }),
+            attendance.present || 0,
+          ]),
+          h(UBadge, { color: "gray" }, () => [
+            h("span", { class: "i-lucide-x mr-1" }),
+            attendance.absent || 0,
+          ]),
+        ]);
+      }
+
+      return h("span", { class: "text-gray-500 text-sm" }, "-");
+    },
+  },
+];
+
 // Computed
 const filteredTransactions = computed(() => {
-  let result = [...transactions.value];
-
-  // Apply type filter
-  if (transactionFilter.value !== "all") {
-    result = result.filter((t) => t.type === transactionFilter.value);
-  }
-
-  // Apply search filter
-  if (transactionSearch.value) {
-    const searchLower = transactionSearch.value.toLowerCase();
-    result = result.filter(
-      (t) =>
-        t.type?.toLowerCase().includes(searchLower) ||
-        t.amount.toString().includes(transactionSearch.value)
-    );
-  }
-
-  // Apply date range filter
-  if (dateFrom.value) {
-    const fromDate = new Date(dateFrom.value);
-    fromDate.setHours(0, 0, 0, 0);
-    result = result.filter((t) => {
-      const transactionDate = new Date(t.created_at);
-      return transactionDate >= fromDate;
-    });
-  }
-
-  if (dateTo.value) {
-    const toDate = new Date(dateTo.value);
-    toDate.setHours(23, 59, 59, 999);
-    result = result.filter((t) => {
-      const transactionDate = new Date(t.created_at);
-      return transactionDate <= toDate;
-    });
-  }
-
-  // Sort by date descending (newest first)
-  result.sort(
-    (a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
-
-  return result;
+  // Return transactions as-is, filtering is done server-side
+  return transactions.value;
 });
 
-const totalTransactionsAmount = computed(() => {
-  return filteredTransactions.value.reduce((total, transaction) => {
-    return total + transaction.amount;
-  }, 0);
-});
+const paginationStart = computed(
+  () => (currentPage.value - 1) * transactionsPerPage.value + 1,
+);
+const paginationEnd = computed(() =>
+  Math.min(
+    currentPage.value * transactionsPerPage.value,
+    totalTransactions.value,
+  ),
+);
 
 const filteredStudents = computed(() => {
   if (!studentSearch.value) {
@@ -709,7 +738,7 @@ const filteredStudents = computed(() => {
         .toLowerCase()
         .includes(searchLower) ||
       s.student.phone?.includes(studentSearch.value) ||
-      s.group.name?.toLowerCase().includes(searchLower)
+      s.group.name?.toLowerCase().includes(searchLower),
   );
 });
 
@@ -717,7 +746,7 @@ const filteredCategories = computed(() => {
   return expenseCategories.value.filter(
     (category) =>
       category.name.toLowerCase() === "bonus" ||
-      category.name.toLowerCase() === "oylik"
+      category.name.toLowerCase() === "oylik",
   );
 });
 
@@ -726,15 +755,15 @@ const loadTeacher = async () => {
   try {
     const response = await api.get<Teacher>(
       apiService.value,
-      `/users/${teacherId.value}`
+      `/users/${teacherId.value}`,
     );
     teacher.value = response;
   } catch (error) {
     console.error("Failed to load teacher:", error);
-    toast({
+    toast.add({
       title: "Xatolik",
       description: "O'qituvchi ma'lumotlarini yuklashda xatolik.",
-      variant: "destructive",
+      color: "error",
     });
   }
 };
@@ -743,16 +772,16 @@ const loadWallet = async () => {
   try {
     const response = await api.get<Wallet>(
       apiService.value,
-      `/teacher-wallet/teacher/${teacherId.value}`
+      `/teacher-wallet/teacher/${teacherId.value}`,
     );
     wallet.value = response;
   } catch (error) {
     console.error("Failed to load wallet:", error);
     wallet.value = null;
-    toast({
+    toast.add({
       title: "Xatolik",
       description: "Hamyon ma'lumotlarini yuklashda xatolik.",
-      variant: "destructive",
+      color: "error",
     });
   }
 };
@@ -760,18 +789,65 @@ const loadWallet = async () => {
 const loadTransactions = async () => {
   loadingTransactions.value = true;
   try {
-    const response = await api.get<Transaction[]>(
-      apiService.value,
-      `/teacher-transaction/teacher/${teacherId.value}`
-    );
-    transactions.value = response;
+    // Build query parameters
+    const params = new URLSearchParams({
+      teacher_id: teacherId.value,
+      page: currentPage.value.toString(),
+      limit: transactionsPerPage.value.toString(),
+    });
+
+    // Add type filter if not "all"
+    if (transactionFilter.value && transactionFilter.value !== "all") {
+      params.append("type", transactionFilter.value);
+    }
+
+    // Add date range filters
+    if (dateFrom.value) {
+      params.append("start_date", new Date(dateFrom.value).toISOString());
+    }
+    if (dateTo.value) {
+      params.append("end_date", new Date(dateTo.value).toISOString());
+    }
+
+    // Add search filter
+    if (transactionSearch.value) {
+      params.append("search", transactionSearch.value);
+    }
+
+    const response = await api.get<{
+      data: Transaction[];
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
+      totalAmount: number;
+    }>(apiService.value, `/teacher-transaction?${params.toString()}`);
+
+    // Handle response with pagination
+    if (response?.data && Array.isArray(response.data)) {
+      transactions.value = response.data;
+      currentPage.value = response.pagination.page;
+      totalPages.value = response.pagination.totalPages;
+      totalTransactions.value = response.pagination.total;
+      totalTransactionsAmount.value = response.totalAmount;
+    } else {
+      transactions.value = [];
+      totalPages.value = 1;
+      totalTransactions.value = 0;
+      totalTransactionsAmount.value = 0;
+    }
   } catch (error) {
     console.error("Failed to load transactions:", error);
     transactions.value = [];
-    toast({
+    totalPages.value = 1;
+    totalTransactions.value = 0;
+    totalTransactionsAmount.value = 0;
+    toast.add({
       title: "Xatolik",
       description: "Tranzaksiyalarni yuklashda xatolik.",
-      variant: "destructive",
+      color: "error",
     });
   } finally {
     loadingTransactions.value = false;
@@ -783,16 +859,16 @@ const loadStudents = async () => {
   try {
     const response = await api.get<Student[]>(
       apiService.value,
-      `/group-students/teacher/${teacherId.value}/students`
+      `/group-students/teacher/${teacherId.value}/students`,
     );
     students.value = response;
   } catch (error) {
     console.error("Failed to load students:", error);
     students.value = [];
-    toast({
+    toast.add({
       title: "Xatolik",
       description: "O'quvchilarni yuklashda xatolik.",
-      variant: "destructive",
+      color: "error",
     });
   } finally {
     loadingStudents.value = false;
@@ -801,10 +877,10 @@ const loadStudents = async () => {
 
 const loadStudentAttendance = async (studentId: string) => {
   if (!studentDateFrom.value || !studentDateTo.value) {
-    toast({
+    toast.add({
       title: "Xatolik",
       description: "Iltimos, sanalarni tanlang.",
-      variant: "destructive",
+      color: "error",
     });
     return;
   }
@@ -813,7 +889,7 @@ const loadStudentAttendance = async (studentId: string) => {
   try {
     const response = await api.get<any[]>(
       apiService.value,
-      `/attendance/student/${studentId}/daterange?startDate=${studentDateFrom.value}&endDate=${studentDateTo.value}&teacherId=${teacherId.value}`
+      `/attendance/student/${studentId}/daterange?startDate=${studentDateFrom.value}&endDate=${studentDateTo.value}&teacherId=${teacherId.value}`,
     );
 
     // Calculate attendance statistics
@@ -833,23 +909,24 @@ const loadStudentAttendance = async (studentId: string) => {
 
 const loadAllStudentsAttendance = async () => {
   if (!studentDateFrom.value || !studentDateTo.value) {
-    toast({
+    toast.add({
       title: "Xatolik",
       description: "Iltimos, sanalarni tanlang.",
-      variant: "destructive",
+      color: "error",
     });
     return;
   }
 
   studentAttendance.value = {};
   const promises = students.value.map((student) =>
-    loadStudentAttendance(student.student.user_id)
+    loadStudentAttendance(student.student.user_id),
   );
   await Promise.all(promises);
 
-  toast({
+  toast.add({
     title: "Muvaffaqiyat",
     description: "Davomat ma'lumotlari yuklandi.",
+    color: "success",
   });
 };
 
@@ -857,15 +934,15 @@ const loadExpenseCategories = async () => {
   try {
     const response = await api.get<ExpenseCategory[]>(
       apiService.value,
-      "/expense-categories"
+      "/expense-categories",
     );
     expenseCategories.value = response;
   } catch (error) {
     console.error("Failed to load expense categories:", error);
-    toast({
+    toast.add({
       title: "Xatolik",
       description: "Xarajat turlarini yuklashda xatolik.",
-      variant: "destructive",
+      color: "error",
     });
   }
 };
@@ -876,7 +953,7 @@ const submitPayment = async () => {
   isSubmittingPayment.value = true;
   try {
     const selectedCategory = expenseCategories.value.find(
-      (c) => c.id === paymentForm.category_id
+      (c) => c.id === paymentForm.category_id,
     );
     const categoryName = selectedCategory?.name || "To'lov";
 
@@ -892,9 +969,10 @@ const submitPayment = async () => {
 
     await api.post(apiService.value, "/expenses", payload);
 
-    toast({
+    toast.add({
       title: "Muvaffaqiyat",
       description: "To'lov muvaffaqiyatli amalga oshirildi.",
+      color: "success",
     });
 
     // Reset form
@@ -909,10 +987,10 @@ const submitPayment = async () => {
     await loadWallet();
   } catch (error) {
     console.error("Failed to submit payment:", error);
-    toast({
+    toast.add({
       title: "Xatolik",
       description: "To'lovni amalga oshirishda xatolik yuz berdi.",
-      variant: "destructive",
+      color: "error",
     });
   } finally {
     isSubmittingPayment.value = false;
@@ -935,9 +1013,7 @@ const loadAllData = async () => {
 };
 
 const getInitials = (firstName: string, lastName: string) => {
-  return `${firstName?.charAt(0) || ""}${
-    lastName?.charAt(0) || ""
-  }`.toUpperCase();
+  return `${firstName?.charAt(0) || ""}${lastName?.charAt(0) || ""}`.toUpperCase();
 };
 
 const formatCurrency = (amount: number) => {
@@ -952,7 +1028,21 @@ const formatCurrency = (amount: number) => {
 const formatDateTime = (dateString: string) => {
   if (!dateString) return "N/A";
   const date = new Date(dateString);
-  return date.toLocaleString("uz-UZ");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const year = date.getUTCFullYear();
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+  return `${day}-${month}-${year} ${hours}:${minutes}`;
+};
+
+const formatDate = (dateString: string) => {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const year = date.getUTCFullYear();
+  return `${day}-${month}-${year}`;
 };
 
 const clearDateFilters = () => {
@@ -970,27 +1060,37 @@ const getTransactionLabel = (type: string) => {
   return labels[type] || type;
 };
 
-const getTransactionBadgeVariant = (type: string) => {
-  if (type === "kirim") return "default";
-  if (type === "bonus") return "default";
-  return "secondary";
+const getTransactionBadgeColor = (type: string) => {
+  if (type === "kirim" || type === "bonus") return "green";
+  return "gray";
 };
 
 const getTransactionIcon = (type: string) => {
-  if (type === "kirim" || type === "bonus") return "lucide:arrow-down-left";
-  return "lucide:arrow-up-right";
+  if (type === "kirim" || type === "bonus") return "i-lucide-arrow-down-left";
+  return "i-lucide-arrow-up-right";
 };
 
 const getTransactionAmountClass = (type: string) => {
   if (type === "kirim" || type === "bonus")
-    return "text-green-600 font-semibold";
-  return "text-red-600 font-semibold";
+    return "text-green-600 font-semibold text-right";
+  return "text-red-600 font-semibold text-right";
 };
 
 const getTransactionSign = (type: string) => {
   if (type === "kirim" || type === "bonus") return "+";
   return "-";
 };
+
+// Watch for filter changes and reload transactions
+watch([transactionFilter, dateFrom, dateTo, transactionSearch], () => {
+  currentPage.value = 1; // Reset to first page when filters change
+  loadTransactions();
+});
+
+// Watch for page changes
+watch(currentPage, () => {
+  loadTransactions();
+});
 
 // Lifecycle
 onMounted(() => {

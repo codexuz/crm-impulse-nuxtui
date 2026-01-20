@@ -1,239 +1,135 @@
 <template>
-  <div class="container py-10 space-y-6">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold tracking-tight">
-          Xarajatlar kategoriyasi
-        </h1>
-        <p class="text-muted-foreground">Xarajat kategoriyalarini boshqarish</p>
-      </div>
-      <div class="flex gap-2">
-        <Button variant="outline" @click="refreshData">
-          <Icon name="lucide:refresh-cw" class="mr-2 h-4 w-4" />
-          Yangilash
-        </Button>
-        <Button @click="openCreateDialog">
-          <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
-          Yangi kategoriya
-        </Button>
-      </div>
-    </div>
-
-    <!-- Search Filter -->
-    <div class="flex flex-col sm:flex-row gap-4">
-      <Input
-        v-model="searchQuery"
-        placeholder="Kategoriya nomini qidirish..."
-        class="sm:max-w-xs"
+  <UDashboardPanel id="categories">
+    <template #header>
+      <UDashboardNavbar
+        title="Xarajatlar kategoriyasi"
+        :ui="{ right: 'gap-3' }"
       >
         <template #leading>
-          <Icon name="lucide:search" class="h-4 w-4" />
+          <UDashboardSidebarCollapse />
         </template>
-      </Input>
-    </div>
 
-    <!-- Categories Table -->
-    <Card>
-      <CardContent class="p-0">
-        <div class="p-2 border-b">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Kategoriya nomi</TableHead>
-                <TableHead class="text-right">Amallar</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow v-if="loading">
-                <TableCell colspan="2" class="text-center py-10">
-                  <div class="flex justify-center items-center">
-                    <Icon
-                      name="lucide:loader-2"
-                      class="h-8 w-8 animate-spin text-muted-foreground"
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
-              <TableRow v-else-if="paginatedCategories.length === 0">
-                <TableCell colspan="2" class="text-center py-10">
-                  <div class="flex justify-center">
-                    <Icon
-                      name="lucide:search-x"
-                      class="h-8 w-8 text-muted-foreground"
-                    />
-                  </div>
-                  <p class="text-muted-foreground mt-2">
-                    Kategoriyalar topilmadi
-                  </p>
-                </TableCell>
-              </TableRow>
-              <TableRow
-                v-for="category in paginatedCategories"
-                :key="category.id"
-                class="hover:bg-muted/50"
-              >
-                <TableCell>
-                  <div class="flex items-center gap-2">
-                    <Badge variant="outline">
-                      <Icon name="lucide:tag" class="h-3 w-3 mr-1" />
-                      {{ category.name }}
-                    </Badge>
-                  </div>
-                </TableCell>
-                <TableCell class="text-right">
-                  <div class="flex justify-end space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      @click="editCategory(category)"
-                      title="Tahrirlash"
-                    >
-                      <Icon name="lucide:pencil" class="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      @click="deleteCategory(category)"
-                      title="O'chirish"
-                    >
-                      <Icon
-                        name="lucide:trash-2"
-                        class="h-4 w-4 text-red-500"
-                      />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
+        <template #description> Xarajat kategoriyalarini boshqarish </template>
 
-        <!-- Pagination -->
-        <div class="flex items-center justify-between p-4">
-          <div class="text-sm text-muted-foreground">
-            Ko'rsatilmoqda
-            <span class="font-medium">{{ paginationStart }}</span> dan
-            <span class="font-medium">{{ paginationEnd }}</span> gacha
-            <span class="font-medium">{{ filteredCategories.length }}</span> ta
-            kategoriya
-          </div>
+        <template #right>
+          <UButton
+            icon="i-lucide-plus"
+            label="Yangi kategoriya"
+            @click="openCreateDialog"
+          />
+        </template>
+      </UDashboardNavbar>
+    </template>
 
-          <Pagination
-            v-model:page="currentPage"
-            :total="filteredCategories.length"
-            :items-per-page="itemsPerPage"
-            :sibling-count="1"
-            @update:page="onPageChange"
-          >
-            <PaginationContent>
-              <PaginationPrevious
-                :disabled="currentPage === 1"
-                @click="navigatePage(currentPage - 1)"
+    <template #body>
+      <div>
+        <!-- Filters Section -->
+        <UDashboardToolbar>
+          <template #left>
+            <UInput
+              v-model="searchQuery"
+              icon="i-lucide-search"
+              placeholder="Kategoriya nomini qidirish..."
+              class="w-64"
+            />
+          </template>
+
+          <template #right>
+            <UButton
+              icon="i-lucide-refresh-cw"
+              label="Yangilash"
+              variant="outline"
+              @click="refreshData"
+            />
+          </template>
+        </UDashboardToolbar>
+
+        <!-- Categories Table -->
+        <UCard>
+          <template #header>
+            <h3 class="text-base font-semibold">Kategoriyalar ro'yxati</h3>
+          </template>
+
+          <UTable
+            :data="paginatedCategories"
+            :columns="columns"
+            :loading="loading"
+            :empty="'Kategoriyalar topilmadi'"
+          />
+
+          <template #footer>
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-gray-500">
+                <span class="font-medium">{{ paginationStart }}</span> dan
+                <span class="font-medium">{{ paginationEnd }}</span> gacha, jami
+                <span class="font-medium">{{ filteredCategories.length }}</span>
+                ta kategoriya
+              </div>
+
+              <UPagination
+                :model-value="currentPage"
+                :total="filteredCategories.length"
+                :items-per-page="itemsPerPage"
+                show-last
+                show-first
+                @update:page="onPageChange"
               />
+            </div>
+          </template>
+        </UCard>
+      </div>
 
-              <PaginationItem
-                v-for="pageNum in displayedPages"
-                :key="pageNum"
-                :value="pageNum"
-                :is-active="pageNum === currentPage"
-                @click="navigatePage(pageNum)"
-              >
-                {{ pageNum }}
-              </PaginationItem>
-
-              <PaginationEllipsis v-if="showEndEllipsis" />
-
-              <PaginationNext
-                :disabled="currentPage === totalPages"
-                @click="navigatePage(currentPage + 1)"
+      <!-- Create/Edit Modal -->
+      <UModal
+        v-model:open="showCategoryDialog"
+        :title="isEditMode ? 'Kategoriyani tahrirlash' : 'Yangi kategoriya'"
+      >
+        <template #body>
+          <form @submit.prevent="saveCategory" class="space-y-4">
+            <div class="space-y-2">
+              <label class="block text-sm font-medium">
+                Kategoriya nomi
+                <span class="text-red-500">*</span>
+              </label>
+              <UInput
+                v-model="categoryForm.name"
+                placeholder="Kategoriya nomi"
+                required
+                class="w-full"
+                @keyup.enter="saveCategory"
               />
-            </PaginationContent>
-          </Pagination>
-        </div>
-      </CardContent>
-    </Card>
+            </div>
+          </form>
+        </template>
 
-    <!-- Create/Edit Dialog -->
-    <Dialog v-model:open="showCategoryDialog">
-      <DialogContent class="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>
-            {{ isEditMode ? "Kategoriyani tahrirlash" : "Yangi kategoriya" }}
-          </DialogTitle>
-          <DialogDescription>
-            {{
-              isEditMode
-                ? "Kategoriya nomini tahrirlang"
-                : "Yangi kategoriya qo'shing"
-            }}
-          </DialogDescription>
-        </DialogHeader>
-        <div class="grid gap-4 py-4">
-          <div class="grid grid-cols-4 items-center gap-4">
-            <Label for="name" class="text-right">Nomi *</Label>
-            <Input
-              id="name"
-              v-model="categoryForm.name"
-              placeholder="Kategoriya nomi"
-              class="col-span-3"
-              @keyup.enter="saveCategory"
+        <template #footer="{ close }">
+          <div class="flex justify-end gap-2">
+            <UButton
+              color="neutral"
+              variant="outline"
+              label="Bekor qilish"
+              @click="close"
+            />
+            <UButton
+              :label="isSaving ? 'Saqlanmoqda...' : 'Saqlash'"
+              :loading="isSaving"
+              @click="saveCategory"
             />
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" @click="showCategoryDialog = false">
-            Bekor qilish
-          </Button>
-          <Button @click="saveCategory" :disabled="isSaving">
-            <Icon
-              v-if="isSaving"
-              name="lucide:loader-2"
-              class="mr-2 h-4 w-4 animate-spin"
-            />
-            {{ isSaving ? "Saqlanmoqda..." : "Saqlash" }}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    <!-- Delete Confirmation Dialog -->
-    <AlertDialog v-model:open="showDeleteDialog">
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Ishonchingiz komilmi?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Ushbu kategoriyani o'chirmoqchimisiz? Bu amalni bekor qilib
-            bo'lmaydi.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
-          <AlertDialogAction
-            @click="confirmDelete"
-            class="bg-red-600 hover:bg-red-700"
-          >
-            O'chirish
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  </div>
+        </template>
+      </UModal>
+    </template>
+  </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import type { TableColumn } from "@nuxt/ui";
+import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 
-import { api } from "~/lib/api";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
-} from "@/components/ui/pagination";
+const UBadge = resolveComponent("UBadge");
+const UButton = resolveComponent("UButton");
+const UPopover = resolveComponent("UPopover");
 
 definePageMeta({
   middleware: ["auth"],
@@ -258,28 +154,104 @@ const searchQuery = ref("");
 const currentPage = ref(1);
 const itemsPerPage = 10;
 const showCategoryDialog = ref(false);
-const showDeleteDialog = ref(false);
 const selectedCategory = ref<Category | null>(null);
 const isEditMode = ref(false);
 const isSaving = ref(false);
+const isDeleting = ref(false);
+const deletePopoverOpen = ref<Record<string, boolean>>({});
 
 // Form data
 const categoryForm = reactive({
   name: "",
 });
 
+// Table columns
+const columns: TableColumn<Category>[] = [
+  {
+    accessorKey: "name",
+    header: "Kategoriya nomi",
+    cell: ({ row }) => {
+      return h("div", { class: "flex items-center gap-2" }, [
+        h("span", { class: "i-lucide-tag text-gray-500" }),
+        h(
+          UBadge,
+          () => row.original.name,
+        ),
+      ]);
+    },
+  },
+  {
+    id: "actions",
+    header: "Amallar",
+    cell: ({ row }) => {
+      const categoryId = row.original.id;
+      return h("div", { class: "flex justify-end gap-1" }, [
+        h(UButton, {
+          variant: "ghost",
+          icon: "i-lucide-pencil",
+          size: "sm",
+          square: true,
+          onClick: () => editCategory(row.original),
+        }),
+        h(
+          UPopover,
+          {
+            open: deletePopoverOpen.value[categoryId] || false,
+            "onUpdate:open": (value: boolean) => {
+              deletePopoverOpen.value[categoryId] = value;
+            },
+          },
+          {
+            default: () =>
+              h(UButton, {
+                color: "error",
+                variant: "ghost",
+                icon: "i-lucide-trash-2",
+                size: "sm",
+                square: true,
+              }),
+            content: () =>
+              h("div", { class: "p-4 max-w-sm space-y-3" }, [
+                h(
+                  "h4",
+                  { class: "font-semibold text-sm" },
+                  "Ishonchingiz komilmi?",
+                ),
+                h(
+                  "p",
+                  { class: "text-sm text-gray-600" },
+                  "Bu kategoriyani butunlay o'chiradi. Bu amalni qaytarib bo'lmaydi.",
+                ),
+                h("div", { class: "flex justify-end gap-2 mt-3" }, [
+                  h(UButton, {
+                    color: "neutral",
+                    variant: "subtle",
+                    label: "Bekor qilish",
+                    size: "sm",
+                    onClick: () => {
+                      deletePopoverOpen.value[categoryId] = false;
+                    },
+                  }),
+                  h(UButton, {
+                    color: "red",
+                    label: isDeleting.value ? "O'chirilmoqda..." : "O'chirish",
+                    loading: isDeleting.value,
+                    size: "sm",
+                    onClick: async () => {
+                      await confirmDelete(row.original);
+                      deletePopoverOpen.value[categoryId] = false;
+                    },
+                  }),
+                ]),
+              ]),
+          },
+        ),
+      ]);
+    },
+  },
+];
+
 // Computed properties
-const categoriesCount = computed(() => categories.value.length);
-
-const lastAddedCategory = computed(() => {
-  if (categories.value.length === 0) return null;
-  const sorted = [...categories.value].sort(
-    (a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
-  return sorted[0]?.name;
-});
-
 const filteredCategories = computed(() => {
   return categories.value.filter((category) => {
     return category.name
@@ -307,41 +279,8 @@ const paginationStart = computed(() => {
 const paginationEnd = computed(() => {
   return Math.min(
     currentPage.value * itemsPerPage,
-    filteredCategories.value.length
+    filteredCategories.value.length,
   );
-});
-
-// Pagination display helpers
-const displayedPages = computed(() => {
-  if (totalPages.value <= 7) {
-    return Array.from({ length: totalPages.value }, (_, i) => i + 1);
-  }
-
-  const pages = [];
-  pages.push(1);
-
-  if (currentPage.value <= 3) {
-    pages.push(2, 3, 4);
-  } else if (currentPage.value >= totalPages.value - 2) {
-    pages.push(
-      totalPages.value - 3,
-      totalPages.value - 2,
-      totalPages.value - 1
-    );
-  } else {
-    pages.push(currentPage.value - 1, currentPage.value, currentPage.value + 1);
-  }
-
-  if (!pages.includes(totalPages.value)) {
-    pages.push(totalPages.value);
-  }
-
-  return [...new Set(pages)].sort((a, b) => a - b);
-});
-
-const showEndEllipsis = computed(() => {
-  const lastDisplayedPage = Math.max(...displayedPages.value);
-  return lastDisplayedPage < totalPages.value;
 });
 
 // Fetch data
@@ -350,33 +289,20 @@ const fetchCategories = async () => {
   try {
     const response = await api.get<Category[]>(
       apiService.value,
-      "/expense-categories"
+      "/expense-categories",
     );
     categories.value = response || [];
   } catch (error) {
     console.error("Failed to fetch categories:", error);
-    toast.toast({
+    toast.add({
       title: "Xatolik",
       description: "Kategoriyalarni yuklashda xatolik yuz berdi",
-      variant: "destructive",
+      color: "error",
     });
     categories.value = [];
   } finally {
     loading.value = false;
   }
-};
-
-// Helper functions
-const formatDate = (dateString: string) => {
-  if (!dateString) return "N/A";
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat("uz-UZ", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
 };
 
 // Action handlers
@@ -397,18 +323,13 @@ const editCategory = (category: Category) => {
   showCategoryDialog.value = true;
 };
 
-const deleteCategory = (category: Category) => {
-  selectedCategory.value = category;
-  showDeleteDialog.value = true;
-};
-
 const saveCategory = async () => {
   // Validation
   if (!categoryForm.name.trim()) {
-    toast.toast({
+    toast.add({
       title: "Xatolik",
       description: "Iltimos, kategoriya nomini kiriting",
-      variant: "destructive",
+      color: "error",
     });
     return;
   }
@@ -423,17 +344,19 @@ const saveCategory = async () => {
       await api.patch(
         apiService.value,
         `/expense-categories/${selectedCategory.value.id}`,
-        data
+        data,
       );
-      toast.toast({
+      toast.add({
         title: "Muvaffaqiyat",
         description: "Kategoriya muvaffaqiyatli yangilandi",
+        color: "success",
       });
     } else {
       await api.post(apiService.value, "/expense-categories", data);
-      toast.toast({
+      toast.add({
         title: "Muvaffaqiyat",
         description: "Kategoriya muvaffaqiyatli qo'shildi",
+        color: "success",
       });
     }
 
@@ -442,37 +365,37 @@ const saveCategory = async () => {
     fetchCategories();
   } catch (error) {
     console.error("Failed to save category:", error);
-    toast.toast({
+    toast.add({
       title: "Xatolik",
       description: "Kategoriyani saqlashda xatolik yuz berdi",
-      variant: "destructive",
+      color: "error",
     });
   } finally {
     isSaving.value = false;
   }
 };
 
-const confirmDelete = async () => {
-  if (!selectedCategory.value) return;
+const confirmDelete = async (category: Category) => {
+  if (!category) return;
 
+  isDeleting.value = true;
   try {
-    await api.delete(
-      apiService.value,
-      `/expense-categories/${selectedCategory.value.id}`
-    );
-    toast.toast({
+    await api.delete(apiService.value, `/expense-categories/${category.id}`);
+    toast.add({
       title: "Muvaffaqiyat",
       description: "Kategoriya muvaffaqiyatli o'chirildi",
+      color: "success",
     });
-    showDeleteDialog.value = false;
     fetchCategories();
   } catch (error) {
     console.error("Failed to delete category:", error);
-    toast.toast({
+    toast.add({
       title: "Xatolik",
       description: "Kategoriyani o'chirishda xatolik yuz berdi",
-      variant: "destructive",
+      color: "error",
     });
+  } finally {
+    isDeleting.value = false;
   }
 };
 
@@ -482,13 +405,6 @@ const resetForm = () => {
 };
 
 // Navigation functions for pagination
-const navigatePage = (newPage: number) => {
-  if (newPage >= 1 && newPage <= totalPages.value) {
-    currentPage.value = newPage;
-    updateUrlParams();
-  }
-};
-
 const onPageChange = (newPage: number) => {
   if (newPage >= 1 && newPage <= totalPages.value) {
     currentPage.value = newPage;

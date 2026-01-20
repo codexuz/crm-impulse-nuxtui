@@ -398,7 +398,11 @@
                 <label class="block text-sm font-medium">
                   Keyingi to'lov sanasi
                 </label>
-                <UInput v-model="editPayment.next_payment_date" type="date" class="w-full"/>
+                <UInput
+                  v-model="editPayment.next_payment_date"
+                  type="date"
+                  class="w-full"
+                />
               </div>
             </div>
             <div class="space-y-2">

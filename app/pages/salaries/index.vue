@@ -1,381 +1,496 @@
 <template>
-  <div>
-    <div class="flex justify-between items-center mb-6">
-      <div>
-        <h2 class="text-3xl font-bold tracking-tight">O'qituvchilar maoshi</h2>
-        <p class="text-muted-foreground">
-          O'qituvchilar maoshi va to'lov ma'lumotlarini boshqarish
-        </p>
-      </div>
-    </div>
+  <UDashboardPanel id="salaries">
+    <template #header>
+      <UDashboardNavbar title="Oyliklar" :ui="{ right: 'gap-3' }">
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
 
-    <div class="space-y-4">
-      <!-- Teacher Selection -->
-      <div class="flex items-center gap-4">
-        <Input
-          v-model="teacherSearch"
-          placeholder="O'qituvchini qidirish..."
-          class="max-w-sm"
-        />
-        <Select v-model="selectedTeacherId" class="flex-1">
-          <SelectTrigger>
-            <SelectValue placeholder="O'qituvchini tanlang" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem
-              v-for="teacher in filteredTeachers"
-              :key="teacher.user_id"
-              :value="teacher.user_id"
-            >
-              <div class="flex items-center justify-between w-full">
-                <span>{{ teacher.first_name }} {{ teacher.last_name }}</span>
-                <Badge
-                  v-if="teacher.teacher_profile"
-                  variant="outline"
-                  class="ml-2"
-                >
-                  {{
-                    teacher.teacher_profile.payment_type === "percentage"
-                      ? "Foiz"
-                      : "Qat'iy"
-                  }}
-                </Badge>
-              </div>
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+        <template #description>
+          O'qituvchilar oylik ma'lumotlari va hisobotlari
+        </template>
 
-      <!-- Teacher Salary Information -->
-      <Card v-if="selectedTeacher">
-        <CardHeader>
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-              <Avatar class="h-16 w-16">
-                <AvatarFallback class="text-lg">
-                  {{
-                    getInitials(
-                      selectedTeacher.first_name,
-                      selectedTeacher.last_name
-                    )
-                  }}
-                </AvatarFallback>
-              </Avatar>
+        <template #right>
+          <UButton icon="i-lucide-wallet" label="Hamyonlar" variant="outline" />
+        </template>
+      </UDashboardNavbar>
+    </template>
+
+    <template #body>
+      <div class="space-y-6">
+        <!-- Stats Overview -->
+        <div class="grid gap-4 md:grid-cols-4">
+          <UCard>
+            <div class="flex items-center justify-between">
               <div>
-                <CardTitle>
+                <p class="text-sm font-medium text-gray-500">
+                  Jami o'qituvchilar
+                </p>
+                <p class="text-2xl font-bold mt-1">{{ teachersCount }}</p>
+                <p class="text-xs text-gray-500 mt-1">Aktiv o'qituvchilar</p>
+              </div>
+              <span class="i-lucide-users text-gray-400 text-2xl"></span>
+            </div>
+          </UCard>
+
+          <UCard>
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-500">
+                  Jami hamyon balansi
+                </p>
+                <p class="text-2xl font-bold mt-1">
+                  {{ formatCurrency(totalWalletBalance) }}
+                </p>
+                <p class="text-xs text-gray-500 mt-1">Barcha hamyonlar</p>
+              </div>
+              <span class="i-lucide-wallet text-gray-400 text-2xl"></span>
+            </div>
+          </UCard>
+
+          <UCard>
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-500">Jami talabalar</p>
+                <p class="text-2xl font-bold mt-1">{{ totalStudents }}</p>
+                <p class="text-xs text-gray-500 mt-1">Barcha guruhlar</p>
+              </div>
+              <span
+                class="i-lucide-graduation-cap text-gray-400 text-2xl"
+              ></span>
+            </div>
+          </UCard>
+
+          <UCard>
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-500">Jami guruhlar</p>
+                <p class="text-2xl font-bold mt-1">{{ totalGroups }}</p>
+                <p class="text-xs text-gray-500 mt-1">Aktiv guruhlar</p>
+              </div>
+              <span class="i-lucide-users-round text-gray-400 text-2xl"></span>
+            </div>
+          </UCard>
+        </div>
+
+        <!-- Filters Section -->
+        <UDashboardToolbar>
+          <template #left>
+            <UInput
+              v-model="searchQuery"
+              icon="i-lucide-search"
+              placeholder="O'qituvchi ismi yoki telefon..."
+              class="w-64"
+            />
+          </template>
+
+          <template #right>
+            <USelectMenu
+              v-model="paymentTypeFilter"
+              :items="paymentTypeOptions"
+              value-key="value"
+              placeholder="To'lov turi"
+              class="w-40"
+            >
+              <template #label>
+                {{
+                  paymentTypeOptions.find((p) => p.value === paymentTypeFilter)
+                    ?.label || "To'lov turi"
+                }}
+              </template>
+            </USelectMenu>
+
+            <UButton
+              v-if="hasActiveFilters"
+              icon="i-lucide-x"
+              label="Tozalash"
+              variant="ghost"
+              @click="clearFilters"
+            />
+
+            <UButton
+              icon="i-lucide-refresh-cw"
+              label="Yangilash"
+              variant="outline"
+              @click="refreshData"
+            />
+          </template>
+        </UDashboardToolbar>
+
+        <!-- Salaries Table -->
+        <UCard>
+          <template #header>
+            <h3 class="text-base font-semibold">O'qituvchilar ro'yxati</h3>
+          </template>
+
+          <UTable
+            :data="paginatedTeachers"
+            :columns="columns"
+            :loading="loading"
+            :empty="'O\'qituvchilar topilmadi'"
+          />
+
+          <template #footer>
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-gray-500">
+                <span class="font-medium">{{ paginationStart }}</span> dan
+                <span class="font-medium">{{ paginationEnd }}</span> gacha, jami
+                <span class="font-medium">{{ filteredTeachers.length }}</span>
+                ta o'qituvchi
+              </div>
+
+              <UPagination
+                :model-value="currentPage"
+                :total="filteredTeachers.length"
+                :items-per-page="itemsPerPage"
+                show-last
+                show-first
+                @update:page="onPageChange"
+              />
+            </div>
+          </template>
+        </UCard>
+      </div>
+
+      <!-- View Modal -->
+      <UModal v-model:open="showViewDialog" title="O'qituvchi tafsilotlari">
+        <template #body>
+          <div v-if="selectedTeacher" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <h4 class="text-sm font-medium text-gray-500 mb-1">F.I.Sh.</h4>
+                <p class="font-medium">
                   {{ selectedTeacher.first_name }}
                   {{ selectedTeacher.last_name }}
-                </CardTitle>
-                <CardDescription>
-                  {{ selectedTeacher.phone }}
-                </CardDescription>
+                </p>
+              </div>
+              <div>
+                <h4 class="text-sm font-medium text-gray-500 mb-1">Telefon</h4>
+                <p>{{ selectedTeacher.phone }}</p>
               </div>
             </div>
-            <Badge
-              :variant="selectedTeacher.is_active ? 'default' : 'secondary'"
-            >
-              {{ selectedTeacher.is_active ? "Faol" : "Nofaol" }}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div v-if="selectedTeacher.teacher_profile" class="space-y-6">
-            <!-- Payment Information -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardHeader class="pb-3">
-                  <CardDescription>O'quvchilar soni</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div class="text-2xl font-bold">
-                    <div
-                      v-if="loadingStudentsCount"
-                      class="flex items-center gap-2"
-                    >
-                      <Icon
-                        name="lucide:loader-2"
-                        class="h-6 w-6 animate-spin"
-                      />
-                      <span class="text-lg">Yuklanmoqda...</span>
-                    </div>
-                    <div v-else>{{ studentsCount }} ta o'quvchi</div>
-                  </div>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardHeader class="pb-3">
-                  <CardDescription>To'lov miqdori</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div class="text-2xl font-bold">
-                    {{
-                      selectedTeacher.teacher_profile.payment_type ===
-                      "percentage"
-                        ? `${formatCurrency(
-                            selectedTeacher.teacher_profile.payment_value
-                          )} / dars`
-                        : formatCurrency(
-                            selectedTeacher.teacher_profile.payment_value
-                          )
-                    }}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader class="pb-3">
-                  <CardDescription>To'lov kuni</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div class="text-2xl font-bold">
-                    Har oyning
-                    {{ selectedTeacher.teacher_profile.payment_day }}-kuni
-                  </div>
-                </CardContent>
-              </Card>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <h4 class="text-sm font-medium text-gray-500 mb-1">
+                  To'lov turi
+                </h4>
+                <UBadge
+                  :color="
+                    selectedTeacher.payment_type === 'percentage'
+                      ? 'blue'
+                      : 'green'
+                  "
+                >
+                  {{
+                    selectedTeacher.payment_type === "percentage"
+                      ? "Foiz"
+                      : "Fix"
+                  }}
+                </UBadge>
+              </div>
+              <div>
+                <h4 class="text-sm font-medium text-gray-500 mb-1">
+                  To'lov qiymati
+                </h4>
+                <p>
+                  {{
+                    selectedTeacher.payment_type === "percentage"
+                      ? formatCurrency(selectedTeacher.payment_value)
+                      : formatCurrency(selectedTeacher.payment_value)
+                  }}
+                </p>
+              </div>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="flex gap-2">
-              <Button @click="calculateSalary" variant="default">
-                <Icon name="lucide:calculator" class="mr-2 h-4 w-4" />
-                Maoshni hisoblash
-              </Button>
-              <Button @click="viewSalaryHistory" variant="outline">
-                <Icon name="lucide:history" class="mr-2 h-4 w-4" />
-                Maosh tarixi
-              </Button>
-              <Button @click="navigateToTeacherDetail" variant="outline">
-                <Icon name="lucide:user" class="mr-2 h-4 w-4" />
-                Profil
-              </Button>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <h4 class="text-sm font-medium text-gray-500 mb-1">
+                  Hamyon balansi
+                </h4>
+                <p class="font-semibold text-green-600">
+                  {{ formatCurrency(selectedTeacher.walletBalance) }}
+                </p>
+              </div>
+              <div>
+                <h4 class="text-sm font-medium text-gray-500 mb-1">
+                  Kompensatsiya balansi
+                </h4>
+                <p class="font-semibold text-blue-600">
+                  {{ formatCurrency(selectedTeacher.compensateBalance) }}
+                </p>
+              </div>
             </div>
-          </div>
-          <div v-else class="text-center py-8">
-            <Icon
-              name="lucide:alert-circle"
-              class="h-12 w-12 text-muted-foreground mx-auto mb-3"
-            />
-            <p class="text-muted-foreground">
-              Bu o'qituvchi uchun maosh profili yaratilmagan
-            </p>
-            <Button @click="createSalaryProfile" class="mt-4">
-              <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
-              Maosh profilini yaratish
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
-      <!-- Empty State -->
-      <Card v-else>
-        <CardContent class="py-10">
-          <div class="text-center">
-            <Icon
-              name="lucide:user-search"
-              class="h-16 w-16 text-muted-foreground mx-auto mb-4"
-            />
-            <h3 class="text-lg font-semibold mb-2">O'qituvchini tanlang</h3>
-            <p class="text-muted-foreground">
-              Maosh ma'lumotlarini ko'rish uchun yuqoridan o'qituvchini tanlang
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <h4 class="text-sm font-medium text-gray-500 mb-1">
+                  Guruhlar soni
+                </h4>
+                <p>{{ selectedTeacher.groupsCount }}</p>
+              </div>
+              <div>
+                <h4 class="text-sm font-medium text-gray-500 mb-1">
+                  Talabalar soni
+                </h4>
+                <p>{{ selectedTeacher.studentsCount }}</p>
+              </div>
+            </div>
 
-    <!-- Edit Salary Dialog -->
-    <Dialog v-model:open="editDialog">
-      <DialogContent class="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Maoshni tahrirlash</DialogTitle>
-          <DialogDescription>
-            O'qituvchi maosh ma'lumotlarini yangilash
-          </DialogDescription>
-        </DialogHeader>
-        <form v-if="editingProfile" @submit.prevent="updateSalary">
-          <div class="grid gap-4 py-4">
-            <div class="grid grid-cols-4 items-center gap-4">
-              <Label for="payment_type" class="text-right">To'lov turi</Label>
-              <Select v-model="editingProfile.payment_type" class="col-span-3">
-                <SelectTrigger id="payment_type">
-                  <SelectValue placeholder="To'lov turini tanlang" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="percentage">Foiz asosida</SelectItem>
-                  <SelectItem value="fixed">Qat'iy maosh</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div class="grid grid-cols-4 items-center gap-4">
-              <Label for="payment_value" class="text-right">Miqdor</Label>
-              <Input
-                id="payment_value"
-                v-model="editingProfile.payment_value"
-                type="number"
-                step="1"
-                class="col-span-3"
-              />
-            </div>
-            <div class="grid grid-cols-4 items-center gap-4">
-              <Label for="payment_day" class="text-right">To'lov kuni</Label>
-              <Input
-                id="payment_day"
-                v-model="editingProfile.payment_day"
-                type="number"
-                min="1"
-                max="31"
-                class="col-span-3"
-              />
+            <div>
+              <h4 class="text-sm font-medium text-gray-500 mb-1">
+                Ro'yxatdan o'tgan sana
+              </h4>
+              <p class="text-sm">
+                {{ formatDate(selectedTeacher.created_at) }}
+              </p>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" @click="editDialog = false">
-              Bekor qilish
-            </Button>
-            <Button type="submit" :disabled="isUpdating">
-              <Icon
-                v-if="isUpdating"
-                name="lucide:loader-2"
-                class="mr-2 h-4 w-4 animate-spin"
-              />
-              {{ isUpdating ? "Saqlanmoqda..." : "Saqlash" }}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  </div>
+        </template>
+
+        <template #footer="{ close }">
+          <div class="flex justify-end">
+            <UButton label="Yopish" @click="close" />
+          </div>
+        </template>
+      </UModal>
+    </template>
+  </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted, watch } from "vue";
+import type { TableColumn } from "@nuxt/ui";
+import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 
-import { api } from "~/lib/api";
+const UBadge = resolveComponent("UBadge");
+const UButton = resolveComponent("UButton");
 
-const { apiService } = useAuth();
-const { toast } = useToast();
-const router = useRouter();
-
-interface TeacherProfile {
-  id: string;
-  user_id: string;
-  payment_type: "percentage" | "fixed";
-  payment_value: number;
-  payment_day: number;
-  createdAt: string;
-  updatedAt: string;
-}
+definePageMeta({
+  middleware: ["auth"],
+});
 
 interface Teacher {
   user_id: string;
   username: string;
-  level_id: string | null;
-  phone: string;
   first_name: string;
   last_name: string;
+  phone: string;
   avatar_url: string | null;
-  is_active: boolean;
+  branch_id: string | null;
+  payment_type: "percentage" | "fixed";
+  payment_value: number;
+  groupsCount: number;
+  studentsCount: number;
+  walletBalance: number;
+  compensateBalance: number;
   created_at: string;
-  last_login: string;
-  currentSessionId: string;
-  roles: any[];
-  teacher_profile: TeacherProfile | null;
 }
 
-// State
+const { apiService } = useAuth();
+const toast = useToast();
+const router = useRouter();
+const route = useRoute();
+
+// State variables
 const teachers = ref<Teacher[]>([]);
-const isLoading = ref(true);
-const teacherSearch = ref("");
-const selectedTeacherId = ref<string>("");
-const editDialog = ref(false);
-const editingProfile = ref<TeacherProfile | null>(null);
-const isUpdating = ref(false);
-const studentsCount = ref(0);
-const loadingStudentsCount = ref(false);
+const loading = ref(true);
+const searchQuery = ref("");
+const paymentTypeFilter = ref<string | null>(null);
+const currentPage = ref(1);
+const itemsPerPage = 10;
+const showViewDialog = ref(false);
+const selectedTeacher = ref<Teacher | null>(null);
 
-// Computed
+// Table columns
+const columns: TableColumn<Teacher>[] = [
+  {
+    accessorKey: "first_name",
+    header: "O'qituvchi",
+    cell: ({ row }) => {
+      return h("div", {}, [
+        h(
+          "div",
+          { class: "font-medium" },
+          `${row.original.first_name} ${row.original.last_name}`,
+        ),
+        h("div", { class: "text-xs text-gray-500" }, row.original.phone),
+      ]);
+    },
+  },
+  {
+    accessorKey: "payment_type",
+    header: "To'lov turi",
+    cell: ({ row }) => {
+      return h(
+        UBadge,
+        {
+          color: row.original.payment_type === "percentage" ? "blue" : "green",
+        },
+        () => (row.original.payment_type === "percentage" ? "Foiz" : "Fix"),
+      );
+    },
+  },
+  {
+    accessorKey: "payment_value",
+    header: "To'lov qiymati",
+    cell: ({ row }) => formatCurrency(row.original.payment_value),
+  },
+  {
+    accessorKey: "walletBalance",
+    header: "Hamyon balansi",
+    cell: ({ row }) => {
+      return h(
+        "span",
+        { class: "font-semibold text-green-600" },
+        formatCurrency(row.original.walletBalance),
+      );
+    },
+  },
+  {
+    accessorKey: "groupsCount",
+    header: "Guruhlar",
+    cell: ({ row }) => row.original.groupsCount,
+  },
+  {
+    accessorKey: "studentsCount",
+    header: "Talabalar",
+    cell: ({ row }) => row.original.studentsCount,
+  },
+  {
+    id: "actions",
+    header: "Amallar",
+    cell: ({ row }) => {
+      return h("div", { class: "flex justify-end gap-1" }, [
+        h(UButton, {
+          variant: "ghost",
+          icon: "i-lucide-eye",
+          size: "sm",
+          square: true,
+          onClick: () => navigateToTeacher(row.original.user_id),
+        }),
+      ]);
+    },
+  },
+];
+
+// Options
+const paymentTypeOptions = [
+  { label: "Barchasi", value: null },
+  { label: "Foiz", value: "percentage" },
+  { label: "Fix", value: "fixed" },
+];
+
+// Computed properties
 const filteredTeachers = computed(() => {
-  if (!teacherSearch.value) {
-    return teachers.value;
-  }
-
-  const searchLower = teacherSearch.value.toLowerCase();
-  return teachers.value.filter(
-    (teacher) =>
-      teacher.first_name?.toLowerCase().includes(searchLower) ||
-      teacher.last_name?.toLowerCase().includes(searchLower) ||
-      `${teacher.first_name} ${teacher.last_name}`
+  return teachers.value.filter((teacher) => {
+    // Filter by search query
+    const searchMatch =
+      teacher.first_name
         .toLowerCase()
-        .includes(searchLower) ||
-      teacher.phone?.includes(teacherSearch.value) ||
-      teacher.username?.toLowerCase().includes(searchLower)
+        .includes(searchQuery.value.toLowerCase()) ||
+      teacher.last_name
+        .toLowerCase()
+        .includes(searchQuery.value.toLowerCase()) ||
+      teacher.phone.includes(searchQuery.value);
+
+    // Filter by payment type
+    const paymentTypeMatch =
+      !paymentTypeFilter.value ||
+      teacher.payment_type === paymentTypeFilter.value;
+
+    return searchMatch && paymentTypeMatch;
+  });
+});
+
+const teachersCount = computed(() => filteredTeachers.value.length);
+
+const totalWalletBalance = computed(() => {
+  return filteredTeachers.value.reduce(
+    (sum, teacher) => sum + teacher.walletBalance,
+    0,
   );
 });
 
-const selectedTeacher = computed(() => {
-  if (!selectedTeacherId.value) return null;
-  return teachers.value.find((t) => t.user_id === selectedTeacherId.value);
+const totalStudents = computed(() => {
+  return filteredTeachers.value.reduce(
+    (sum, teacher) => sum + teacher.studentsCount,
+    0,
+  );
 });
 
-// Watch for teacher selection change
-watch(selectedTeacherId, async (newTeacherId) => {
-  if (newTeacherId) {
-    await loadStudentsCount(newTeacherId);
-  } else {
-    studentsCount.value = 0;
-  }
+const totalGroups = computed(() => {
+  return filteredTeachers.value.reduce(
+    (sum, teacher) => sum + teacher.groupsCount,
+    0,
+  );
 });
 
-// Methods
-const loadTeachers = async () => {
-  isLoading.value = true;
+const totalPages = computed(() => {
+  return Math.max(1, Math.ceil(filteredTeachers.value.length / itemsPerPage));
+});
+
+const paginatedTeachers = computed(() => {
+  const startIndex = (currentPage.value - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  return filteredTeachers.value.slice(startIndex, endIndex);
+});
+
+const paginationStart = computed(() => {
+  return filteredTeachers.value.length === 0
+    ? 0
+    : (currentPage.value - 1) * itemsPerPage + 1;
+});
+
+const paginationEnd = computed(() => {
+  return Math.min(
+    currentPage.value * itemsPerPage,
+    filteredTeachers.value.length,
+  );
+});
+
+const hasActiveFilters = computed(() => {
+  return searchQuery.value !== "" || paymentTypeFilter.value !== null;
+});
+
+// Fetch data
+const fetchTeachers = async () => {
+  loading.value = true;
   try {
-    const response = await api.get<Teacher[]>(
-      apiService.value,
-      "/users/teachers"
-    );
-    teachers.value = response;
+    const response = await api.get<{
+      data: Teacher[];
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      };
+    }>(apiService.value, "/teacher-wallet/stats/teachers?limit=100");
+
+    teachers.value = response.data || [];
   } catch (error) {
-    console.error("Failed to load teachers:", error);
-    toast({
+    console.error("Failed to fetch teachers:", error);
+    toast.add({
       title: "Xatolik",
-      description:
-        "O'qituvchilarni yuklashda xatolik. Qaytadan urinib ko'ring.",
-      variant: "destructive",
+      description: "O'qituvchilarni yuklashda xatolik yuz berdi",
+      color: "error",
     });
+    teachers.value = [];
   } finally {
-    isLoading.value = false;
+    loading.value = false;
   }
 };
 
-const loadStudentsCount = async (teacherId: string) => {
-  loadingStudentsCount.value = true;
-  try {
-    const response = await api.get<{ count: number }>(
-      apiService.value,
-      `/group-students/teacher/${teacherId}/count`
-    );
-    studentsCount.value = response.count || 0;
-  } catch (error) {
-    console.error("Failed to load students count:", error);
-    studentsCount.value = 0;
-    toast({
-      title: "Xatolik",
-      description: "O'quvchilar sonini yuklashda xatolik.",
-      variant: "destructive",
-    });
-  } finally {
-    loadingStudentsCount.value = false;
-  }
-};
-
-const getInitials = (firstName: string, lastName: string) => {
-  return `${firstName?.charAt(0) || ""}${
-    lastName?.charAt(0) || ""
-  }`.toUpperCase();
+// Helper functions
+const formatDate = (dateString: string) => {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const year = date.getUTCFullYear();
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+  return `${day}-${month}-${year} ${hours}:${minutes}`;
 };
 
 const formatCurrency = (amount: number) => {
@@ -387,74 +502,69 @@ const formatCurrency = (amount: number) => {
   );
 };
 
-const formatDate = (dateString: string) => {
-  if (!dateString) return "N/A";
-  const date = new Date(dateString);
-  return date.toLocaleDateString("uz-UZ");
+// Action handlers
+const refreshData = () => {
+  fetchTeachers();
 };
 
-const formatDateTime = (dateString: string) => {
-  if (!dateString) return "N/A";
-  const date = new Date(dateString);
-  return date.toLocaleString("uz-UZ");
+const navigateToTeacher = (teacherId: string) => {
+  router.push(`/salaries/teacher/${teacherId}`);
 };
 
-const calculateSalary = () => {
-  if (!selectedTeacherId.value) return;
-  router.push(`/salaries/teacher/${selectedTeacherId.value}`);
+const viewTeacher = (teacher: Teacher) => {
+  selectedTeacher.value = teacher;
+  showViewDialog.value = true;
 };
 
-const updateSalary = async () => {
-  if (!editingProfile.value) return;
+const clearFilters = () => {
+  searchQuery.value = "";
+  paymentTypeFilter.value = null;
+};
 
-  isUpdating.value = true;
-  try {
-    // API call to update teacher salary profile would go here
-    // const response = await api.patch(
-    //   apiService.value,
-    //   `/teacher-profiles/${editingProfile.value.id}`,
-    //   editingProfile.value
-    // );
-
-    toast({
-      title: "Muvaffaqiyat",
-      description: "Maosh ma'lumotlari muvaffaqiyatli yangilandi",
-    });
-
-    editDialog.value = false;
-    await loadTeachers();
-  } catch (error) {
-    console.error("Failed to update salary:", error);
-    toast({
-      title: "Xatolik",
-      description: "Maoshni yangilashda xatolik. Qaytadan urinib ko'ring.",
-      variant: "destructive",
-    });
-  } finally {
-    isUpdating.value = false;
+// Navigation functions for pagination
+const onPageChange = (newPage: number) => {
+  if (newPage >= 1 && newPage <= totalPages.value) {
+    currentPage.value = newPage;
+    updateUrlParams();
   }
 };
 
-const createSalaryProfile = () => {
-  toast({
-    title: "Tez orada",
-    description: "Maosh profili yaratish funksiyasi tez orada qo'shiladi",
-  });
+const updateUrlParams = () => {
+  const query: Record<string, string> = {
+    page: currentPage.value.toString(),
+  };
+
+  if (searchQuery.value) {
+    query.search = searchQuery.value;
+  }
+
+  if (paymentTypeFilter.value) {
+    query.payment_type = paymentTypeFilter.value;
+  }
+
+  router.push({ query });
 };
 
-const viewSalaryHistory = () => {
-  if (!selectedTeacherId.value) return;
-  router.push(`/salaries/history?teacher=${selectedTeacherId.value}`);
-};
-
-const navigateToTeacherDetail = () => {
-  if (!selectedTeacher.value) return;
-  const searchName = selectedTeacher.value.first_name.toLowerCase();
-  router.push(`/teachers/profile?search=${searchName}`);
-};
-
-// Lifecycle
+// Initialize data on component mount
 onMounted(() => {
-  loadTeachers();
+  if (route.query.page) {
+    currentPage.value = parseInt(route.query.page as string, 10);
+  }
+
+  if (route.query.search) {
+    searchQuery.value = route.query.search as string;
+  }
+
+  if (route.query.payment_type) {
+    paymentTypeFilter.value = route.query.payment_type as string;
+  }
+
+  fetchTeachers();
+});
+
+// Watch for filter changes and reset to page 1
+watch([searchQuery, paymentTypeFilter], () => {
+  currentPage.value = 1;
+  updateUrlParams();
 });
 </script>
