@@ -12,16 +12,20 @@
       </UDashboardNavbar>
 
       <UDashboardToolbar>
-        <template #left>
-          <UInput
-            v-model="filters.query"
-            icon="i-lucide-search"
-            placeholder="O'qituvchi bo'yicha qidirish..."
-            class="w-64"
-          />
-        </template>
-
         <template #right>
+          <UInput
+            v-model="filters.start_date"
+            type="date"
+            placeholder="Boshlanish sanasi"
+            class="w-48"
+          />
+
+          <UInput
+            v-model="filters.end_date"
+            type="date"
+            placeholder="Tugash sanasi"
+            class="w-48"
+          />
           <USelectMenu
             v-model="filters.teacherId"
             :items="teacherOptions"
@@ -235,9 +239,10 @@ const currentPage = ref(1);
 
 // Filters
 const filters = ref({
-  query: "",
   teacherId: "all",
   compensated: "all",
+  start_date: "",
+  end_date: "",
   limit: 10,
 });
 
@@ -477,6 +482,10 @@ const loadCompensatedLessons = async () => {
       params.append("teacher_id", filters.value.teacherId);
     if (filters.value.compensated !== "all")
       params.append("compensated", filters.value.compensated);
+    if (filters.value.start_date)
+      params.append("start_date", filters.value.start_date);
+    if (filters.value.end_date)
+      params.append("end_date", filters.value.end_date);
 
     const response = await api.get<{
       data: CompensatedLesson[];
@@ -520,11 +529,12 @@ const updateUrlParams = () => {
     limit: filters.value.limit.toString(),
   };
 
-  if (filters.value.query) query.search = filters.value.query;
   if (filters.value.teacherId !== "all")
     query.teacherId = filters.value.teacherId;
   if (filters.value.compensated !== "all")
     query.compensated = filters.value.compensated;
+  if (filters.value.start_date) query.start_date = filters.value.start_date;
+  if (filters.value.end_date) query.end_date = filters.value.end_date;
 
   router.push({ query });
 };
@@ -626,9 +636,10 @@ watch(
 
 watch(
   [
-    () => filters.value.query,
     () => filters.value.teacherId,
     () => filters.value.compensated,
+    () => filters.value.start_date,
+    () => filters.value.end_date,
   ],
   () => {
     currentPage.value = 1;
@@ -646,14 +657,17 @@ onMounted(async () => {
   if (route.query.limit) {
     filters.value.limit = parseInt(route.query.limit as string) || 10;
   }
-  if (route.query.search) {
-    filters.value.query = route.query.search as string;
-  }
   if (route.query.teacherId) {
     filters.value.teacherId = route.query.teacherId as string;
   }
   if (route.query.compensated) {
     filters.value.compensated = route.query.compensated as string;
+  }
+  if (route.query.start_date) {
+    filters.value.start_date = route.query.start_date as string;
+  }
+  if (route.query.end_date) {
+    filters.value.end_date = route.query.end_date as string;
   }
 
   await loadTeachers();

@@ -1,325 +1,239 @@
 <template>
-  <div class="container py-10 space-y-6">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold tracking-tight">O'qituvchi profillar</h1>
-        <p class="text-muted-foreground">
-          O'qituvchilarning to'lov ma'lumotlarini boshqarish
-        </p>
-      </div>
-      <div class="flex gap-2">
-        <Button variant="outline" @click="refreshData">
-          <Icon name="lucide:refresh-cw" class="mr-2 h-4 w-4" />
-          Yangilash
-        </Button>
-        <Button @click="openCreateDialog">
-          <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
-          Yangi profil
-        </Button>
-      </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="flex flex-col sm:flex-row gap-4">
-      <Input
-        v-model="searchQuery"
-        placeholder="O'qituvchi ismi bilan qidirish..."
-        class="sm:max-w-xs"
-      >
+  <UDashboardPanel id="teacher-profiles">
+    <template #header>
+      <UDashboardNavbar title="O'qituvchi profillar" :ui="{ right: 'gap-3' }">
         <template #leading>
-          <Icon name="lucide:search" class="h-4 w-4" />
+          <UDashboardSidebarCollapse />
         </template>
-      </Input>
-      <Select v-model="paymentTypeFilter">
-        <SelectTrigger class="sm:max-w-[200px]">
-          <SelectValue placeholder="To'lov turi" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Barcha turlar</SelectItem>
-          <SelectItem value="percentage">Foiz</SelectItem>
-          <SelectItem value="fixed">Qat'iy summa</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
 
-    <!-- Table -->
-    <Card>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>O'qituvchi</TableHead>
-              <TableHead>To'lov turi</TableHead>
-              <TableHead>To'lov qiymati</TableHead>
-              <TableHead>To'lov kuni</TableHead>
-              <TableHead class="text-right">Amallar</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody v-if="!loading && paginatedProfiles.length > 0">
-            <TableRow v-for="profile in paginatedProfiles" :key="profile.id">
-              <TableCell class="font-medium">
-                {{ profile.teacher_name || "N/A" }}
-              </TableCell>
-              <TableCell>
-                <Badge
-                  :variant="
-                    profile.payment_type === 'percentage'
-                      ? 'default'
-                      : 'secondary'
+        <template #description>
+          O'qituvchilarning to'lov ma'lumotlarini boshqarish
+        </template>
+
+        <template #right>
+          <UButton
+            icon="i-lucide-refresh-cw"
+            variant="outline"
+            @click="refreshData"
+          />
+          <UButton
+            icon="i-lucide-plus"
+            label="Yangi profil"
+            @click="openCreateDialog"
+          />
+        </template>
+      </UDashboardNavbar>
+
+      <UDashboardToolbar>
+        <template #left>
+          <UInput
+            v-model="searchQuery"
+            icon="i-lucide-search"
+            placeholder="O'qituvchi ismi bilan qidirish..."
+            class="w-64"
+          />
+        </template>
+
+        <template #right>
+          <USelectMenu
+            :model-value="paymentTypeFilter"
+            @update:model-value="
+              (val: string | any) =>
+                (paymentTypeFilter =
+                  typeof val === 'string' ? val : val?.value || 'all')
+            "
+            :items="paymentTypeOptions"
+            value-attribute="value"
+            option-attribute="label"
+            placeholder="To'lov turi"
+            class="w-48"
+          />
+        </template>
+      </UDashboardToolbar>
+    </template>
+
+    <template #body>
+      <div>
+        <!-- Profiles Table -->
+        <UCard>
+          <template #header>
+            <h3 class="text-base font-semibold">Profillar ro'yxati</h3>
+          </template>
+
+          <UTable
+            :data="paginatedProfiles"
+            :columns="columns"
+            :loading="loading"
+            :empty="'Profillar topilmadi'"
+          />
+
+          <template #footer>
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-gray-500">
+                <span class="font-medium">{{ paginationStart }}</span> dan
+                <span class="font-medium">{{ paginationEnd }}</span> gacha, jami
+                <span class="font-medium">{{ totalItems }}</span> ta profil
+              </div>
+
+              <UPagination
+                :model-value="currentPage"
+                :total="totalItems"
+                :items-per-page="itemsPerPage"
+                show-last
+                show-first
+                @update:page="(p: number) => (currentPage = p)"
+              />
+            </div>
+          </template>
+        </UCard>
+      </div>
+
+      <!-- Create/Edit Dialog -->
+      <UModal v-model:open="isDialogOpen" :ui="{ width: 'sm:max-w-[500px]' }">
+        <template #header>
+          <h3 class="text-lg font-semibold">
+            {{ isEditMode ? "Profilni tahrirlash" : "Yangi profil qo'shish" }}
+          </h3>
+        </template>
+
+        <template #body>
+          <div class="space-y-4">
+            <div>
+              <UFormField label="O'qituvchi" required>
+                <USelectMenu
+                  v-model="profileForm.user_id"
+                  :items="teacherOptions"
+                  value-attribute="value"
+                  option-attribute="label"
+                  placeholder="O'qituvchini tanlang"
+                  :disabled="isEditMode"
+                />
+              </UFormField>
+            </div>
+
+            <div>
+              <UFormField label="To'lov turi" required>
+                <USelectMenu
+                  v-model="profileForm.payment_type"
+                  :items="paymentTypeSelectOptions"
+                  value-attribute="value"
+                  option-attribute="label"
+                  placeholder="To'lov turini tanlang"
+                />
+              </UFormField>
+            </div>
+
+            <div>
+              <UFormField label="Bir dars uchun to'lov" required>
+                <UInput
+                  v-model.number="profileForm.payment_value"
+                  type="number"
+                  placeholder="Summani kiriting"
+                  :min="0"
+                />
+              </UFormField>
+            </div>
+
+            <div>
+              <UFormField label="To'lov kuni">
+                <UInput
+                  v-model.number="profileForm.payment_day"
+                  type="number"
+                  placeholder="1-31"
+                  :min="1"
+                  :max="31"
+                />
+              </UFormField>
+            </div>
+          </div>
+        </template>
+
+        <template #footer>
+          <div class="flex justify-end gap-3">
+            <UButton
+              color="neutral"
+              variant="subtle"
+              label="Bekor qilish"
+              @click="isDialogOpen = false"
+            />
+            <UButton label="Saqlash" @click="saveProfile" />
+          </div>
+        </template>
+      </UModal>
+
+      <!-- View Dialog -->
+      <UModal
+        v-model:open="isViewDialogOpen"
+        :ui="{ width: 'sm:max-w-[500px]' }"
+      >
+        <template #header>
+          <h3 class="text-lg font-semibold">Profil ma'lumotlari</h3>
+        </template>
+
+        <template #body>
+          <div v-if="selectedProfile" class="space-y-4 py-4">
+            <div class="grid grid-cols-3 gap-4">
+              <span class="font-semibold">O'qituvchi:</span>
+              <span class="col-span-2">{{
+                selectedProfile.teacher_name || "N/A"
+              }}</span>
+            </div>
+            <div class="grid grid-cols-3 gap-4">
+              <span class="font-semibold">To'lov turi:</span>
+              <span class="col-span-2">
+                <UBadge
+                  :color="
+                    selectedProfile.payment_type === 'percentage'
+                      ? 'blue'
+                      : 'gray'
                   "
                 >
                   {{
-                    profile.payment_type === "percentage"
+                    selectedProfile.payment_type === "percentage"
                       ? "Foiz"
                       : "Qat'iy summa"
                   }}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                {{ formatCurrency(profile.payment_value || 0) }}
-              </TableCell>
-              <TableCell> {{ profile.payment_day || "N/A" }}-kun </TableCell>
-              <TableCell class="text-right">
-                <div class="flex justify-end gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    @click="viewProfile(profile)"
-                  >
-                    <Icon name="lucide:eye" class="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    @click="editProfile(profile)"
-                  >
-                    <Icon name="lucide:pencil" class="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    @click="confirmDelete(profile)"
-                  >
-                    <Icon
-                      name="lucide:trash-2"
-                      class="h-4 w-4 text-destructive"
-                    />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody v-else-if="loading">
-            <TableRow>
-              <TableCell colspan="5" class="text-center py-10">
-                Yuklanmoqda...
-              </TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody v-else>
-            <TableRow>
-              <TableCell colspan="5" class="text-center py-10">
-                Ma'lumot topilmadi
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </CardContent>
-      <CardFooter class="flex items-center justify-between">
-        <div class="text-sm text-muted-foreground">
-          Ko'rsatilmoqda {{ paginationStart }} - {{ paginationEnd }} /
-          {{ totalItems }} ta profil
-        </div>
-        <Pagination
-          v-model:page="currentPage"
-          :total="filteredProfiles.length"
-          :items-per-page="itemsPerPage"
-          :sibling-count="1"
-        >
-          <PaginationContent>
-            <PaginationPrevious
-              :disabled="currentPage === 1"
-              @click="currentPage = Math.max(1, currentPage - 1)"
-            />
-
-            <PaginationItem
-              v-for="pageNum in displayedPages"
-              :key="pageNum"
-              :value="pageNum"
-              :is-active="pageNum === currentPage"
-              @click="currentPage = pageNum"
-            >
-              {{ pageNum }}
-            </PaginationItem>
-
-            <PaginationEllipsis v-if="showEndEllipsis" />
-
-            <PaginationNext
-              :disabled="currentPage === totalPages"
-              @click="currentPage = Math.min(totalPages, currentPage + 1)"
-            />
-          </PaginationContent>
-        </Pagination>
-      </CardFooter>
-    </Card>
-
-    <!-- Create/Edit Dialog -->
-    <Dialog v-model:open="isDialogOpen">
-      <DialogContent class="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>
-            {{ isEditMode ? "Profilni tahrirlash" : "Yangi profil qo'shish" }}
-          </DialogTitle>
-          <DialogDescription>
-            O'qituvchi to'lov ma'lumotlarini kiriting
-          </DialogDescription>
-        </DialogHeader>
-        <div class="grid gap-4 py-4">
-          <div class="grid grid-cols-4 items-center gap-4">
-            <Label for="teacher" class="text-right">O'qituvchi *</Label>
-            <div class="col-span-3">
-              <Select v-model="profileForm.user_id" :disabled="isEditMode">
-                <SelectTrigger id="teacher">
-                  <SelectValue placeholder="O'qituvchini tanlang" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem
-                    v-for="teacher in teachers"
-                    :key="teacher.user_id"
-                    :value="teacher.user_id"
-                  >
-                    {{ teacher.first_name }} {{ teacher.last_name }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                </UBadge>
+              </span>
             </div>
-          </div>
-          <div class="grid grid-cols-4 items-center gap-4">
-            <Label for="payment_type" class="text-right">To'lov turi *</Label>
-            <div class="col-span-3">
-              <Select v-model="profileForm.payment_type">
-                <SelectTrigger id="payment_type">
-                  <SelectValue placeholder="To'lov turini tanlang" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="percentage">Foiz</SelectItem>
-                  <SelectItem value="fixed">Qat'iy summa</SelectItem>
-                </SelectContent>
-              </Select>
+            <div class="grid grid-cols-3 gap-4">
+              <span class="font-semibold">Bir dars uchun:</span>
+              <span class="col-span-2">
+                {{ formatCurrency(selectedProfile.payment_value || 0) }}
+              </span>
             </div>
-          </div>
-          <div class="grid grid-cols-4 items-center gap-4">
-            <Label for="payment_value" class="text-right">
-              Bir dars uchun to'lov *
-            </Label>
-            <Input
-              id="payment_value"
-              v-model.number="profileForm.payment_value"
-              type="number"
-              placeholder="Summani kiriting"
-              class="col-span-3"
-              :min="0"
-            />
-          </div>
-          <div class="grid grid-cols-4 items-center gap-4">
-            <Label for="payment_day" class="text-right">To'lov kuni</Label>
-            <Input
-              id="payment_day"
-              v-model.number="profileForm.payment_day"
-              type="number"
-              placeholder="1-31"
-              class="col-span-3"
-              min="1"
-              max="31"
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" @click="isDialogOpen = false">
-            Bekor qilish
-          </Button>
-          <Button @click="saveProfile">Saqlash</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    <!-- View Dialog -->
-    <Dialog v-model:open="isViewDialogOpen">
-      <DialogContent class="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Profil ma'lumotlari</DialogTitle>
-        </DialogHeader>
-        <div class="space-y-4 py-4" v-if="selectedProfile">
-          <div class="grid grid-cols-3 gap-4">
-            <span class="font-semibold">O'qituvchi:</span>
-            <span class="col-span-2">{{
-              selectedProfile.teacher_name || "N/A"
-            }}</span>
-          </div>
-          <div class="grid grid-cols-3 gap-4">
-            <span class="font-semibold">To'lov turi:</span>
-            <span class="col-span-2">
-              <Badge
-                :variant="
-                  selectedProfile.payment_type === 'percentage'
-                    ? 'default'
-                    : 'secondary'
-                "
+            <div class="grid grid-cols-3 gap-4">
+              <span class="font-semibold">To'lov kuni:</span>
+              <span class="col-span-2"
+                >{{ selectedProfile.payment_day || "N/A" }}-kun</span
               >
-                {{
-                  selectedProfile.payment_type === "percentage"
-                    ? "Foiz"
-                    : "Qat'iy summa"
-                }}
-              </Badge>
-            </span>
+            </div>
           </div>
-          <div class="grid grid-cols-3 gap-4">
-            <span class="font-semibold">Bir dars uchun:</span>
-            <span class="col-span-2">
-              {{ formatCurrency(selectedProfile.payment_value || 0) }}
-            </span>
-          </div>
-          <div class="grid grid-cols-3 gap-4">
-            <span class="font-semibold">To'lov kuni:</span>
-            <span class="col-span-2"
-              >{{ selectedProfile.payment_day || "N/A" }}-kun</span
-            >
-          </div>
-        </div>
-        <DialogFooter>
-          <Button @click="isViewDialogOpen = false">Yopish</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </template>
 
-    <!-- Delete Confirmation Dialog -->
-    <AlertDialog v-model:open="isDeleteDialogOpen">
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Profilni o'chirish</AlertDialogTitle>
-          <AlertDialogDescription>
-            Haqiqatan ham bu profilni o'chirmoqchimisiz? Bu amalni ortga
-            qaytarib bo'lmaydi.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
-          <AlertDialogAction @click="deleteProfile"
-            >O'chirish</AlertDialogAction
-          >
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  </div>
+        <template #footer>
+          <div class="flex justify-end gap-3">
+            <UButton label="Yopish" @click="isViewDialogOpen = false" />
+          </div>
+        </template>
+      </UModal>
+    </template>
+  </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import type { TableColumn } from "@nuxt/ui";
 import { useAuth } from "~/composables/useAuth";
 import { api } from "~/lib/api";
-import { toast } from "vue-sonner";
+
+definePageMeta({
+  layout: "default",
+  middleware: "auth",
+});
+
+const UBadge = resolveComponent("UBadge");
+const UButton = resolveComponent("UButton");
+const UPopover = resolveComponent("UPopover");
 
 interface TeacherProfile {
   id: string;
@@ -342,6 +256,7 @@ interface Teacher {
 const { apiService } = useAuth();
 const router = useRouter();
 const route = useRoute();
+const toast = useToast();
 
 // State variables
 const profiles = ref<TeacherProfile[]>([]);
@@ -357,9 +272,10 @@ const totalServerPages = ref(1);
 // Dialog states
 const isDialogOpen = ref(false);
 const isViewDialogOpen = ref(false);
-const isDeleteDialogOpen = ref(false);
 const isEditMode = ref(false);
 const selectedProfile = ref<TeacherProfile | null>(null);
+const deletePopoverOpen = ref<Record<string, boolean>>({});
+const isDeleting = ref(false);
 
 // Form data
 const profileForm = ref({
@@ -368,6 +284,134 @@ const profileForm = ref({
   payment_value: null as number | null,
   payment_day: null as number | null,
 });
+
+// Options
+const paymentTypeOptions = [
+  { label: "Barcha turlar", value: "all" },
+  { label: "Foiz", value: "percentage" },
+  { label: "Qat'iy summa", value: "fixed" },
+];
+
+const paymentTypeSelectOptions = [
+  { label: "Foiz", value: "percentage" },
+  { label: "Qat'iy summa", value: "fixed" },
+];
+
+const teacherOptions = computed(() =>
+  teachers.value.map((t) => ({
+    label: `${t.first_name} ${t.last_name}`,
+    value: t.user_id,
+  })),
+);
+
+// Table columns
+const columns: TableColumn<TeacherProfile>[] = [
+  {
+    accessorKey: "teacher_name",
+    header: "O'qituvchi",
+    cell: ({ row }) => row.original.teacher_name || "N/A",
+  },
+  {
+    accessorKey: "payment_type",
+    header: "To'lov turi",
+    cell: ({ row }) => {
+      return h(
+        UBadge,
+        {
+          color: row.original.payment_type === "percentage" ? "blue" : "gray",
+        },
+        () =>
+          row.original.payment_type === "percentage" ? "Foiz" : "Qat'iy summa",
+      );
+    },
+  },
+  {
+    accessorKey: "payment_value",
+    header: "To'lov qiymati",
+    cell: ({ row }) => formatCurrency(row.original.payment_value || 0),
+  },
+  {
+    accessorKey: "payment_day",
+    header: "To'lov kuni",
+    cell: ({ row }) => `${row.original.payment_day || "N/A"}-kun`,
+  },
+  {
+    id: "actions",
+    header: "Amallar",
+    cell: ({ row }) => {
+      const profileId = row.original.id;
+      return h("div", { class: "flex items-center gap-1" }, [
+        h(UButton, {
+          variant: "ghost",
+          icon: "i-lucide-eye",
+          size: "sm",
+          square: true,
+          onClick: () => viewProfile(row.original),
+        }),
+        h(UButton, {
+          variant: "ghost",
+          icon: "i-lucide-pencil",
+          size: "sm",
+          square: true,
+          onClick: () => editProfile(row.original),
+        }),
+        h(
+          UPopover,
+          {
+            open: deletePopoverOpen.value[profileId] || false,
+            "onUpdate:open": (value: boolean) => {
+              deletePopoverOpen.value[profileId] = value;
+            },
+          },
+          {
+            default: () =>
+              h(UButton, {
+                color: "error",
+                variant: "ghost",
+                icon: "i-lucide-trash-2",
+                size: "sm",
+                square: true,
+              }),
+            content: () =>
+              h("div", { class: "p-4 max-w-sm space-y-3" }, [
+                h(
+                  "h4",
+                  { class: "font-semibold text-sm" },
+                  "Ishonchingiz komilmi?",
+                ),
+                h(
+                  "p",
+                  { class: "text-sm text-gray-600" },
+                  "Bu profilni butunlay o'chiradi va \nbarcha bog'langan ma'lumotlarni olib tashlaydi.",
+                ),
+                h("div", { class: "flex justify-end gap-2 mt-3" }, [
+                  h(UButton, {
+                    color: "neutral",
+                    variant: "subtle",
+                    label: "Bekor qilish",
+                    size: "sm",
+                    onClick: () => {
+                      deletePopoverOpen.value[profileId] = false;
+                    },
+                  }),
+                  h(UButton, {
+                    color: "red",
+                    label: isDeleting.value ? "O'chirilmoqda..." : "O'chirish",
+                    loading: isDeleting.value,
+                    size: "sm",
+                    onClick: async () => {
+                      await deleteProfile(row.original);
+                      deletePopoverOpen.value[profileId] = false;
+                    },
+                  }),
+                ]),
+              ]),
+          },
+        ),
+      ]);
+    },
+  },
+];
 
 // Computed properties
 const filteredProfiles = computed(() => {
@@ -393,33 +437,6 @@ const paginationStart = computed(() => {
 const paginationEnd = computed(() => {
   const end = currentPage.value * itemsPerPage.value;
   return Math.min(end, totalItems.value);
-});
-
-const displayedPages = computed(() => {
-  const pages = [];
-  const maxPagesToShow = 5;
-  const halfRange = Math.floor(maxPagesToShow / 2);
-
-  let startPage = Math.max(1, currentPage.value - halfRange);
-  let endPage = Math.min(totalPages.value, startPage + maxPagesToShow - 1);
-
-  if (endPage - startPage < maxPagesToShow - 1) {
-    startPage = Math.max(1, endPage - maxPagesToShow + 1);
-  }
-
-  for (let i = startPage; i <= endPage; i++) {
-    pages.push(i);
-  }
-
-  return pages;
-});
-
-const showEndEllipsis = computed(() => {
-  const lastDisplayedPage =
-    displayedPages.value[displayedPages.value.length - 1];
-  return (
-    lastDisplayedPage !== undefined && lastDisplayedPage < totalPages.value
-  );
 });
 
 // API Functions
@@ -460,7 +477,11 @@ const fetchProfiles = async () => {
     itemsPerPage.value = response.limit || 10;
   } catch (error) {
     console.error("Failed to fetch teacher profiles:", error);
-    toast.error("Profillarni yuklashda xatolik yuz berdi");
+    toast.add({
+      title: "Xatolik",
+      description: "Profillarni yuklashda xatolik yuz berdi",
+      color: "error",
+    });
     profiles.value = [];
     totalItems.value = 0;
     totalServerPages.value = 1;
@@ -530,20 +551,23 @@ const viewProfile = (profile: TeacherProfile) => {
   isViewDialogOpen.value = true;
 };
 
-const confirmDelete = (profile: TeacherProfile) => {
-  selectedProfile.value = profile;
-  isDeleteDialogOpen.value = true;
-};
-
 const saveProfile = async () => {
   // Validation
   if (!profileForm.value.user_id) {
-    toast.error("O'qituvchini tanlang");
+    toast.add({
+      title: "Xatolik",
+      description: "O'qituvchini tanlang",
+      color: "error",
+    });
     return;
   }
 
   if (!profileForm.value.payment_type) {
-    toast.error("To'lov turini tanlang");
+    toast.add({
+      title: "Xatolik",
+      description: "To'lov turini tanlang",
+      color: "error",
+    });
     return;
   }
 
@@ -551,12 +575,20 @@ const saveProfile = async () => {
     profileForm.value.payment_value === null ||
     profileForm.value.payment_value === undefined
   ) {
-    toast.error("To'lov qiymatini kiriting");
+    toast.add({
+      title: "Xatolik",
+      description: "To'lov qiymatini kiriting",
+      color: "error",
+    });
     return;
   }
 
   if (profileForm.value.payment_value < 0) {
-    toast.error("To'lov qiymati manfiy bo'lishi mumkin emas");
+    toast.add({
+      title: "Xatolik",
+      description: "To'lov qiymati manfiy bo'lishi mumkin emas",
+      color: "error",
+    });
     return;
   }
 
@@ -572,38 +604,57 @@ const saveProfile = async () => {
       await api.patch(
         apiService.value,
         `/teacher-profile/${selectedProfile.value.id}`,
-        payload
+        payload,
       );
-      toast.success("Profil muvaffaqiyatli yangilandi");
+      toast.add({
+        title: "Muvaffaqiyat",
+        description: "Profil muvaffaqiyatli yangilandi",
+        color: "success",
+      });
     } else {
       await api.post(apiService.value, "/teacher-profile", payload);
-      toast.success("Profil muvaffaqiyatli qo'shildi");
+      toast.add({
+        title: "Muvaffaqiyat",
+        description: "Profil muvaffaqiyatli qo'shildi",
+        color: "success",
+      });
     }
 
     isDialogOpen.value = false;
     await fetchProfiles();
   } catch (error: any) {
     console.error("Failed to save profile:", error);
-    toast.error(
-      error?.response?.data?.message || "Profilni saqlashda xatolik yuz berdi"
-    );
+    toast.add({
+      title: "Xatolik",
+      description:
+        error?.response?.data?.message ||
+        "Profilni saqlashda xatolik yuz berdi",
+      color: "error",
+    });
   }
 };
 
-const deleteProfile = async () => {
-  if (!selectedProfile.value) return;
+const deleteProfile = async (profile: TeacherProfile) => {
+  if (!profile) return;
 
+  isDeleting.value = true;
   try {
-    await api.delete(
-      apiService.value,
-      `/teacher-profile/${selectedProfile.value.id}`
-    );
-    toast.success("Profil muvaffaqiyatli o'chirildi");
-    isDeleteDialogOpen.value = false;
+    await api.delete(apiService.value, `/teacher-profile/${profile.id}`);
+    toast.add({
+      title: "Muvaffaqiyat",
+      description: "Profil muvaffaqiyatli o'chirildi",
+      color: "success",
+    });
     await fetchProfiles();
   } catch (error) {
     console.error("Failed to delete profile:", error);
-    toast.error("Profilni o'chirishda xatolik yuz berdi");
+    toast.add({
+      title: "Xatolik",
+      description: "Profilni o'chirishda xatolik yuz berdi",
+      color: "error",
+    });
+  } finally {
+    isDeleting.value = false;
   }
 };
 

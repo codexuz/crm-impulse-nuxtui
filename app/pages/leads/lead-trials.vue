@@ -27,30 +27,20 @@
 
           <template #right>
             <USelectMenu
-              :model-value="statusFilter"
-              @update:model-value="
-                (val: string | any) =>
-                  (statusFilter =
-                    typeof val === 'string' ? val : val?.value || '')
-              "
+              v-model="statusFilter"
+              value-key="id"
               :items="statusOptions"
-              value-attribute="value"
-              option-attribute="label"
-              placeholder="Holat"
+              placeholder="Barcha holatlar"
+              nullable
               class="w-45"
             />
 
             <USelectMenu
-              :model-value="teacherFilter"
-              @update:model-value="
-                (val: string | any) =>
-                  (teacherFilter =
-                    typeof val === 'string' ? val : val?.value || '')
-              "
+              v-model="teacherFilter"
+              value-key="id"
               :items="teacherOptions"
-              value-attribute="value"
-              option-attribute="label"
-              placeholder="O'qituvchi"
+              placeholder="Barcha o'qituvchilar"
+              nullable
               class="w-48"
             />
           </template>
@@ -90,54 +80,68 @@
         </UCard>
       </div>
 
-        <!-- Edit Trial Lesson Modal -->
-  <UModal v-model:open="showEditDialog">
-      <template #header>
-        <h3 class="text-base font-semibold">Sinov darsini tahrirlash</h3>
-      </template>
+      <!-- Edit Trial Lesson Modal -->
+      <UModal v-model:open="showEditDialog">
+        <template #header>
+          <h3 class="text-base font-semibold">Sinov darsini tahrirlash</h3>
+        </template>
 
-      <template #body>
-        <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium mb-2">Holat</label>
-          <USelectMenu
-            v-model="editingTrial.status"
-            :items="statusOptions"
-            value-attribute="value"
-            option-attribute="label"
-            placeholder="Holatni tanlang"
-          />
-        </div>
+        <template #body>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">Sana va vaqt</label>
+              <UInput
+                v-model="editingTrial.scheduledAt"
+                type="datetime-local"
+                placeholder="Sinov darsi sanasini tanlang"
+              />
+            </div>
 
-        <div>
-          <label class="block text-sm font-medium mb-2">Izohlar</label>
-          <UTextarea
-            v-model="editingTrial.notes"
-            placeholder="Sinov darsi haqida izoh qo'shing"
-            :rows="3"
-            class="w-full"
-          />
-        </div>
-      </div>
-      </template>
+            <div>
+              <label class="block text-sm font-medium mb-2">O'qituvchi</label>
+              <USelectMenu
+                v-model="editingTrial.teacher_id"
+                value-key="id"
+                :items="teacherOptions"
+                placeholder="O'qituvchini tanlang"
+              />
+            </div>
 
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <UButton
-            variant="outline"
-            label="Bekor qilish"
-            @click="showEditDialog = false"
-          />
-          <UButton label="O'zgarishlarni saqlash" @click="saveTrialChanges" />
-        </div>
-      </template>
-  </UModal>
+            <div>
+              <label class="block text-sm font-medium mb-2">Holat</label>
+              <USelectMenu
+                v-model="editingTrial.status"
+                value-key="id"
+                :items="statusOptions"
+                placeholder="Holatni tanlang"
+              />
+            </div>
 
+            <div>
+              <label class="block text-sm font-medium mb-2">Izohlar</label>
+              <UTextarea
+                v-model="editingTrial.notes"
+                placeholder="Sinov darsi haqida izoh qo'shing"
+                :rows="3"
+                class="w-full"
+              />
+            </div>
+          </div>
+        </template>
+
+        <template #footer>
+          <div class="flex justify-end gap-2">
+            <UButton
+              variant="outline"
+              label="Bekor qilish"
+              @click="showEditDialog = false"
+            />
+            <UButton label="O'zgarishlarni saqlash" @click="saveTrialChanges" />
+          </div>
+        </template>
+      </UModal>
     </template>
   </UDashboardPanel>
-
-
-
 </template>
 
 <script setup lang="ts">
@@ -204,8 +208,8 @@ const itemsPerPage = ref(10);
 const total = ref(0);
 const totalPages = ref(1);
 const searchQuery = ref("");
-const statusFilter = ref("");
-const teacherFilter = ref("");
+const statusFilter = ref("all");
+const teacherFilter = ref("all");
 const { auth, apiService } = useAuth();
 const showDeleteDialog = ref(false);
 const trialToDelete = ref<string | null>(null);
@@ -214,23 +218,26 @@ const deletePopoverOpen = ref<Record<string, boolean>>({});
 const isDeleting = ref(false);
 const editingTrial = reactive({
   id: "",
+  scheduledAt: "",
   status: "",
+  teacher_id: "",
+  lead_id: "",
   notes: "",
 });
 
 // Options
 const statusOptions = [
-  { label: "Barcha holatlar", value: "" },
-  { label: "Belgilangan", value: "belgilangan" },
-  { label: "Keldi", value: "keldi" },
-  { label: "Kelmadi", value: "kelmadi" },
+  { label: "Barcha holatlar", id: "all" },
+  { label: "Belgilangan", id: "belgilangan" },
+  { label: "Keldi", id: "keldi" },
+  { label: "Kelmadi", id: "kelmadi" },
 ];
 
 const teacherOptions = computed(() => [
-  { label: "Barcha o'qituvchilar", value: "" },
+  { label: "Barcha o'qituvchilar", id: "all" },
   ...teachers.value.map((t) => ({
     label: `${t.first_name} ${t.last_name}`,
-    value: t.user_id,
+    id: t.user_id,
   })),
 ]);
 
@@ -428,13 +435,13 @@ const updateUrlParams = () => {
     query.search = searchQuery.value;
   }
 
-  // Add status filter if it exists
-  if (statusFilter.value) {
+  // Add status filter if it exists and is not 'all'
+  if (statusFilter.value && statusFilter.value !== "all") {
     query.status = statusFilter.value;
   }
 
-  // Add teacher filter if it exists
-  if (teacherFilter.value) {
+  // Add teacher filter if it exists and is not 'all'
+  if (teacherFilter.value && teacherFilter.value !== "all") {
     query.teacherId = teacherFilter.value;
   }
 
@@ -457,11 +464,11 @@ const fetchTrialLessons = async () => {
       params.append("search", searchQuery.value);
     }
 
-    if (statusFilter.value) {
+    if (statusFilter.value && statusFilter.value !== "all") {
       params.append("status", statusFilter.value);
     }
 
-    if (teacherFilter.value) {
+    if (teacherFilter.value && teacherFilter.value !== "all") {
       params.append("teacherId", teacherFilter.value);
     }
 
@@ -509,7 +516,10 @@ const paginatedTrialLessons = computed(() => {
 // Format date
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
-  return format(date, "MMM dd, yyyy");
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 // Format time
@@ -539,7 +549,19 @@ const formatPhone = (phone: string) => {
 const openEditTrialDialog = (trial: TrialLesson) => {
   // Set the current trial data to edit
   editingTrial.id = trial.id;
+
+  // Convert ISO date to datetime-local format (YYYY-MM-DDTHH:mm) using UTC
+  const date = new Date(trial.scheduledAt);
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+  editingTrial.scheduledAt = `${year}-${month}-${day}T${hours}:${minutes}`;
+
   editingTrial.status = trial.status;
+  editingTrial.teacher_id = trial.teacher_id;
+  editingTrial.lead_id = trial.lead_id;
   editingTrial.notes = trial.notes || "";
 
   // Open the dialog
@@ -549,27 +571,24 @@ const openEditTrialDialog = (trial: TrialLesson) => {
 // Save changes to trial lesson
 const saveTrialChanges = async () => {
   try {
+    // Convert datetime-local format to ISO string, treating input as UTC
+    const scheduledAtISO = editingTrial.scheduledAt + ":00.000Z";
+
     // Make the API request to update the trial lesson
     await api.patch(
       apiService.value,
       `/lead-trial-lessons/${editingTrial.id}`,
       {
+        scheduledAt: scheduledAtISO,
         status: editingTrial.status,
+        teacher_id: editingTrial.teacher_id,
+        lead_id: editingTrial.lead_id,
         notes: editingTrial.notes,
       },
     );
 
-    // Update the trial in the local state
-    const index = trialLessons.value.findIndex(
-      (trial: TrialLesson) => trial.id === editingTrial.id,
-    );
-    if (index !== -1) {
-      const trial = trialLessons.value[index];
-      if (trial) {
-        trial.status = editingTrial.status;
-        trial.notes = editingTrial.notes;
-      }
-    }
+    // Refresh the trial lessons list to get updated data
+    await fetchTrialLessons();
 
     toast.add({
       title: "Muvaffaqiyat",
@@ -585,21 +604,6 @@ const saveTrialChanges = async () => {
       description: "Sinov darsini yangilashda xatolik",
       color: "error",
     });
-  }
-};
-
-// Confirm deletion of a trial lesson
-const confirmDeleteTrial = (trial: TrialLesson) => {
-  trialToDelete.value = trial.id;
-  showDeleteDialog.value = true;
-};
-
-// Confirm deletion from dialog
-const confirmDelete = async () => {
-  if (trialToDelete.value) {
-    await deleteTrial(trialToDelete.value);
-    showDeleteDialog.value = false;
-    trialToDelete.value = null;
   }
 };
 
