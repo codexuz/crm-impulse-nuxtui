@@ -357,6 +357,76 @@
                   </div>
                 </div>
               </template>
+
+              <!-- Compensated Lessons Tab -->
+              <template #compensated-lessons>
+                <div class="space-y-4">
+                  <!-- Toolbar -->
+                  <UDashboardToolbar>
+                    <template #left>
+                      <div class="text-sm text-gray-500">
+                        Jami
+                        <span class="font-medium">{{
+                          totalCompensatedLessons
+                        }}</span>
+                        ta qoldirilgan dars
+                      </div>
+                    </template>
+
+                    <template #right>
+                      <UButton
+                        icon="i-lucide-refresh-cw"
+                        label="Yangilash"
+                        variant="outline"
+                        @click="loadCompensatedLessons"
+                      />
+                    </template>
+                  </UDashboardToolbar>
+
+                  <!-- Compensated Lessons Table -->
+                  <UTable
+                    :data="compensatedLessons"
+                    :columns="compensatedLessonsColumns"
+                    :loading="loadingCompensatedLessons"
+                    :empty="'Qoldirilgan darslar topilmadi'"
+                  />
+
+                  <!-- Pagination -->
+                  <div
+                    v-if="totalCompensatedLessons > 0"
+                    class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-4"
+                  >
+                    <div class="text-sm text-gray-500">
+                      <span class="font-medium">{{
+                        (compensatedLessonsPage - 1) *
+                          compensatedLessonsPerPage +
+                        1
+                      }}</span>
+                      dan
+                      <span class="font-medium">{{
+                        Math.min(
+                          compensatedLessonsPage * compensatedLessonsPerPage,
+                          totalCompensatedLessons,
+                        )
+                      }}</span>
+                      gacha, jami
+                      <span class="font-medium">{{
+                        totalCompensatedLessons
+                      }}</span>
+                      ta dars
+                    </div>
+
+                    <UPagination
+                      :model-value="compensatedLessonsPage"
+                      :total="totalCompensatedLessons"
+                      :items-per-page="compensatedLessonsPerPage"
+                      show-last
+                      show-first
+                      @update:page="(p: number) => (compensatedLessonsPage = p)"
+                    />
+                  </div>
+                </div>
+              </template>
             </UTabs>
           </UCard>
         </div>
@@ -366,41 +436,43 @@
       <UModal v-model:open="paymentDialog" title="O'qituvchiga to'lov">
         <template #body>
           <form @submit.prevent="submitPayment" class="space-y-4">
-            <div class="space-y-2">
-              <label class="text-sm font-medium">Tur</label>
+            <UFormField label="Tur" name="category">
               <USelectMenu
                 v-model="paymentForm.category_id"
                 :items="filteredCategories"
-                value-key="id"
-                option-label="name"
                 placeholder="Tur tanlang"
                 required
+                class="w-full"
               />
-            </div>
+            </UFormField>
 
-            <div class="space-y-2">
-              <label class="text-sm font-medium">Summa</label>
+            <UFormField label="Summa" name="amount">
               <UInput
                 v-model.number="paymentForm.amount"
                 type="number"
                 placeholder="Summa kiriting"
                 required
+                class="w-full"
               />
-            </div>
+            </UFormField>
 
-            <div class="space-y-2">
-              <label class="text-sm font-medium">Izoh</label>
+            <UFormField label="Izoh" name="description">
               <UTextarea
                 v-model="paymentForm.description"
                 placeholder="Izoh kiriting..."
                 :rows="3"
+                class="w-full"
               />
-            </div>
+            </UFormField>
 
-            <div class="space-y-2">
-              <label class="text-sm font-medium">Sana</label>
-              <UInput v-model="paymentForm.expense_date" type="date" required />
-            </div>
+            <UFormField label="Sana" name="date">
+              <UInput
+                v-model="paymentForm.expense_date"
+                type="date"
+                required
+                class="w-full"
+              />
+            </UFormField>
           </form>
         </template>
 
@@ -458,6 +530,12 @@ interface Transaction {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  student?: {
+    user_id: string;
+    first_name: string;
+    last_name: string;
+    phone: string;
+  };
 }
 
 interface Student {
@@ -490,6 +568,41 @@ interface ExpenseCategory {
   description: string | null;
   created_at: string;
   updated_at: string;
+}
+
+interface CompensatedLesson {
+  id: string;
+  teacher_id: string;
+  compensate_lesson_id: string;
+  amount: string;
+  created_at: string;
+  paid_at: string | null;
+  isPaid: boolean;
+  compensateLesson?: {
+    id: string;
+    attendance_id: string;
+    teacher_id: string;
+    student_id: string;
+    compensated: boolean;
+    compensated_by: string;
+    valid_until: string;
+    attendance?: {
+      id: string;
+      group_id: string;
+      student_id: string;
+      teacher_id: string;
+      status: string;
+      note: string;
+      date: string;
+      student?: {
+        user_id: string;
+        first_name: string;
+        last_name: string;
+        phone: string;
+        username: string;
+      };
+    };
+  };
 }
 
 const route = useRoute();
@@ -551,6 +664,13 @@ const paymentForm = reactive({
 const dateFrom = ref(getDefaultDateFrom());
 const dateTo = ref(getDefaultDateTo());
 
+// Compensated lessons state
+const compensatedLessons = ref<CompensatedLesson[]>([]);
+const loadingCompensatedLessons = ref(false);
+const compensatedLessonsPage = ref(1);
+const compensatedLessonsPerPage = ref(10);
+const totalCompensatedLessons = ref(0);
+
 // Tab items
 const tabItems = [
   {
@@ -562,6 +682,11 @@ const tabItems = [
     label: "Davomat",
     icon: "i-lucide-calendar-check",
     slot: "attendance",
+  },
+  {
+    label: "Qoldirilgan darslar",
+    icon: "i-lucide-calendar-x",
+    slot: "compensated-lessons",
   },
 ];
 
@@ -708,6 +833,89 @@ const studentColumns: TableColumn<Student>[] = [
   },
 ];
 
+// Table columns for compensated lessons
+const compensatedLessonsColumns: TableColumn<CompensatedLesson>[] = [
+  {
+    id: "index",
+    header: "No",
+    cell: ({ row, table }) => {
+      const index = table.getRowModel().rows.indexOf(row);
+      return h(
+        "span",
+        { class: "text-gray-500" },
+        (
+          index +
+          1 +
+          (compensatedLessonsPage.value - 1) * compensatedLessonsPerPage.value
+        ).toString(),
+      );
+    },
+  },
+  {
+    accessorKey: "compensateLesson.attendance.date",
+    header: "Dars sanasi",
+    cell: ({ row }) => {
+      const date = row.original.compensateLesson?.attendance?.date;
+      return date ? formatDate(date) : h("span", { class: "text-gray-400 text-sm" }, "-");
+    },
+  },
+  {
+    accessorKey: "compensateLesson.attendance.student",
+    header: "O'quvchi",
+    cell: ({ row }) => {
+      const student = row.original.compensateLesson?.attendance?.student;
+      if (student) {
+        return h("div", { class: "flex flex-col" }, [
+          h(
+            "span",
+            { class: "font-medium" },
+            `${student.first_name} ${student.last_name}`,
+          ),
+          h("span", { class: "text-xs text-gray-500" }, student.phone),
+        ]);
+      }
+      return h("span", { class: "text-gray-400 text-sm" }, "-");
+    },
+  },
+  {
+    accessorKey: "amount",
+    header: "Summa",
+    cell: ({ row }) => {
+      return h(
+        "span",
+        { class: "font-semibold text-gray-900 dark:text-white" },
+        formatCurrency(parseFloat(row.original.amount)),
+      );
+    },
+  },
+  {
+    accessorKey: "compensateLesson.valid_until",
+    header: "Amal qilish muddati",
+    cell: ({ row }) => {
+      const validUntil = row.original.compensateLesson?.valid_until;
+      return validUntil ? formatDate(validUntil) : h("span", { class: "text-gray-400 text-sm" }, "-");
+    },
+  },
+  {
+    accessorKey: "isPaid",
+    header: "Status",
+    cell: ({ row }) => {
+      return h(UBadge, { color: row.original.isPaid ? "green" : "gray" }, () =>
+        row.original.isPaid ? "To'langan" : "Kutilmoqda",
+      );
+    },
+  },
+  {
+    accessorKey: "paid_at",
+    header: "To'langan sana",
+    cell: ({ row }) => {
+      return row.original.paid_at
+        ? formatDateTime(row.original.paid_at)
+        : h("span", { class: "text-gray-400 text-sm" }, "-");
+    },
+  },
+];
+
 // Computed
 const filteredTransactions = computed(() => {
   // Return transactions as-is, filtering is done server-side
@@ -743,11 +951,21 @@ const filteredStudents = computed(() => {
 });
 
 const filteredCategories = computed(() => {
-  return expenseCategories.value.filter(
-    (category) =>
-      category.name.toLowerCase() === "bonus" ||
-      category.name.toLowerCase() === "oylik",
-  );
+  return expenseCategories.value
+    .filter((category) => {
+      const name = category.name.toLowerCase().trim();
+      return (
+        name === "bonus" ||
+        name === "oylik" ||
+        name.includes("bonus") ||
+        name.includes("oylik")
+      );
+    })
+    .map((category) => ({
+      id: category.id,
+      label: category.name,
+      value: category.id,
+    }));
 });
 
 // Methods
@@ -803,10 +1021,10 @@ const loadTransactions = async () => {
 
     // Add date range filters
     if (dateFrom.value) {
-      params.append("start_date", new Date(dateFrom.value).toISOString());
+      params.append("start_date", new Date(dateFrom.value!).toISOString());
     }
     if (dateTo.value) {
-      params.append("end_date", new Date(dateTo.value).toISOString());
+      params.append("end_date", new Date(dateTo.value!).toISOString());
     }
 
     // Add search filter
@@ -947,6 +1165,47 @@ const loadExpenseCategories = async () => {
   }
 };
 
+const loadCompensatedLessons = async () => {
+  loadingCompensatedLessons.value = true;
+  try {
+    const params = new URLSearchParams({
+      teacher_id: teacherId.value,
+      page: compensatedLessonsPage.value.toString(),
+      limit: compensatedLessonsPerPage.value.toString(),
+    });
+
+    const response = await api.get<{
+      walletEntries: CompensatedLesson[];
+      total: number;
+      totalPages: number;
+      currentPage: number;
+    }>(
+      apiService.value,
+      `/compensate-lessons/wallet/all-teachers?${params.toString()}`,
+    );
+
+    if (response?.walletEntries && Array.isArray(response.walletEntries)) {
+      compensatedLessons.value = response.walletEntries;
+      compensatedLessonsPage.value = response.currentPage;
+      totalCompensatedLessons.value = response.total;
+    } else {
+      compensatedLessons.value = [];
+      totalCompensatedLessons.value = 0;
+    }
+  } catch (error) {
+    console.error("Failed to load compensated lessons:", error);
+    compensatedLessons.value = [];
+    totalCompensatedLessons.value = 0;
+    toast.add({
+      title: "Xatolik",
+      description: "Qoldirilgan darslarni yuklashda xatolik.",
+      color: "error",
+    });
+  } finally {
+    loadingCompensatedLessons.value = false;
+  }
+};
+
 const submitPayment = async () => {
   if (!teacher.value) return;
 
@@ -1006,6 +1265,7 @@ const loadAllData = async () => {
       loadTransactions(),
       loadStudents(),
       loadExpenseCategories(),
+      loadCompensatedLessons(),
     ]);
   } finally {
     isLoading.value = false;
@@ -1090,6 +1350,11 @@ watch([transactionFilter, dateFrom, dateTo, transactionSearch], () => {
 // Watch for page changes
 watch(currentPage, () => {
   loadTransactions();
+});
+
+// Watch for compensated lessons page changes
+watch(compensatedLessonsPage, () => {
+  loadCompensatedLessons();
 });
 
 // Lifecycle
