@@ -856,7 +856,9 @@ const compensatedLessonsColumns: TableColumn<CompensatedLesson>[] = [
     header: "Dars sanasi",
     cell: ({ row }) => {
       const date = row.original.compensateLesson?.attendance?.date;
-      return date ? formatDate(date) : h("span", { class: "text-gray-400 text-sm" }, "-");
+      return date
+        ? formatDate(date)
+        : h("span", { class: "text-gray-400 text-sm" }, "-");
     },
   },
   {
@@ -893,7 +895,9 @@ const compensatedLessonsColumns: TableColumn<CompensatedLesson>[] = [
     header: "Amal qilish muddati",
     cell: ({ row }) => {
       const validUntil = row.original.compensateLesson?.valid_until;
-      return validUntil ? formatDate(validUntil) : h("span", { class: "text-gray-400 text-sm" }, "-");
+      return validUntil
+        ? formatDate(validUntil)
+        : h("span", { class: "text-gray-400 text-sm" }, "-");
     },
   },
   {
