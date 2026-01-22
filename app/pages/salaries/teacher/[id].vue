@@ -439,7 +439,8 @@
             <UFormField label="Tur" name="category">
               <USelectMenu
                 v-model="paymentForm.category_id"
-                :items="filteredCategories"
+                :items="formattedExpenseCategories"
+                value-key="value"
                 placeholder="Tur tanlang"
                 required
                 class="w-full"
@@ -954,22 +955,11 @@ const filteredStudents = computed(() => {
   );
 });
 
-const filteredCategories = computed(() => {
-  return expenseCategories.value
-    .filter((category) => {
-      const name = category.name.toLowerCase().trim();
-      return (
-        name === "bonus" ||
-        name === "oylik" ||
-        name.includes("bonus") ||
-        name.includes("oylik")
-      );
-    })
-    .map((category) => ({
-      id: category.id,
-      label: category.name,
-      value: category.id,
-    }));
+const formattedExpenseCategories = computed(() => {
+  return expenseCategories.value.map((category) => ({
+    label: category.name,
+    value: category.id,
+  }));
 });
 
 // Methods
@@ -1212,6 +1202,16 @@ const loadCompensatedLessons = async () => {
 
 const submitPayment = async () => {
   if (!teacher.value) return;
+
+  // Validate category_id is selected
+  if (!paymentForm.category_id) {
+    toast.add({
+      title: "Xatolik",
+      description: "Iltimos, tur tanlang.",
+      color: "error",
+    });
+    return;
+  }
 
   isSubmittingPayment.value = true;
   try {
