@@ -207,6 +207,17 @@ export interface StudentPayment {
   updatedAt: string;
 }
 
+export interface StudentParent {
+  id: string;
+  student_id: string;
+  full_name: string;
+  phone_number: string;
+  additional_number?: string;
+  created_at?: string;
+  updated_at?: string;
+  student?: Student;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;

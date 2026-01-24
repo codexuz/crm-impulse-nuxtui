@@ -39,6 +39,9 @@ const newLead = reactive({
   first_name: "",
   last_name: "",
   phone: "",
+  parent_phone_number: "",
+  parent_name: "",
+  additional_number: "",
   status: "Yangi",
   source: "Instagram",
   question: "",
@@ -115,6 +118,9 @@ const resetForm = () => {
   newLead.first_name = "";
   newLead.last_name = "";
   newLead.phone = "";
+  newLead.parent_phone_number = "";
+  newLead.parent_name = "";
+  newLead.additional_number = "";
   newLead.status = "Yangi";
   newLead.source = "Instagram";
   newLead.question = "";
@@ -155,44 +161,70 @@ onMounted(() => {
           </div>
 
           <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-2">
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                Ism <span class="text-red-500">*</span>
-              </label>
+            <UFormField label="Ism" required>
               <UInput
                 v-model="newLead.first_name"
                 placeholder="Ismni kiriting"
                 required
+                class="w-full"
               />
-            </div>
+            </UFormField>
 
-            <div class="space-y-2">
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                Familiya <span class="text-red-500">*</span>
-              </label>
+            <UFormField label="Familiya" required>
               <UInput
                 v-model="newLead.last_name"
                 placeholder="Familiyani kiriting"
                 required
+                class="w-full"
               />
-            </div>
+            </UFormField>
           </div>
 
-          <div class="space-y-2">
-            <label
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Telefon raqami <span class="text-red-500">*</span>
-            </label>
+          <UFormField label="Telefon raqami" required>
             <UInput
               v-model="newLead.phone"
               placeholder="+998 XX XXX XX XX"
               required
+              class="w-full"
             />
+          </UFormField>
+        </div>
+
+        <!-- Parent Information Section -->
+        <div class="space-y-4">
+          <div
+            class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-800"
+          >
+            <UIcon name="i-lucide-users" class="w-4 h-4 text-primary" />
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+              Ota-ona ma'lumotlari
+            </h3>
+          </div>
+
+          <UFormField label="Ota-ona ismi">
+            <UInput
+              v-model="newLead.parent_name"
+              placeholder="Ota-ona ismini kiriting"
+              class="w-full"
+            />
+          </UFormField>
+
+          <div class="grid grid-cols-2 gap-4">
+            <UFormField label="Ota-ona telefoni">
+              <UInput
+                v-model="newLead.parent_phone_number"
+                placeholder="+998 XX XXX XX XX"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField label="Qo'shimcha raqam">
+              <UInput
+                v-model="newLead.additional_number"
+                placeholder="+998 XX XXX XX XX"
+                class="w-full"
+              />
+            </UFormField>
           </div>
         </div>
 
@@ -208,33 +240,25 @@ onMounted(() => {
           </div>
 
           <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-2">
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                Holat
-              </label>
+            <UFormField label="Holat">
               <USelectMenu
                 v-model="newLead.status"
                 :items="filteredStatusOptions"
                 value-key="value"
                 placeholder="Holatni tanlang"
+                class="w-full"
               />
-            </div>
+            </UFormField>
 
-            <div class="space-y-2">
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                Manba
-              </label>
+            <UFormField label="Manba">
               <USelectMenu
                 v-model="newLead.source"
                 :items="filteredSourceOptions"
                 value-key="value"
                 placeholder="Manbani tanlang"
+                class="w-full"
               />
-            </div>
+            </UFormField>
           </div>
         </div>
 
@@ -249,18 +273,14 @@ onMounted(() => {
             </h3>
           </div>
 
-          <div class="space-y-2">
-            <label
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Qiziqayotgan kurs
-            </label>
+          <UFormField label="Qiziqayotgan kurs">
             <USelectMenu
               v-model="newLead.course_id"
               :items="courseOptions"
               value-key="id"
               placeholder="Kursni tanlang"
               :loading="isLoadingCourses"
+              class="w-full"
             >
               <template #option="{ option }">
                 <div class="flex items-center justify-between w-full">
@@ -275,7 +295,7 @@ onMounted(() => {
                 </div>
               </template>
             </USelectMenu>
-          </div>
+          </UFormField>
         </div>
 
         <!-- Additional Information Section -->
@@ -289,33 +309,23 @@ onMounted(() => {
             </h3>
           </div>
 
-          <div class="space-y-2">
-            <label
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Savol
-            </label>
+          <UFormField label="Savol">
             <UTextarea
               v-model="newLead.question"
               placeholder="Lead savoli..."
               :rows="3"
               class="w-full"
             />
-          </div>
+          </UFormField>
 
-          <div class="space-y-2">
-            <label
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Izohlar
-            </label>
+          <UFormField label="Izohlar">
             <UTextarea
               v-model="newLead.notes"
               placeholder="Qo'shimcha izohlar..."
               :rows="3"
               class="w-full"
             />
-          </div>
+          </UFormField>
         </div>
 
         <!-- Footer Buttons -->

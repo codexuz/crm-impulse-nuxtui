@@ -69,18 +69,10 @@ const links = [
     {
       label: "SMS Xabarnoma",
       icon: "i-lucide-message-square",
-      to: "/sms/sms-posting",
+      to: "/sms/report",
       defaultOpen: true,
       type: "trigger" as const,
       children: [
-        // {
-        //   label: "SMS yuborish",
-        //   to: "/sms/sms-posting",
-        //   exact: true,
-        //   onSelect: () => {
-        //     open.value = false;
-        //   },
-        // },
         {
           label: "Hisobot",
           to: "/sms/report",
@@ -131,6 +123,14 @@ const links = [
         {
           label: "Faol talabalar",
           to: "/students",
+          exact: true,
+          onSelect: () => {
+            open.value = false;
+          },
+        },
+          {
+          label: "Ota-onalar",
+          to: "/students/parents",
           exact: true,
           onSelect: () => {
             open.value = false;

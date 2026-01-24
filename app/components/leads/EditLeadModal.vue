@@ -7,6 +7,9 @@ interface Lead {
   first_name: string;
   last_name: string;
   phone: string;
+  parent_phone_number?: string;
+  parent_name?: string;
+  additional_number?: string;
   status: string;
   source: string;
   question?: string;
@@ -61,6 +64,9 @@ watch(
         first_name: newLead.first_name,
         last_name: newLead.last_name,
         phone: newLead.phone,
+        parent_phone_number: newLead.parent_phone_number || "",
+        parent_name: newLead.parent_name || "",
+        additional_number: newLead.additional_number || "",
         status: newLead.status,
         source: newLead.source,
         question: newLead.question || "",
@@ -81,6 +87,9 @@ const handleSubmit = async () => {
       first_name: editingLead.value.first_name,
       last_name: editingLead.value.last_name,
       phone: editingLead.value.phone,
+      parent_phone_number: editingLead.value.parent_phone_number || null,
+      parent_name: editingLead.value.parent_name || null,
+      additional_number: editingLead.value.additional_number || null,
       status: editingLead.value.status,
       source: editingLead.value.source,
       question: editingLead.value.question || null,
@@ -130,44 +139,70 @@ const handleSubmit = async () => {
           </div>
 
           <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-2">
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                Ism <span class="text-red-500">*</span>
-              </label>
+            <UFormField label="Ism" required>
               <UInput
                 v-model="editingLead.first_name"
                 placeholder="Ismni kiriting"
                 required
+                class="w-full"
               />
-            </div>
+            </UFormField>
 
-            <div class="space-y-2">
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                Familiya <span class="text-red-500">*</span>
-              </label>
+            <UFormField label="Familiya" required>
               <UInput
                 v-model="editingLead.last_name"
                 placeholder="Familiyani kiriting"
                 required
+                class="w-full"
               />
-            </div>
+            </UFormField>
           </div>
 
-          <div class="space-y-2">
-            <label
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Telefon raqami <span class="text-red-500">*</span>
-            </label>
+          <UFormField label="Telefon raqami" required>
             <UInput
               v-model="editingLead.phone"
               placeholder="+998 XX XXX XX XX"
               required
+              class="w-full"
             />
+          </UFormField>
+        </div>
+
+        <!-- Parent Information -->
+        <div class="space-y-4">
+          <div
+            class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700"
+          >
+            <UIcon name="i-lucide-users" class="w-4 h-4 text-primary" />
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+              Ota-ona ma'lumotlari
+            </h3>
+          </div>
+
+          <UFormField label="Ota-ona ismi">
+            <UInput
+              v-model="editingLead.parent_name"
+              placeholder="Ota-ona ismini kiriting"
+              class="w-full"
+            />
+          </UFormField>
+
+          <div class="grid grid-cols-2 gap-4">
+            <UFormField label="Ota-ona telefoni">
+              <UInput
+                v-model="editingLead.parent_phone_number"
+                placeholder="+998 XX XXX XX XX"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField label="Qo'shimcha raqam">
+              <UInput
+                v-model="editingLead.additional_number"
+                placeholder="+998 XX XXX XX XX"
+                class="w-full"
+              />
+            </UFormField>
           </div>
         </div>
 
@@ -183,33 +218,25 @@ const handleSubmit = async () => {
           </div>
 
           <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-2">
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                Holat
-              </label>
+            <UFormField label="Holat">
               <USelectMenu
                 v-model="editingLead.status"
                 :items="statusOptionsFiltered"
                 value-key="value"
                 placeholder="Holatni tanlang"
+                class="w-full"
               />
-            </div>
+            </UFormField>
 
-            <div class="space-y-2">
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                Manba
-              </label>
+            <UFormField label="Manba">
               <USelectMenu
                 v-model="editingLead.source"
                 :items="sourceOptionsFiltered"
                 value-key="value"
                 placeholder="Manbani tanlang"
+                class="w-full"
               />
-            </div>
+            </UFormField>
           </div>
         </div>
 
@@ -224,47 +251,33 @@ const handleSubmit = async () => {
             </h3>
           </div>
 
-          <div class="space-y-2">
-            <label
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Qiziqayotgan kurs
-            </label>
+          <UFormField label="Qiziqayotgan kurs">
             <USelectMenu
               v-model="editingLead.course_id"
               :items="courseOptions"
               value-key="value"
               placeholder="Kursni tanlang"
+              class="w-full"
             />
-          </div>
+          </UFormField>
 
-          <div class="space-y-2">
-            <label
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Savol
-            </label>
+          <UFormField label="Savol">
             <UTextarea
               v-model="editingLead.question"
               placeholder="Lead savoli..."
               :rows="3"
               class="w-full"
             />
-          </div>
+          </UFormField>
 
-          <div class="space-y-2">
-            <label
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Eslatmalar
-            </label>
+          <UFormField label="Eslatmalar">
             <UTextarea
               v-model="editingLead.notes"
               placeholder="Qo'shimcha eslatmalar..."
               :rows="3"
               class="w-full"
             />
-          </div>
+          </UFormField>
         </div>
       </form>
     </template>

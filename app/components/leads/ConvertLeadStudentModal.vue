@@ -7,6 +7,9 @@ interface Lead {
   first_name: string;
   last_name: string;
   phone: string;
+  parent_phone_number?: string;
+  parent_name?: string;
+  additional_number?: string;
 }
 
 const open = defineModel<boolean>("open");
@@ -31,6 +34,9 @@ const studentData = reactive({
   username: "",
   password: "",
   level_id: "none",
+  full_name: "",
+  phone_number: "",
+  additional_number: "",
 });
 
 const courseOptions = computed(() => [
@@ -62,15 +68,21 @@ const resetForm = () => {
   studentData.username = "";
   studentData.password = "";
   studentData.level_id = "none";
+  studentData.full_name = "";
+  studentData.phone_number = "";
+  studentData.additional_number = "";
   showPassword.value = false;
 };
 
-// Watch for lead changes to populate username
+// Watch for lead changes to populate username and parent info
 watch(
   () => props.lead,
   (newLead) => {
     if (newLead) {
       studentData.username = `${newLead.first_name.toLowerCase()}_${newLead.last_name.toLowerCase()}`;
+      studentData.full_name = newLead.parent_name || "";
+      studentData.phone_number = newLead.parent_phone_number || "";
+      studentData.additional_number = newLead.additional_number || "";
     }
   },
   { immediate: true },
@@ -81,6 +93,9 @@ watch(open, (isOpen) => {
     loadCourses();
     if (props.lead) {
       studentData.username = `${props.lead.first_name.toLowerCase()}_${props.lead.last_name.toLowerCase()}`;
+      studentData.full_name = props.lead.parent_name || "";
+      studentData.phone_number = props.lead.parent_phone_number || "";
+      studentData.additional_number = props.lead.additional_number || "";
     }
   } else {
     resetForm();
@@ -92,6 +107,7 @@ const handleSubmit = async () => {
 
   isSubmitting.value = true;
   try {
+    // Register student with parent information - server handles parent creation
     await api.post(apiService.value, "/auth/register", {
       phone: props.lead.phone,
       username: studentData.username,
@@ -99,6 +115,9 @@ const handleSubmit = async () => {
       first_name: props.lead.first_name,
       last_name: props.lead.last_name,
       level_id: studentData.level_id === "none" ? null : studentData.level_id,
+      full_name: studentData.full_name || "",
+      phone_number: studentData.phone_number || "",
+      additional_number: studentData.additional_number || "",
     });
 
     toast.add({
@@ -169,32 +188,22 @@ const handleSubmit = async () => {
           </div>
 
           <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-2">
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                Login
-                <span class="text-red-500">*</span>
-              </label>
+            <UFormField label="Login" required>
               <UInput
                 v-model="studentData.username"
                 placeholder="Loginni kiriting"
                 required
+                class="w-full"
               />
-            </div>
+            </UFormField>
 
-            <div class="space-y-2">
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                Parol
-                <span class="text-red-500">*</span>
-              </label>
+            <UFormField label="Parol" required hint="Kamida 6 ta belgi">
               <UInput
                 v-model="studentData.password"
                 :type="showPassword ? 'text' : 'password'"
                 placeholder="Parolni kiriting"
                 required
+                class="w-full"
               >
                 <template #trailing>
                   <UButton
@@ -206,10 +215,7 @@ const handleSubmit = async () => {
                   />
                 </template>
               </UInput>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Kamida 6 ta belgi
-              </p>
-            </div>
+            </UFormField>
           </div>
         </div>
 
@@ -227,20 +233,53 @@ const handleSubmit = async () => {
             </h3>
           </div>
 
-          <div class="space-y-2">
-            <label
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Daraja
-            </label>
+          <UFormField label="Daraja">
             <USelectMenu
               v-model="studentData.level_id"
               :items="courseOptions"
-               value-key="value"
+              value-key="value"
               :loading="isLoadingCourses"
               placeholder="Darajani tanlang"
               class="w-full"
             />
+          </UFormField>
+        </div>
+
+        <!-- Parent Information Section -->
+        <div class="space-y-4">
+          <div
+            class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700"
+          >
+            <UIcon name="i-lucide-users" class="w-4 h-4 text-primary" />
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+              Ota-ona ma'lumotlari
+            </h3>
+          </div>
+
+          <UFormField label="Ota-ona ismi">
+            <UInput
+              v-model="studentData.full_name"
+              placeholder="Ota-ona ismini kiriting"
+              class="w-full"
+            />
+          </UFormField>
+
+          <div class="grid grid-cols-2 gap-4">
+            <UFormField label="Ota-ona telefoni">
+              <UInput
+                v-model="studentData.phone_number"
+                placeholder="+998 XX XXX XX XX"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField label="Qo'shimcha raqam">
+              <UInput
+                v-model="studentData.additional_number"
+                placeholder="+998 XX XXX XX XX"
+                class="w-full"
+              />
+            </UFormField>
           </div>
         </div>
       </form>

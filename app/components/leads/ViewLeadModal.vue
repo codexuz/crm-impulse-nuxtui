@@ -7,6 +7,9 @@ interface Lead {
   first_name: string;
   last_name: string;
   phone: string;
+  parent_phone_number?: string;
+  parent_name?: string;
+  additional_number?: string;
   status: string;
   source: string;
   question?: string;
@@ -200,6 +203,33 @@ watch(open, (isOpen) => {
               </div>
               <div class="mt-1 text-base text-gray-900 dark:text-white">
                 {{ lead.phone }}
+              </div>
+            </div>
+
+            <div v-if="lead.parent_name">
+              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Ota-ona ismi
+              </div>
+              <div class="mt-1 text-base text-gray-900 dark:text-white">
+                {{ lead.parent_name }}
+              </div>
+            </div>
+
+            <div v-if="lead.parent_phone_number">
+              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Ota-ona telefoni
+              </div>
+              <div class="mt-1 text-base text-gray-900 dark:text-white">
+                {{ lead.parent_phone_number }}
+              </div>
+            </div>
+
+            <div v-if="lead.additional_number">
+              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Qo'shimcha raqam
+              </div>
+              <div class="mt-1 text-base text-gray-900 dark:text-white">
+                {{ lead.additional_number }}
               </div>
             </div>
 
