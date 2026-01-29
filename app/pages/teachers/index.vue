@@ -545,7 +545,7 @@ function openAddDialog() {
 async function addTeacher() {
   try {
     isLoading.value = true;
-    await api.post<Teacher>(apiService.value, "/users", {
+    await api.post<Teacher>(apiService.value, "/users/teachers", {
       ...newTeacher.value,
       roles: ["teacher"],
     });

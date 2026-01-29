@@ -335,10 +335,10 @@ const loadCourses = async () => {
   error.value = "";
 
   try {
-    const response = await api.get<Course[]>(apiService.value, "/courses");
+    const response = await api.get<{ data: any[] }>(apiService.value, "/courses");
 
     // Store courses and exclude units array
-    courses.value = response.map((course: any) => {
+    courses.value = response?.data.map((course: any) => {
       // Create a new object without the units property
       const { units, ...courseWithoutUnits } = course;
       return courseWithoutUnits;

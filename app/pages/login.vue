@@ -2,9 +2,7 @@
   <div class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
       <div class="flex justify-center mb-6">
-        <div
-          class="h-12 w-12 rounded-lg bg-primary flex items-center justify-center"
-        >
+        <div class="h-12 w-12 rounded-lg bg-primary flex items-center justify-center">
           <UIcon name="i-lucide-graduation-cap" class="text-white text-2xl" />
         </div>
       </div>
@@ -18,83 +16,28 @@
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
       <UCard>
-        <UForm  class="space-y-4" @submit.prevent="handleLogin">
-          <UFormField 
-            label="Foydalanuvchi nomi"
-            :error="errors.username"
-            required
-          >
-            <UInput
-              v-model="username"
-              name="username"
-              type="text"
-              autocomplete="username"
-              placeholder="Foydalanuvchi nomini kiriting"
-              icon="i-lucide-user"
-              size="lg"
-              class="w-full"
-            />
+        <UForm class="space-y-4" @submit.prevent="handleLogin">
+          <UFormField label="Foydalanuvchi nomi" :error="errors.username" required>
+            <UInput v-model="username" name="username" type="text" autocomplete="username"
+              placeholder="Foydalanuvchi nomini kiriting" icon="i-lucide-user" size="lg" class="w-full" />
           </UFormField>
 
-          <UFormField  label="Parol" :error="errors.password" required>
-            <UInput
-              v-model="password"
-              name="password"
-              type="password"
-              autocomplete="current-password"
-              placeholder="Parolni kiriting"
-              icon="i-lucide-lock"
-              size="lg"
-              class="w-full"
-            />
+          <UFormField label="Parol" :error="errors.password" required>
+            <UInput v-model="password" name="password" type="password" autocomplete="current-password"
+              placeholder="Parolni kiriting" icon="i-lucide-lock" size="lg" class="w-full" />
           </UFormField>
 
           <div class="flex items-center justify-between">
             <UCheckbox v-model="rememberMe" label="Meni eslab qol" />
 
-            <UButton
-              variant="link"
-              size="sm"
-              class="text-sm"
-              :padded="false"
-              to="#"
-            >
+            <UButton variant="link" size="sm" class="text-sm" :padded="false" to="#">
               Parolni unutdingizmi?
             </UButton>
           </div>
 
-          <UButton
-            type="submit"
-            block
-            size="lg"
-            :loading="isLoading"
-            :disabled="isLoading"
-          >
+          <UButton type="submit" block size="lg" :loading="isLoading" :disabled="isLoading">
             {{ isLoading ? "Kirilmoqda..." : "Kirish" }}
           </UButton>
-
-          <UAlert
-            v-if="loginError"
-            color="red"
-            variant="soft"
-            :title="loginError"
-            icon="i-lucide-alert-circle"
-          >
-            <template #actions>
-              <UButton
-                v-if="
-                  loginError.includes('network') ||
-                  loginError.includes('tarmoq')
-                "
-                variant="soft"
-                color="red"
-                size="xs"
-                @click="handleLogin"
-              >
-                Qayta urinish
-              </UButton>
-            </template>
-          </UAlert>
         </UForm>
       </UCard>
     </div>
@@ -108,6 +51,7 @@ definePageMeta({
 
 const { login } = useAuth();
 const router = useRouter();
+const toast = useToast();
 
 const username = ref("");
 const password = ref("");
@@ -143,6 +87,11 @@ const handleLogin = async () => {
   try {
     console.log("Attempting login with:", username.value);
     await login(username.value, password.value);
+     toast.add({
+      title: "Muvaffaqiyatli",
+      description: "Tizimga muvaffaqiyatli kirdingiz",
+      color: "success",
+    });
     router.push("/");
   } catch (error) {
     console.error("Login error details:", error);
@@ -174,6 +123,11 @@ const handleLogin = async () => {
     }
 
     loginError.value = errorMessage;
+     toast.add({
+      title: "Xatolik",
+      description: "Login yoki parol noto'g'ri.",
+      color: "error",
+    });
   } finally {
     isLoading.value = false;
   }

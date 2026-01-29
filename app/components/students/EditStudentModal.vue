@@ -40,8 +40,8 @@ const courseOptions = computed(() => [
 const loadCourses = async () => {
   isLoadingCourses.value = true;
   try {
-    const response = await api.get<any[]>(apiService.value, "/courses");
-    courses.value = response || [];
+    const response = await api.get<{ data: any[] }>(apiService.value, "/courses");
+    courses.value = response.data || [];
   } catch (error) {
     console.error("Failed to load courses:", error);
     toast.add({

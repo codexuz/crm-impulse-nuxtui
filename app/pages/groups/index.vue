@@ -373,10 +373,15 @@ const loadGroups = async () => {
 
 const loadCourses = async () => {
   try {
-    const response = await api.get<Course[]>(apiService.value, "/courses");
-    courses.value = (response || []).filter((course) => course.isActive);
+    const response = await api.get<{ data: any[] }>(apiService.value, "/courses");
+    courses.value = response.data || [];
   } catch (error) {
     console.error("Failed to load courses:", error);
+   toast.add({
+      title: "Xatolik",
+      description: "Kurslarni yuklashda xatolik yuz berdi",
+      color: "error",
+    });
   }
 };
 

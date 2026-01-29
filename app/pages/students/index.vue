@@ -509,14 +509,13 @@ const formatDate = (dateString?: string): string => {
 
 const loadCourses = async () => {
   try {
-    const response = await api.get<any[]>(apiService.value, "/courses");
-    courses.value = response || [];
+    const response = await api.get<{ data: any[] }>(apiService.value, "/courses");
+    courses.value = response.data || [];
   } catch (error) {
     console.error("Failed to load courses:", error);
-    toast.add({
+   toast.add({
       title: "Xatolik",
-      description:
-        "Kurslarni yuklashda xatolik. Iltimos, qayta urinib ko'ring.",
+      description: "Kurslarni yuklashda xatolik yuz berdi",
       color: "error",
     });
   }
