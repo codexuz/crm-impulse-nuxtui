@@ -68,11 +68,12 @@ const filteredSourceOptions = computed(() =>
   props.sourceOptions.filter((s) => s.value !== ""),
 );
 
+
 const loadCourses = async () => {
   isLoadingCourses.value = true;
   try {
-    const response = await api.get<Course[]>(apiService.value, "/courses");
-    courses.value = response || [];
+    const response = await api.get<{ data: any[] }>(apiService.value, "/courses");
+    courses.value = response.data || [];
   } catch (error) {
     console.error("Failed to load courses:", error);
     toast.add({
@@ -84,6 +85,8 @@ const loadCourses = async () => {
     isLoadingCourses.value = false;
   }
 };
+
+
 
 const createLead = async (close: () => void) => {
   isCreatingLead.value = true;
