@@ -3,22 +3,13 @@
     <template #header>
       <UDashboardNavbar title="Maoshni hisoblash" :ui="{ right: 'gap-3' }">
         <template #leading>
-          <UButton
-            variant="ghost"
-            icon="i-lucide-arrow-left"
-            square
-            @click="router.back()"
-          />
+          <UButton variant="ghost" icon="i-lucide-arrow-left" square @click="router.back()" />
         </template>
 
         <template #description> O'qituvchi hamyon va tranzaksiyalar </template>
 
         <template #right>
-          <UButton
-            icon="i-lucide-wallet"
-            label="To'lov / Bonus"
-            @click="paymentDialog = true"
-          />
+          <UButton icon="i-lucide-wallet" label="To'lov / Bonus" @click="paymentDialog = true" />
         </template>
       </UDashboardNavbar>
     </template>
@@ -26,9 +17,7 @@
     <template #body>
       <!-- Loading State -->
       <div v-if="isLoading" class="flex justify-center items-center py-20">
-        <span
-          class="i-lucide-loader-2 text-5xl animate-spin text-primary"
-        ></span>
+        <span class="i-lucide-loader-2 text-5xl animate-spin text-primary"></span>
       </div>
 
       <!-- Content -->
@@ -40,14 +29,9 @@
             <!-- Profile Header -->
             <div class="relative">
               <div class="h-24 bg-linear-to-r from-primary to-blue-400"></div>
-              <div
-                class="px-6 pb-6 -mt-12 flex flex-col items-center text-center"
-              >
-                <UAvatar
-                  size="2xl"
-                  :alt="teacher?.first_name + ' ' + teacher?.last_name"
-                  class="ring-4 ring-white dark:ring-gray-900 mb-4"
-                >
+              <div class="px-6 pb-6 -mt-12 flex flex-col items-center text-center">
+                <UAvatar size="2xl" :alt="teacher?.first_name + ' ' + teacher?.last_name"
+                  class="ring-4 ring-white dark:ring-gray-900 mb-4">
                   <template #fallback>
                     <span class="text-xl">
                       {{
@@ -59,10 +43,7 @@
                   </template>
                 </UAvatar>
 
-                <UBadge
-                  :color="teacher?.is_active ? 'green' : 'gray'"
-                  class="mb-2"
-                >
+                <UBadge :color="teacher?.is_active ? 'green' : 'gray'" class="mb-2">
                   {{ teacher?.is_active ? "FAOL" : "NOFAOL" }}
                 </UBadge>
 
@@ -74,13 +55,9 @@
                 </p>
 
                 <!-- Wallet Balance Highlight -->
-                <div
-                  class="w-full pt-6 border-t border-gray-200 dark:border-gray-700"
-                >
+                <div class="w-full pt-6 border-t border-gray-200 dark:border-gray-700">
                   <div class="flex flex-col items-center mb-6">
-                    <span
-                      class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1"
-                    >
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
                       Hamyon balansi
                     </span>
                     <span class="text-3xl font-black text-primary">
@@ -119,9 +96,7 @@
             <ul class="space-y-3 text-sm">
               <li class="flex justify-between">
                 <span class="text-gray-500">Hamyon ID</span>
-                <span class="font-mono text-xs"
-                  >{{ wallet.id?.substring(0, 8) }}...</span
-                >
+                <span class="font-mono text-xs">{{ wallet.id?.substring(0, 8) }}...</span>
               </li>
               <li class="flex justify-between">
                 <span class="text-gray-500">Yaratilgan</span>
@@ -206,22 +181,13 @@
                   <!-- Filters -->
                   <UDashboardToolbar>
                     <template #left>
-                      <UInput
-                        v-model="transactionSearch"
-                        icon="i-lucide-search"
-                        placeholder="Tranzaksiyalarni qidirish..."
-                        class="w-64"
-                      />
+                      <UInput v-model="transactionSearch" icon="i-lucide-search"
+                        placeholder="Tranzaksiyalarni qidirish..." class="w-64" />
                     </template>
 
                     <template #right>
-                      <USelectMenu
-                        v-model="transactionFilter"
-                        :items="transactionTypeOptions"
-                        value-key="value"
-                        placeholder="Turi"
-                        class="w-40"
-                      >
+                      <USelectMenu v-model="transactionFilter" :items="transactionTypeOptions" value-key="value"
+                        placeholder="Turi" class="w-40">
                         <template #label>
                           {{
                             transactionTypeOptions.find(
@@ -232,50 +198,25 @@
                       </USelectMenu>
 
                       <div class="flex items-center gap-2">
-                        <UInput
-                          v-model="dateFrom"
-                          type="date"
-                          placeholder="Dan"
-                          class="w-40"
-                        />
-                        <UInput
-                          v-model="dateTo"
-                          type="date"
-                          placeholder="Gacha"
-                          class="w-40"
-                        />
+                        <UInput v-model="dateFrom" type="date" placeholder="Dan" class="w-40" />
+                        <UInput v-model="dateTo" type="date" placeholder="Gacha" class="w-40" />
                       </div>
 
-                      <UButton
-                        v-if="dateFrom || dateTo"
-                        icon="i-lucide-x"
-                        label="Tozalash"
-                        variant="ghost"
-                        @click="clearDateFilters"
-                      />
+                      <UButton v-if="dateFrom || dateTo" icon="i-lucide-x" label="Tozalash" variant="ghost"
+                        @click="clearDateFilters" />
 
-                      <UButton
-                        icon="i-lucide-refresh-cw"
-                        label="Yangilash"
-                        variant="outline"
-                        @click="loadTransactions"
-                      />
+                      <UButton icon="i-lucide-refresh-cw" label="Yangilash" variant="outline"
+                        @click="loadTransactions" />
                     </template>
                   </UDashboardToolbar>
 
                   <!-- Transactions Table -->
-                  <UTable
-                    :data="filteredTransactions"
-                    :columns="transactionColumns"
-                    :loading="loadingTransactions"
-                    :empty="'Tranzaksiyalar topilmadi'"
-                  />
+                  <UTable :data="filteredTransactions" :columns="transactionColumns" :loading="loadingTransactions"
+                    :empty="'Tranzaksiyalar topilmadi'" />
 
                   <!-- Pagination -->
-                  <div
-                    v-if="totalTransactions > 0"
-                    class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-4"
-                  >
+                  <div v-if="totalTransactions > 0"
+                    class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-4">
                     <div class="text-sm text-gray-500">
                       <span class="font-medium">{{ paginationStart }}</span> dan
                       <span class="font-medium">{{ paginationEnd }}</span>
@@ -284,14 +225,9 @@
                       ta tranzaksiya
                     </div>
 
-                    <UPagination
-                      :model-value="currentPage"
-                      :total="totalTransactions"
-                      :items-per-page="transactionsPerPage"
-                      show-last
-                      show-first
-                      @update:page="(p: number) => (currentPage = p)"
-                    />
+                    <UPagination :model-value="currentPage" :total="totalTransactions"
+                      :items-per-page="transactionsPerPage" show-last show-first
+                      @update:page="(p: number) => (currentPage = p)" />
                   </div>
                 </div>
               </template>
@@ -302,57 +238,28 @@
                   <!-- Filters -->
                   <UDashboardToolbar>
                     <template #left>
-                      <UInput
-                        v-model="studentSearch"
-                        icon="i-lucide-search"
-                        placeholder="O'quvchilarni qidirish..."
-                        class="w-64"
-                      />
+                      <UInput v-model="studentSearch" icon="i-lucide-search" placeholder="O'quvchilarni qidirish..."
+                        class="w-64" />
                     </template>
 
                     <template #right>
                       <div class="flex items-center gap-2">
-                        <UInput
-                          v-model="studentDateFrom"
-                          type="date"
-                          placeholder="Dan"
-                          class="w-40"
-                        />
-                        <UInput
-                          v-model="studentDateTo"
-                          type="date"
-                          placeholder="Gacha"
-                          class="w-40"
-                        />
+                        <UInput v-model="studentDateFrom" type="date" placeholder="Dan" class="w-40" />
+                        <UInput v-model="studentDateTo" type="date" placeholder="Gacha" class="w-40" />
                       </div>
 
-                      <UButton
-                        icon="i-lucide-calendar-check"
-                        label="Davomat yuklash"
-                        @click="loadAllStudentsAttendance"
-                      />
+                      <UButton icon="i-lucide-calendar-check" label="Davomat yuklash"
+                        @click="loadAllStudentsAttendance" />
 
-                      <UButton
-                        icon="i-lucide-refresh-cw"
-                        label="Yangilash"
-                        variant="outline"
-                        @click="loadStudents"
-                      />
+                      <UButton icon="i-lucide-refresh-cw" label="Yangilash" variant="outline" @click="loadStudents" />
                     </template>
                   </UDashboardToolbar>
 
                   <!-- Students Table -->
-                  <UTable
-                    :data="filteredStudents"
-                    :columns="studentColumns"
-                    :loading="loadingStudents"
-                    :empty="'O\'quvchilar topilmadi'"
-                  />
+                  <UTable :data="filteredStudents" :columns="studentColumns" :loading="loadingStudents"
+                    :empty="'O\'quvchilar topilmadi'" />
 
-                  <div
-                    v-if="filteredStudents.length > 0"
-                    class="flex justify-end text-sm text-gray-500"
-                  >
+                  <div v-if="filteredStudents.length > 0" class="flex justify-end text-sm text-gray-500">
                     Jami {{ filteredStudents.length }} ta o'quvchi
                   </div>
                 </div>
@@ -374,32 +281,22 @@
                     </template>
 
                     <template #right>
-                      <UButton
-                        icon="i-lucide-refresh-cw"
-                        label="Yangilash"
-                        variant="outline"
-                        @click="loadCompensatedLessons"
-                      />
+                      <UButton icon="i-lucide-refresh-cw" label="Yangilash" variant="outline"
+                        @click="loadCompensatedLessons" />
                     </template>
                   </UDashboardToolbar>
 
                   <!-- Compensated Lessons Table -->
-                  <UTable
-                    :data="compensatedLessons"
-                    :columns="compensatedLessonsColumns"
-                    :loading="loadingCompensatedLessons"
-                    :empty="'Qoldirilgan darslar topilmadi'"
-                  />
+                  <UTable :data="compensatedLessons" :columns="compensatedLessonsColumns"
+                    :loading="loadingCompensatedLessons" :empty="'Qoldirilgan darslar topilmadi'" />
 
                   <!-- Pagination -->
-                  <div
-                    v-if="totalCompensatedLessons > 0"
-                    class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-4"
-                  >
+                  <div v-if="totalCompensatedLessons > 0"
+                    class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-4">
                     <div class="text-sm text-gray-500">
                       <span class="font-medium">{{
                         (compensatedLessonsPage - 1) *
-                          compensatedLessonsPerPage +
+                        compensatedLessonsPerPage +
                         1
                       }}</span>
                       dan
@@ -416,14 +313,9 @@
                       ta dars
                     </div>
 
-                    <UPagination
-                      :model-value="compensatedLessonsPage"
-                      :total="totalCompensatedLessons"
-                      :items-per-page="compensatedLessonsPerPage"
-                      show-last
-                      show-first
-                      @update:page="(p: number) => (compensatedLessonsPage = p)"
-                    />
+                    <UPagination :model-value="compensatedLessonsPage" :total="totalCompensatedLessons"
+                      :items-per-page="compensatedLessonsPerPage" show-last show-first
+                      @update:page="(p: number) => (compensatedLessonsPage = p)" />
                   </div>
                 </div>
               </template>
@@ -437,42 +329,21 @@
         <template #body>
           <form @submit.prevent="submitPayment" class="space-y-4">
             <UFormField label="Tur" name="category">
-              <USelectMenu
-                v-model="paymentForm.category_id"
-                :items="formattedExpenseCategories"
-                value-key="value"
-                placeholder="Tur tanlang"
-                required
-                class="w-full"
-              />
+              <USelectMenu v-model="paymentForm.category_id" :items="formattedExpenseCategories" value-key="value"
+                placeholder="Tur tanlang" required class="w-full" />
             </UFormField>
 
             <UFormField label="Summa" name="amount">
-              <UInput
-                v-model.number="paymentForm.amount"
-                type="number"
-                placeholder="Summa kiriting"
-                required
-                class="w-full"
-              />
+              <UInput v-model.number="paymentForm.amount" type="number" placeholder="Summa kiriting" required
+                class="w-full" />
             </UFormField>
 
             <UFormField label="Izoh" name="description">
-              <UTextarea
-                v-model="paymentForm.description"
-                placeholder="Izoh kiriting..."
-                :rows="3"
-                class="w-full"
-              />
+              <UTextarea v-model="paymentForm.description" placeholder="Izoh kiriting..." :rows="3" class="w-full" />
             </UFormField>
 
             <UFormField label="Sana" name="date">
-              <UInput
-                v-model="paymentForm.expense_date"
-                type="date"
-                required
-                class="w-full"
-              />
+              <UInput v-model="paymentForm.expense_date" type="date" required class="w-full" />
             </UFormField>
           </form>
         </template>
@@ -480,11 +351,7 @@
         <template #footer="{ close }">
           <div class="flex justify-end gap-2">
             <UButton label="Bekor qilish" variant="outline" @click="close" />
-            <UButton
-              label="Saqlash"
-              :loading="isSubmittingPayment"
-              @click="submitPayment"
-            />
+            <UButton label="Saqlash" :loading="isSubmittingPayment" @click="submitPayment" />
           </div>
         </template>
       </UModal>
@@ -919,6 +786,25 @@ const compensatedLessonsColumns: TableColumn<CompensatedLesson>[] = [
         : h("span", { class: "text-gray-400 text-sm" }, "-");
     },
   },
+  {
+    id: "actions",
+    header: "Amallar",
+    cell: ({ row }) => {
+      if (row.original.isPaid) {
+        return h("span", { class: "text-gray-400 text-sm" }, "-");
+      }
+      return h(
+        UButton,
+        {
+          icon: "i-lucide-check-circle",
+          label: "To'lash",
+          size: "xs",
+          color: "green",
+          onClick: () => markLessonAsPaid(row.original.id),
+        },
+      );
+    },
+  },
 ];
 
 // Computed
@@ -1197,6 +1083,32 @@ const loadCompensatedLessons = async () => {
     });
   } finally {
     loadingCompensatedLessons.value = false;
+  }
+};
+
+const markLessonAsPaid = async (walletEntryId: string) => {
+  try {
+    await api.patch(
+      apiService.value,
+      `/compensate-lessons/wallet/${walletEntryId}/mark-paid`,
+      {},
+    );
+
+    toast.add({
+      title: "Muvaffaqiyat",
+      description: "Dars to'landi deb belgilandi.",
+      color: "success",
+    });
+
+    // Reload compensated lessons and wallet
+    await Promise.all([loadCompensatedLessons(), loadWallet()]);
+  } catch (error) {
+    console.error("Failed to mark lesson as paid:", error);
+    toast.add({
+      title: "Xatolik",
+      description: "Darsni to'landi deb belgilashda xatolik yuz berdi.",
+      color: "error",
+    });
   }
 };
 

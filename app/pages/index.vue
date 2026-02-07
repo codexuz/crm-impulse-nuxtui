@@ -74,7 +74,125 @@
         </UCard>
       </div>
 
-      <!-- Lesson Schedules Section -->
+     
+      <!-- Leads Analytics Section -->
+      <div class="mt-6">
+        <UCard>
+          <template #header>
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-lg font-semibold">Leadlar statistikasi</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ formatSimpleDate(leadsDateRange.startDate) }} -
+                  {{ formatSimpleDate(leadsDateRange.endDate) }}
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <UInput v-model="leadsDateRange.startDate" type="date" size="sm" class="w-40" />
+                <UInput v-model="leadsDateRange.endDate" type="date" size="sm" class="w-40" />
+                <UButton icon="i-lucide-refresh-cw" size="sm" @click="fetchLeadsStats">
+                  Yangilash
+                </UButton>
+              </div>
+            </div>
+          </template>
+
+          <!-- Summary Cards -->
+          <div class="grid gap-4 md:grid-cols-4 mb-6">
+            <div class="p-4 rounded-lg bg-primary/5">
+              <div class="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Jami leadlar
+              </div>
+              <div class="text-3xl font-bold mt-2">
+                {{ leadsStats.totalLeads }}
+              </div>
+            </div>
+            <div class="p-4 rounded-lg bg-green-500/5">
+              <div class="text-sm font-medium text-gray-600 dark:text-gray-400">
+                O'qishga yozildi
+              </div>
+              <div class="text-3xl font-bold mt-2 text-green-600">
+                {{ leadsStats.leadsByStatus["O'qishga yozildi"] || 0 }}
+              </div>
+            </div>
+            <div class="p-4 rounded-lg bg-blue-500/5">
+              <div class="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Konversiya
+              </div>
+              <div class="text-3xl font-bold mt-2 text-blue-600">
+                {{ leadsStats.conversionRate?.toFixed(1) || 0 }}%
+              </div>
+            </div>
+            <div class="p-4 rounded-lg bg-yellow-500/5">
+              <div class="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Sinovda
+              </div>
+              <div class="text-3xl font-bold mt-2 text-yellow-600">
+                {{ leadsStats.leadsByStatus["Sinovda"] || 0 }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Grid -->
+          <div class="grid gap-6 md:grid-cols-2 mb-6">
+            <!-- Leads by Status Chart -->
+            <div class="p-4 border rounded-lg">
+              <h4 class="text-base font-semibold mb-4">Status bo'yicha</h4>
+              <div class="space-y-3">
+                <div v-for="(count, status) in leadsStats.leadsByStatus" :key="status"
+                  class="flex items-center justify-between">
+                  <div class="flex items-center gap-3 flex-1">
+                    <div class="w-4 h-4 rounded" :style="{ backgroundColor: getStatusColor(status as string) }"></div>
+                    <span class="text-sm">{{ status }}</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <div class="w-full max-w-[150px] bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div class="h-2 rounded-full transition-all" :style="{
+                        width: `${(count / leadsStats.totalLeads) * 100}%`,
+                        backgroundColor: getStatusColor(status as string),
+                      }"></div>
+                    </div>
+                    <span class="text-sm font-semibold w-12 text-right">{{ count }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Leads by Source Chart -->
+            <div class="p-4 border rounded-lg">
+              <h4 class="text-base font-semibold mb-4">Manba bo'yicha</h4>
+              <div class="space-y-3">
+                <div v-for="(count, source) in leadsStats.leadsBySource" :key="source"
+                  class="flex items-center justify-between">
+                  <div class="flex items-center gap-3 flex-1">
+                    <div class="w-4 h-4 rounded" :style="{ backgroundColor: getSourceColor(source as string) }"></div>
+                    <span class="text-sm">{{ source }}</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <div class="w-full max-w-[150px] bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div class="h-2 rounded-full transition-all" :style="{
+                        width: `${(count / leadsStats.totalLeads) * 100}%`,
+                        backgroundColor: getSourceColor(source as string),
+                      }"></div>
+                    </div>
+                    <span class="text-sm font-semibold w-12 text-right">{{ count }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Daily Trends Chart -->
+          <div class="p-4 border rounded-lg">
+            <h4 class="text-base font-semibold mb-4">Kunlik tendentsiya</h4>
+            <div class="h-64">
+              <VChart :option="dailyTrendsChartOption" autoresize />
+            </div>
+          </div>
+        </UCard>
+      </div>
+
+       <!-- Lesson Schedules Section -->
       <div class="mt-6">
         <UCard>
           <template #header>
@@ -86,21 +204,11 @@
                 </p>
               </div>
               <div class="flex items-center gap-2">
-                <UButton
-                  variant="outline"
-                  size="sm"
-                  icon="i-lucide-chevron-left"
-                  @click="navigatePrevious"
-                />
+                <UButton variant="outline" size="sm" icon="i-lucide-chevron-left" @click="navigatePrevious" />
                 <UButton variant="outline" size="sm" @click="navigateToday">
                   Bugun
                 </UButton>
-                <UButton
-                  variant="outline"
-                  size="sm"
-                  icon="i-lucide-chevron-right"
-                  @click="navigateNext"
-                />
+                <UButton variant="outline" size="sm" icon="i-lucide-chevron-right" @click="navigateNext" />
               </div>
             </div>
           </template>
@@ -113,22 +221,12 @@
           </div>
 
           <!-- Daily Schedule -->
-          <div
-            v-if="todayLessons.length === 0"
-            class="text-center py-8 text-gray-500 dark:text-gray-400"
-          >
+          <div v-if="todayLessons.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
             Bu kun uchun darslar yo'q
           </div>
-          <UScrollArea
-            v-else
-            v-slot="{ item: lesson }"
-            :items="todayLessons"
-            class="w-full h-96"
-          >
-            <div
-              class="border rounded-lg p-4 bg-primary/5 hover:bg-primary/10 cursor-pointer transition-colors mb-2"
-              @click="showLessonDetails(lesson)"
-            >
+          <UScrollArea v-else v-slot="{ item: lesson }" :items="todayLessons" class="w-full h-96">
+            <div class="border rounded-lg p-4 bg-primary/5 hover:bg-primary/10 cursor-pointer transition-colors mb-2"
+              @click="showLessonDetails(lesson)">
               <div class="flex items-start justify-between">
                 <div class="flex-1">
                   <div class="flex items-center gap-2 mb-2">
@@ -155,95 +253,13 @@
                   </div>
                 </div>
                 <div class="flex flex-col items-end gap-2">
-                  <UBadge
-                    :color="lesson.days === 'odd' ? 'blue' : 'green'"
-                    variant="soft"
-                  >
+                  <UBadge :color="lesson.days === 'odd' ? 'blue' : 'green'" variant="soft">
                     {{ lesson.days === "odd" ? "Toq kunlar" : "Juft kunlar" }}
                   </UBadge>
                 </div>
               </div>
             </div>
           </UScrollArea>
-        </UCard>
-      </div>
-      <!-- Recent Leads and Quick Actions -->
-      <div class="grid gap-4 md:grid-cols-2 mt-4">
-        <UCard>
-          <template #header>
-            <h3 class="text-lg font-semibold">So'nggi leadlar</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              Eng yangi potentsial talabalar
-            </p>
-          </template>
-
-          <div class="space-y-4">
-            <div
-              v-for="(lead, index) in dashboard.recentLeads"
-              :key="index"
-              class="flex items-start gap-3"
-            >
-              <div class="rounded-full bg-primary/10 p-2">
-                <UIcon name="i-lucide-user" class="size-4 text-primary" />
-              </div>
-              <div class="flex-1">
-                <p class="text-sm font-medium">{{ lead.name }}</p>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  {{ lead.phone }} | {{ lead.source }}
-                </p>
-                <p
-                  v-if="lead.question"
-                  class="text-xs text-gray-500 dark:text-gray-400 mt-1"
-                >
-                  Savol: {{ lead.question }}
-                </p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                  Holat: {{ lead.status }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </UCard>
-
-        <UCard>
-          <template #header>
-            <h3 class="text-lg font-semibold">Tezkor harakatlar</h3>
-          </template>
-
-          <div class="flex flex-wrap gap-2">
-            <UButton
-              variant="outline"
-              size="sm"
-              icon="i-lucide-user-plus"
-              @click="navigateTo('/students')"
-            >
-              Talaba qo'shish
-            </UButton>
-            <UButton
-              variant="outline"
-              size="sm"
-              icon="i-lucide-user-cog"
-              @click="navigateTo('/teachers')"
-            >
-              O'qituvchi qo'shish
-            </UButton>
-            <UButton
-              variant="outline"
-              size="sm"
-              icon="i-lucide-users"
-              @click="navigateTo('/groups')"
-            >
-              Guruh yaratish
-            </UButton>
-            <UButton
-              variant="outline"
-              size="sm"
-              icon="i-lucide-book"
-              @click="navigateTo('/courses')"
-            >
-              Kurs qo'shish
-            </UButton>
-          </div>
         </UCard>
       </div>
 
@@ -258,56 +274,35 @@
         <template #body>
           <div v-if="selectedLesson" class="space-y-4">
             <div>
-              <label
-                class="text-sm font-medium text-gray-500 dark:text-gray-400"
-                >Dars nomi</label
-              >
+              <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Dars nomi</label>
               <p class="text-base mt-1">{{ selectedLesson.lessonName }}</p>
             </div>
 
             <div>
-              <label
-                class="text-sm font-medium text-gray-500 dark:text-gray-400"
-                >Guruh</label
-              >
+              <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Guruh</label>
               <p class="text-base mt-1">{{ selectedLesson.groupName }}</p>
             </div>
 
             <div>
-              <label
-                class="text-sm font-medium text-gray-500 dark:text-gray-400"
-                >O'qituvchi</label
-              >
+              <label class="text-sm font-medium text-gray-500 dark:text-gray-400">O'qituvchi</label>
               <p class="text-base mt-1">{{ selectedLesson.teacherName }}</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label
-                  class="text-sm font-medium text-gray-500 dark:text-gray-400"
-                  >Boshlanish vaqti</label
-                >
+                <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Boshlanish vaqti</label>
                 <p class="text-base mt-1">{{ selectedLesson.startTime }}</p>
               </div>
               <div>
-                <label
-                  class="text-sm font-medium text-gray-500 dark:text-gray-400"
-                  >Tugash vaqti</label
-                >
+                <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Tugash vaqti</label>
                 <p class="text-base mt-1">{{ selectedLesson.endTime }}</p>
               </div>
             </div>
 
             <div>
-              <label
-                class="text-sm font-medium text-gray-500 dark:text-gray-400"
-                >Dars kunlari</label
-              >
+              <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Dars kunlari</label>
               <div class="mt-1">
-                <UBadge
-                  :color="selectedLesson.days === 'odd' ? 'blue' : 'green'"
-                  variant="soft"
-                >
+                <UBadge :color="selectedLesson.days === 'odd' ? 'blue' : 'green'" variant="soft">
                   {{
                     selectedLesson.days === "odd" ? "Toq kunlar" : "Juft kunlar"
                   }}
@@ -316,10 +311,7 @@
             </div>
 
             <div>
-              <label
-                class="text-sm font-medium text-gray-500 dark:text-gray-400"
-                >Sana</label
-              >
+              <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Sana</label>
               <p class="text-base mt-1">
                 {{ formatSimpleDate(selectedLesson.date) }}
               </p>
@@ -328,11 +320,7 @@
         </template>
         <template #footer>
           <div class="flex justify-end gap-2">
-            <UButton
-              color="neutral"
-              variant="outline"
-              @click="lessonDetailsModal = false"
-            >
+            <UButton color="neutral" variant="outline" @click="lessonDetailsModal = false">
               Yopish
             </UButton>
           </div>
@@ -376,6 +364,48 @@ const upcomingPayments = ref<any[]>([]);
 // Modal state
 const lessonDetailsModal = ref(false);
 const selectedLesson = ref<any>(null);
+
+// Leads stats state
+const leadsDateRange = reactive<{
+  startDate: string;
+  endDate: string;
+}>({
+  startDate: "2026-01-01",
+  endDate: new Date().toISOString().split("T")[0],
+});
+
+const leadsStats = reactive({
+  totalLeads: 0,
+  leadsByStatus: {} as Record<string, number>,
+  leadsBySource: {} as Record<string, number>,
+  conversionRate: 0,
+  dailyTrends: [] as Array<{ date: string; count: number }>,
+});
+
+// Fetch leads stats
+const fetchLeadsStats = async () => {
+  try {
+    const params = new URLSearchParams();
+    params.append('startDate', leadsDateRange.startDate);
+    params.append('endDate', leadsDateRange.endDate);
+
+    const response = await api.get<{
+      totalLeads: number;
+      leadsByStatus: Record<string, number>;
+      leadsBySource: Record<string, number>;
+      conversionRate: number;
+      dailyTrends: Array<{ date: string; count: number }>;
+    }>(apiService.value, `/leads/stats/by-date-range?${params.toString()}`);
+
+    leadsStats.totalLeads = response.totalLeads;
+    leadsStats.leadsByStatus = response.leadsByStatus;
+    leadsStats.leadsBySource = response.leadsBySource;
+    leadsStats.conversionRate = response.conversionRate;
+    leadsStats.dailyTrends = response.dailyTrends;
+  } catch (error) {
+    console.error("Failed to fetch leads stats:", error);
+  }
+};
 
 // Fetch dashboard data from API
 const fetchDashboardData = async () => {
@@ -496,9 +526,8 @@ const fetchDashboardData = async () => {
           startTime: lesson.group?.lesson_start || "",
           endTime: lesson.group?.lesson_end || "",
           teacherName:
-            `${lesson.group?.teacher?.first_name || ""} ${
-              lesson.group?.teacher?.last_name || ""
-            }`.trim() || "Unknown Teacher",
+            `${lesson.group?.teacher?.first_name || ""} ${lesson.group?.teacher?.last_name || ""
+              }`.trim() || "Unknown Teacher",
         };
       });
     } catch (scheduleError) {
@@ -613,8 +642,127 @@ const navigateTo = (path: string) => {
   window.location.href = path;
 };
 
+// Color helpers for charts
+const getStatusColor = (status: string): string => {
+  const colors: Record<string, string> = {
+    "Yangi": "#3b82f6",
+    "Aloqada": "#8b5cf6",
+    "Sinovda": "#eab308",
+    "Sinovda qatnashdi": "#f97316",
+    "O'qishga yozildi": "#22c55e",
+  };
+  return colors[status] || "#6b7280";
+};
+
+const getSourceColor = (source: string): string => {
+  const colors: Record<string, string> = {
+    "Instagram": "#e91e63",
+    "Do'stimdan": "#3b82f6",
+    "O'zim keldim": "#22c55e",
+    "Banner(yondagi)": "#f97316",
+    "Banner(ko'chadagi)": "#eab308",
+    "Boshqa": "#6b7280",
+  };
+  return colors[source] || "#6b7280";
+};
+
+// ECharts option for daily trends chart
+const dailyTrendsChartOption = computed(() => {
+  const trends = leadsStats.dailyTrends || [];
+  const dates = trends.map((t) => formatDate(new Date(t.date)));
+  const counts = trends.map((t) => t.count);
+
+  return {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'cross',
+        label: {
+          backgroundColor: '#6a7985'
+        }
+      },
+      formatter: (params: any) => {
+        const param = params[0];
+        return `${param.name}<br/>Leadlar: <strong>${param.value}</strong>`;
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '10%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: dates,
+      axisLine: {
+        lineStyle: {
+          color: '#6b7280'
+        }
+      },
+      axisLabel: {
+        color: '#6b7280',
+        fontSize: 11
+      }
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: {
+        lineStyle: {
+          color: '#6b7280'
+        }
+      },
+      axisLabel: {
+        color: '#6b7280',
+        fontSize: 11
+      },
+      splitLine: {
+        lineStyle: {
+          color: '#e5e7eb',
+          type: 'dashed'
+        }
+      }
+    },
+    series: [
+      {
+        name: 'Leadlar',
+        type: 'line',
+        smooth: true,
+        data: counts,
+        areaStyle: {
+          opacity: 0.3,
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgb(59, 130, 246)' },
+              { offset: 1, color: 'rgba(59, 130, 246, 0)' }
+            ]
+          }
+        },
+        lineStyle: {
+          width: 2,
+          color: 'rgb(59, 130, 246)'
+        },
+        itemStyle: {
+          color: 'rgb(59, 130, 246)'
+        },
+        symbol: 'circle',
+        symbolSize: 6,
+        showSymbol: false
+      }
+    ]
+  };
+});
+
 // Fetch data on component mount
 onMounted(() => {
   fetchDashboardData();
+  fetchLeadsStats();
 });
 </script>
