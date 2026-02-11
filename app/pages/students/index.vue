@@ -17,20 +17,11 @@
 
       <UDashboardToolbar>
         <template #left>
-          <UInput
-            v-model="search"
-            icon="i-lucide-search"
-            placeholder="Talabalarni qidirish..."
-            class="w-64"
-          />
+          <UInput v-model="search" icon="i-lucide-search" placeholder="Talabalarni qidirish..." class="w-64" />
         </template>
 
         <template #right>
-          <USelectMenu
-            v-model="limit"
-            :items="[5, 10, 20, 30, 50]"
-            class="w-24"
-          >
+          <USelectMenu v-model="limit" :items="[5, 10, 20, 30, 50]" class="w-24">
             <template #label> {{ limit }} ta </template>
           </USelectMenu>
         </template>
@@ -45,14 +36,8 @@
             <h3 class="text-base font-semibold">Talabalar ro'yxati</h3>
           </template>
 
-          <UTable
-            ref="table"
-            v-model:sort="sort"
-            :data="students"
-            :columns="columns"
-            :loading="isLoading"
-            :empty="'Talabalar topilmadi'"
-          />
+          <UTable ref="table" v-model:sort="sort" :data="students" :columns="columns" :loading="isLoading"
+            :empty="'Talabalar topilmadi'" />
 
           <template #footer>
             <div class="flex items-center justify-between">
@@ -62,32 +47,21 @@
                 <span class="font-medium">{{ totalItems }}</span> talaba
               </div>
 
-              <UPagination
-                :model-value="page"
-                :total="totalItems"
-                :items-per-page="limit"
-                show-last
-                show-first
-                @update:page="(p: number) => (page = p)"
-              />
+              <UPagination :model-value="page" :total="totalItems" :items-per-page="limit" show-last show-first
+                @update:page="(p: number) => (page = p)" />
             </div>
           </template>
         </UCard>
       </div>
       <!-- View Student Modal -->
-      <StudentsViewStudentModal
-        v-model:open="viewDialog"
-        :student="selectedStudent"
-        :student-groups="studentGroups"
-        @edit="editStudent"
-      />
+      <StudentsViewStudentModal v-model:open="viewDialog" :student="selectedStudent" :student-groups="studentGroups"
+        @edit="editStudent" />
 
       <!-- Edit Student Modal -->
-      <StudentsEditStudentModal
-        v-model:open="editDialog"
-        :student="editingStudent"
-        @updated="loadStudents"
-      />
+      <StudentsEditStudentModal v-model:open="editDialog" :student="editingStudent" @updated="loadStudents" />
+
+      <!-- Archive Student Modal -->
+      <StudentsArchiveStudentModal v-model:open="archiveDialog" :student="archivingStudent" @archived="loadStudents" />
     </template>
   </UDashboardPanel>
 </template>
@@ -141,6 +115,8 @@ const editingStudent = ref<Student | null>(null);
 const studentToDelete = ref<Student | null>(null);
 const studentGroups = ref<any[]>([]);
 const deletePopoverOpen = ref<Record<string, boolean>>({});
+const archiveDialog = ref(false);
+const archivingStudent = ref<Student | null>(null);
 
 // New student form
 const newStudent = reactive({
@@ -169,9 +145,9 @@ const columns: TableColumn<Student>[] = [
           row.original.avatar_url
             ? undefined
             : {
-                fallback: () =>
-                  getInitials(row.original.first_name, row.original.last_name),
-              },
+              fallback: () =>
+                getInitials(row.original.first_name, row.original.last_name),
+            },
         ),
         h(
           "span",
@@ -196,10 +172,10 @@ const columns: TableColumn<Student>[] = [
     cell: ({ row }) => {
       return (row.original as any).level
         ? h(
-            UBadge,
-            { variant: "subtle" },
-            () => (row.original as any).level.title,
-          )
+          UBadge,
+          { variant: "subtle" },
+          () => (row.original as any).level.title,
+        )
         : h("span", { class: "text-gray-400 text-sm" }, "Yo'q");
     },
   },
@@ -291,7 +267,14 @@ const columns: TableColumn<Student>[] = [
                   icon: row.original.is_active
                     ? "i-lucide-user-x"
                     : "i-lucide-user-check",
-                  onSelect: () => toggleStudentStatus(row.original),
+                  onSelect: () => {
+                    if (row.original.is_active) {
+                      archivingStudent.value = row.original;
+                      archiveDialog.value = true;
+                    } else {
+                      toggleStudentStatus(row.original);
+                    }
+                  },
                 },
               ],
             ],
@@ -449,9 +432,8 @@ const toggleStudentStatus = async (student: Student) => {
 
     toast.add({
       title: "Muvaffaqiyat",
-      description: `Talaba muvaffaqiyatli ${
-        student.is_active ? "faolsizlantirildi" : "faollashtirildi"
-      }`,
+      description: `Talaba muvaffaqiyatli ${student.is_active ? "faolsizlantirildi" : "faollashtirildi"
+        }`,
       color: "success",
     });
   } catch (error) {
@@ -513,7 +495,7 @@ const loadCourses = async () => {
     courses.value = response.data || [];
   } catch (error) {
     console.error("Failed to load courses:", error);
-   toast.add({
+    toast.add({
       title: "Xatolik",
       description: "Kurslarni yuklashda xatolik yuz berdi",
       color: "error",

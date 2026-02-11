@@ -20,6 +20,9 @@ const newStudent = reactive({
   phone: "",
   password: "",
   level_id: "none",
+  full_name: "",
+  phone_number: "",
+  additional_number: "",
 });
 
 const courseOptions = computed(() => [
