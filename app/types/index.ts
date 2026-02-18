@@ -90,6 +90,7 @@ export interface Group {
   name: string;
   level_id: string;
   teacher_id: string;
+  isIELTS?: boolean;
   createdAt: string;
   updatedAt: string;
   enrolled_count?: number;
