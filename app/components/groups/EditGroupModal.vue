@@ -9,6 +9,7 @@ interface Group {
   level_id: string;
   teacher_id: string;
   isIELTS?: boolean;
+  isEnglish?: boolean;
   days?: string;
   lesson_start?: string;
   lesson_end?: string;
@@ -57,6 +58,7 @@ watch(
         level_id: newGroup.level_id,
         teacher_id: newGroup.teacher_id,
         isIELTS: newGroup.isIELTS ?? false,
+        isEnglish: newGroup.isEnglish ?? false,
         days: newGroup.days,
         lesson_start: newGroup.lesson_start,
         lesson_end: newGroup.lesson_end,
@@ -92,6 +94,7 @@ const handleSubmit = async () => {
       level_id: formData.value.level_id,
       teacher_id: formData.value.teacher_id,
       isIELTS: formData.value.isIELTS ?? false,
+      isEnglish: formData.value.isEnglish ?? false,
       days: formData.value.days,
       lesson_start: formData.value.lesson_start,
       lesson_end: formData.value.lesson_end,
@@ -145,6 +148,13 @@ const handleSubmit = async () => {
               Dars turi
             </label>
             <UCheckbox v-model="formData.isIELTS" label="IELTS guruhi" />
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Til
+            </label>
+            <UCheckbox v-model="formData.isEnglish" label="Ingliz tili guruhi" />
           </div>
         </div>
 

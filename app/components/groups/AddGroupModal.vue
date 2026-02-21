@@ -24,6 +24,7 @@ const formData = ref({
   lesson_start: "",
   lesson_end: "",
   isIELTS: false,
+  isEnglish: false,
 });
 
 const courseOptions = computed(() => {
@@ -87,6 +88,7 @@ const resetForm = () => {
     lesson_start: "",
     lesson_end: "",
     isIELTS: false,
+    isEnglish: false,
   };
 };
 </script>
@@ -124,6 +126,13 @@ const resetForm = () => {
               Dars turi
             </label>
             <UCheckbox v-model="formData.isIELTS" label="IELTS guruhi" />
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Til
+            </label>
+            <UCheckbox v-model="formData.isEnglish" label="Ingliz tili guruhi" />
           </div>
         </div>
 
