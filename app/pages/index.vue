@@ -54,27 +54,27 @@
             </div>
             <UIcon name="i-lucide-alert-circle" class="size-4 text-gray-400" />
           </div>
-          <div class="text-2xl font-bold">{{ upcomingPayments.length }}</div>
+          <div class="text-2xl font-bold">{{ dashboard.upcomingPaymentsCount }}</div>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {{ formatCurrency(dashboard.pendingPaymentsAmount) }} kutilmoqda
+            {{ formatCurrency(dashboard.upcomingPaymentsAmount) }} kutilmoqda
           </p>
         </UCard>
 
         <UCard>
           <div class="flex flex-row items-center justify-between pb-2">
             <div class="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Yangi leadlar
+              Qarzdor talabalar
             </div>
-            <UIcon name="i-lucide-user-plus" class="size-4 text-gray-400" />
+            <UIcon name="i-lucide-alert-triangle" class="size-4 text-red-400" />
           </div>
-          <div class="text-2xl font-bold">{{ dashboard.newLeads }}</div>
+          <div class="text-2xl font-bold text-red-600">{{ dashboard.overduePaymentsCount }}</div>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {{ dashboard.leadsConverted }} talabalarga aylantirildi
+            {{ formatCurrency(dashboard.overduePaymentsAmount) }} qarzdorlik
           </p>
         </UCard>
       </div>
 
-     
+
       <!-- Leads Analytics Section -->
       <div class="mt-6">
         <UCard>
@@ -192,7 +192,7 @@
         </UCard>
       </div>
 
-       <!-- Lesson Schedules Section -->
+      <!-- Lesson Schedules Section -->
       <div class="mt-6">
         <UCard>
           <template #header>
@@ -347,7 +347,10 @@ const dashboard = reactive({
   newStudents: 0,
   activeGroups: 0,
   recentGroups: 0,
-  pendingPaymentsAmount: 0,
+  upcomingPaymentsCount: 0,
+  upcomingPaymentsAmount: 0,
+  overduePaymentsCount: 0,
+  overduePaymentsAmount: 0,
   newLeads: 0,
   leadsConverted: 0,
   recentLeads: [] as any[],
@@ -358,20 +361,16 @@ const dashboard = reactive({
 // Reactive state for debitor students
 const debitorStudents = ref<any[]>([]);
 
-// Reactive state for upcoming payments
-const upcomingPayments = ref<any[]>([]);
+
 
 // Modal state
 const lessonDetailsModal = ref(false);
 const selectedLesson = ref<any>(null);
 
 // Leads stats state
-const leadsDateRange = reactive<{
-  startDate: string;
-  endDate: string;
-}>({
+const leadsDateRange = reactive({
   startDate: "2026-01-01",
-  endDate: new Date().toISOString().split("T")[0],
+  endDate: new Date().toISOString().split("T")[0] as string,
 });
 
 const leadsStats = reactive({
@@ -412,65 +411,48 @@ const fetchDashboardData = async () => {
   try {
     // Get student stats
     try {
-      const studentsResponse = await api.get<{ data: any[]; total: number }>(
+      const statsResponse = await api.get<{ activeStudentsCount: number; newStudentsThisMonth: number }>(
         apiService.value,
-        "/users/students?limit=1000",
+        "/users/students/stats",
       );
-      const students = studentsResponse.data || [];
-      dashboard.totalStudents = studentsResponse.total || students.length;
-
-      // Calculate new students (last 30 days)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      dashboard.newStudents = students.filter(
-        (s) => new Date(s.created_at) > thirtyDaysAgo,
-      ).length;
+      dashboard.totalStudents = statsResponse.activeStudentsCount || 0;
+      dashboard.newStudents = statsResponse.newStudentsThisMonth || 0;
     } catch (studentError) {
-      console.error("Failed to fetch student data:", studentError);
+      console.error("Failed to fetch student stats:", studentError);
       dashboard.totalStudents = 0;
       dashboard.newStudents = 0;
     }
 
     // Get group stats
-    let groups = [];
     try {
-      const groupsResponse = await api.get<{ data: any[]; total: number }>(
+      const groupsStatsResponse = await api.get<{ totalGroups: number; createdThisMonth: number }>(
         apiService.value,
-        "/groups?limit=1000",
+        "/groups/stats",
       );
-      groups = groupsResponse.data || [];
-      dashboard.activeGroups = groupsResponse.total || groups.length;
-
-      // Calculate recent groups (last 30 days)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      dashboard.recentGroups = groups.filter(
-        (g) => new Date(g.createdAt) > thirtyDaysAgo,
-      ).length;
+      dashboard.activeGroups = groupsStatsResponse.totalGroups || 0;
+      dashboard.recentGroups = groupsStatsResponse.createdThisMonth || 0;
     } catch (groupError) {
-      console.error("Failed to fetch group data:", groupError);
+      console.error("Failed to fetch group stats:", groupError);
       dashboard.activeGroups = 0;
       dashboard.recentGroups = 0;
     }
 
-    // Get upcoming payments data
+    // Get payment stats
     try {
-      const upcomingResponse = await api.get<any[]>(
-        apiService.value,
-        "/student-payments/upcoming?days=7",
-      );
-
-      upcomingPayments.value = upcomingResponse || [];
-
-      // Calculate total pending amount
-      dashboard.pendingPaymentsAmount = upcomingPayments.value.reduce(
-        (total, payment) => total + (payment.amount || 0),
-        0,
-      );
-    } catch (upcomingError) {
-      console.error("Failed to fetch upcoming payments:", upcomingError);
-      upcomingPayments.value = [];
-      dashboard.pendingPaymentsAmount = 0;
+      const paymentStatsResponse = await api.get<{
+        upcoming: { count: number; totalAmount: number };
+        overdue: { count: number; totalAmount: number };
+      }>(apiService.value, "/student-payments/stats");
+      dashboard.upcomingPaymentsCount = paymentStatsResponse.upcoming?.count || 0;
+      dashboard.upcomingPaymentsAmount = paymentStatsResponse.upcoming?.totalAmount || 0;
+      dashboard.overduePaymentsCount = paymentStatsResponse.overdue?.count || 0;
+      dashboard.overduePaymentsAmount = paymentStatsResponse.overdue?.totalAmount || 0;
+    } catch (paymentError) {
+      console.error("Failed to fetch payment stats:", paymentError);
+      dashboard.upcomingPaymentsCount = 0;
+      dashboard.upcomingPaymentsAmount = 0;
+      dashboard.overduePaymentsCount = 0;
+      dashboard.overduePaymentsAmount = 0;
     }
 
     // Get leads data
