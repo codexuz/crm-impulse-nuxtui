@@ -1,9 +1,10 @@
 <template>
   <UDashboardPanel id="send-sms">
     <template #header>
-      <UDashboardNavbar title="SMS Jo'natmalar">
+      <UDashboardNavbar>
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="smsNavItems" highlight />
         </template>
 
         <template #description>
@@ -30,31 +31,19 @@
             <form @submit.prevent="searchMessages" class="space-y-4">
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <UFormField  label="Boshlanish sanasi" required>
-                    <UInput
-                      type="datetime-local"
-                      v-model="messageFilters.start_date"
-                      required
-                    />
+                  <UFormField label="Boshlanish sanasi" required>
+                    <UInput type="datetime-local" v-model="messageFilters.start_date" required />
                   </UFormField>
                 </div>
                 <div>
-                  <UFormField  label="Tugash sanasi" required>
-                    <UInput
-                      type="datetime-local"
-                      v-model="messageFilters.end_date"
-                      required
-                    />
+                  <UFormField label="Tugash sanasi" required>
+                    <UInput type="datetime-local" v-model="messageFilters.end_date" required />
                   </UFormField>
                 </div>
                 <div>
-                  <UFormField  label="Holat">
-                    <USelectMenu
-                      v-model="messageFilters.status"
-                      :items="statusOptions"
-                      value-key="value"
-                      placeholder="Holatni tanlang"
-                    >
+                  <UFormField label="Holat">
+                    <USelectMenu v-model="messageFilters.status" :items="statusOptions" value-key="value"
+                      placeholder="Holatni tanlang">
                       <template #label>
                         {{
                           statusOptions.find(
@@ -67,43 +56,25 @@
                 </div>
               </div>
 
-              <UButton
-                type="submit"
-                :loading="isLoadingMessages"
-                :label="
-                  isLoadingMessages ? 'Yuklanmoqda...' : 'Xabarlarni yuklash'
-                "
-              />
+              <UButton type="submit" :loading="isLoadingMessages" :label="isLoadingMessages ? 'Yuklanmoqda...' : 'Xabarlarni yuklash'
+                " />
             </form>
           </div>
 
           <!-- Messages Table -->
-          <UTable
-            :loading="isLoadingMessages"
-            :columns="columns"
-            :data="userMessages"
-            :empty="'Hech qanday xabar topilmadi'"
-          />
+          <UTable :loading="isLoadingMessages" :columns="columns" :data="userMessages"
+            :empty="'Hech qanday xabar topilmadi'" />
 
           <!-- Pagination -->
-          <div
-            v-if="totalPages > 1"
-            class="flex items-center justify-between mt-4 pt-4 border-t"
-          >
+          <div v-if="totalPages > 1" class="flex items-center justify-between mt-4 pt-4 border-t">
             <div class="text-sm text-gray-500">
               <span class="font-medium">{{ paginationStart }}</span> dan
               <span class="font-medium">{{ paginationEnd }}</span> gacha, jami
               <span class="font-medium">{{ totalMessages }}</span> xabar
             </div>
 
-            <UPagination
-              :model-value="currentPage"
-              :total="totalMessages"
-              :items-per-page="pageSize"
-              show-last
-              show-first
-              @update:page="(p: number) => (currentPage = p)"
-            />
+            <UPagination :model-value="currentPage" :total="totalMessages" :items-per-page="pageSize" show-last
+              show-first @update:page="(p: number) => (currentPage = p)" />
           </div>
         </UCard>
       </div>
@@ -113,8 +84,26 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed, watch, h } from "vue";
-import type { TableColumn } from "@nuxt/ui";
+import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import { useSMS } from "~/composables/useSMS";
+
+const smsNavItems: NavigationMenuItem[] = [
+  {
+    label: 'SMS Jo\'natmalar',
+    icon: 'i-lucide-send',
+    to: '/sms/send-sms'
+  },
+  {
+    label: 'Shablonlar',
+    icon: 'i-lucide-file-text',
+    to: '/sms/templates'
+  },
+  {
+    label: 'Hisobot',
+    icon: 'i-lucide-bar-chart-3',
+    to: '/sms/report'
+  }
+]
 
 definePageMeta({
   middleware: ["auth"],

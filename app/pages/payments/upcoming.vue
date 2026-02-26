@@ -1,9 +1,10 @@
 <template>
   <UDashboardPanel id="upcoming-payments">
     <template #header>
-      <UDashboardNavbar title="Kelayotgan to'lovlar" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="paymentNavItems" highlight />
         </template>
 
         <template #description>
@@ -11,12 +12,7 @@
         </template>
 
         <template #right>
-          <UButton
-            icon="i-lucide-refresh-cw"
-            label="Yangilash"
-            variant="outline"
-            @click="refreshData"
-          />
+          <UButton icon="i-lucide-refresh-cw" label="Yangilash" variant="outline" @click="refreshData" />
         </template>
       </UDashboardNavbar>
     </template>
@@ -26,22 +22,12 @@
         <!-- Filters Section -->
         <UDashboardToolbar>
           <template #left>
-            <UInput
-              v-model="search"
-              icon="i-lucide-search"
-              placeholder="Talabalarni qidirish..."
-              class="w-64"
-            />
+            <UInput v-model="search" icon="i-lucide-search" placeholder="Talabalarni qidirish..." class="w-64" />
           </template>
 
           <template #right>
-            <USelectMenu
-              v-model="selectedDays"
-              :items="daysOptions"
-              value-key="value"
-              placeholder="Kunlar"
-              class="w-40"
-            >
+            <USelectMenu v-model="selectedDays" :items="daysOptions" value-key="value" placeholder="Kunlar"
+              class="w-40">
               <template #label>
                 {{
                   daysOptions.find((d) => d.value === selectedDays)?.label ||
@@ -58,12 +44,8 @@
             <h3 class="text-base font-semibold">Kelayotgan to'lovlar</h3>
           </template>
 
-          <UTable
-            :data="filteredPayments"
-            :columns="columns"
-            :loading="isLoading"
-            :empty="'Kelayotgan to\'lovlar topilmadi'"
-          />
+          <UTable :data="filteredPayments" :columns="columns" :loading="isLoading"
+            :empty="'Kelayotgan to\'lovlar topilmadi'" />
 
           <template #footer>
             <div class="text-sm text-gray-500">
@@ -76,24 +58,12 @@
       </div>
 
       <!-- Record Payment Modal -->
-      <UModal
-        v-model:open="recordDialog"
-        title="To'lovni qayd qilish"
-        description="Ushbu talaba uchun yangi to'lovni qayd qilish"
-      >
+      <UModal v-model:open="recordDialog" title="To'lovni qayd qilish"
+        description="Ushbu talaba uchun yangi to'lovni qayd qilish">
         <template #body>
-          <form
-            v-if="selectedPayment"
-            @submit.prevent="submitPayment"
-            class="space-y-4"
-          >
-            <div
-              class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg"
-            >
-              <UAvatar
-                :alt="`${selectedPayment.student?.first_name} ${selectedPayment.student?.last_name}`"
-                size="md"
-              >
+          <form v-if="selectedPayment" @submit.prevent="submitPayment" class="space-y-4">
+            <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+              <UAvatar :alt="`${selectedPayment.student?.first_name} ${selectedPayment.student?.last_name}`" size="md">
                 <template #fallback>
                   {{
                     getInitials(
@@ -119,13 +89,7 @@
                 Summa
                 <span class="text-red-500">*</span>
               </label>
-              <UInput
-                v-model="newPayment.amount"
-                type="number"
-                step="0.01"
-                placeholder="Summa"
-                required
-              />
+              <UInput v-model="newPayment.amount" type="number" step="0.01" placeholder="Summa" required />
             </div>
 
             <div class="space-y-2">
@@ -133,12 +97,8 @@
                 To'lov usuli
                 <span class="text-red-500">*</span>
               </label>
-              <USelectMenu
-                v-model="newPayment.payment_method"
-                :items="paymentMethodOptions"
-                value-key="value"
-                placeholder="Usulni tanlang"
-              />
+              <USelectMenu v-model="newPayment.payment_method" :items="paymentMethodOptions" value-key="value"
+                placeholder="Usulni tanlang" />
             </div>
 
             <div class="space-y-2">
@@ -154,60 +114,31 @@
                 Keyingi to'lov sanasi
                 <span class="text-red-500">*</span>
               </label>
-              <UInput
-                v-model="newPayment.next_payment_date"
-                type="date"
-                required
-              />
+              <UInput v-model="newPayment.next_payment_date" type="date" required />
             </div>
 
             <div class="space-y-2">
               <label class="block text-sm font-medium">Izohlar</label>
-              <UTextarea
-                v-model="newPayment.notes"
-                placeholder="To'lov tafsilotlari"
-                class="w-full"
-                rows="3"
-              />
+              <UTextarea v-model="newPayment.notes" placeholder="To'lov tafsilotlari" class="w-full" rows="3" />
             </div>
           </form>
         </template>
 
         <template #footer>
           <div class="flex justify-end gap-2">
-            <UButton
-              label="Bekor qilish"
-              variant="outline"
-              @click="recordDialog = false"
-            />
-            <UButton
-              label="To'lovni qayd qilish"
-              :loading="isSubmitting"
-              @click="submitPayment"
-            />
+            <UButton label="Bekor qilish" variant="outline" @click="recordDialog = false" />
+            <UButton label="To'lovni qayd qilish" :loading="isSubmitting" @click="submitPayment" />
           </div>
         </template>
       </UModal>
 
       <!-- Extend Due Date Modal -->
-      <UModal
-        v-model:open="extendDialog"
-        title="Muddatni uzaytirish"
-        description="Ushbu talaba uchun to'lov muddatini o'zgartirish"
-      >
+      <UModal v-model:open="extendDialog" title="Muddatni uzaytirish"
+        description="Ushbu talaba uchun to'lov muddatini o'zgartirish">
         <template #body>
-          <form
-            v-if="selectedPayment"
-            @submit.prevent="submitExtension"
-            class="space-y-4"
-          >
-            <div
-              class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg"
-            >
-              <UAvatar
-                :alt="`${selectedPayment.student?.first_name} ${selectedPayment.student?.last_name}`"
-                size="md"
-              >
+          <form v-if="selectedPayment" @submit.prevent="submitExtension" class="space-y-4">
+            <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+              <UAvatar :alt="`${selectedPayment.student?.first_name} ${selectedPayment.student?.last_name}`" size="md">
                 <template #fallback>
                   {{
                     getInitials(
@@ -239,47 +170,26 @@
 
             <div class="space-y-2">
               <label class="block text-sm font-medium">Sabab</label>
-              <UTextarea
-                v-model="extensionReason"
-                placeholder="Uzaytirilish sababi"
-                class="w-full"
-                rows="3"
-              />
+              <UTextarea v-model="extensionReason" placeholder="Uzaytirilish sababi" class="w-full" rows="3" />
             </div>
           </form>
         </template>
 
         <template #footer>
           <div class="flex justify-end gap-2">
-            <UButton
-              label="Bekor qilish"
-              variant="outline"
-              @click="extendDialog = false"
-            />
-            <UButton
-              label="Muddatni uzaytirish"
-              :loading="isSubmitting"
-              @click="submitExtension"
-            />
+            <UButton label="Bekor qilish" variant="outline" @click="extendDialog = false" />
+            <UButton label="Muddatni uzaytirish" :loading="isSubmitting" @click="submitExtension" />
           </div>
         </template>
       </UModal>
 
       <!-- Reminder Modal -->
-      <UModal
-        v-model:open="reminderDialog"
-        title="To'lov eslatmasi yuborish"
-        description="Talabaga kelayotgan to'lov haqida xabar berish"
-      >
+      <UModal v-model:open="reminderDialog" title="To'lov eslatmasi yuborish"
+        description="Talabaga kelayotgan to'lov haqida xabar berish">
         <template #body>
           <div v-if="selectedPayment" class="space-y-4">
-            <div
-              class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg"
-            >
-              <UAvatar
-                :alt="`${selectedPayment.student?.first_name} ${selectedPayment.student?.last_name}`"
-                size="md"
-              >
+            <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+              <UAvatar :alt="`${selectedPayment.student?.first_name} ${selectedPayment.student?.last_name}`" size="md">
                 <template #fallback>
                   {{
                     getInitials(
@@ -312,53 +222,29 @@
 
             <div class="space-y-2">
               <label class="block text-sm font-medium">Xabar</label>
-              <UTextarea
-                v-model="reminderMessage"
-                placeholder="Maxsus xabar (ixtiyoriy)"
-                rows="5"
-                class="w-full"
-              />
+              <UTextarea v-model="reminderMessage" placeholder="Maxsus xabar (ixtiyoriy)" rows="5" class="w-full" />
             </div>
           </div>
         </template>
 
         <template #footer>
           <div class="flex justify-end gap-2">
-            <UButton
-              label="Bekor qilish"
-              variant="outline"
-              @click="reminderDialog = false"
-            />
-            <UButton
-              label="Eslatma yuborish"
-              :loading="isSubmitting"
-              @click="sendReminderNotification"
-            />
+            <UButton label="Bekor qilish" variant="outline" @click="reminderDialog = false" />
+            <UButton label="Eslatma yuborish" :loading="isSubmitting" @click="sendReminderNotification" />
           </div>
         </template>
       </UModal>
 
       <!-- Contact Modal -->
-      <UModal
-        v-model:open="contactDialog"
-        :title="
-          isEditMode ? 'Aloqa ma`lumotlarini tahrirlash' : 'Aloqa qo`shish'
-        "
-        :description="
-          isEditMode
-            ? 'Mavjud aloqa ma`lumotlarini tahrirlash'
-            : 'To`lov uchun aloqa ma`lumotlarini kiritish'
-        "
-      >
+      <UModal v-model:open="contactDialog" :title="isEditMode ? 'Aloqa ma`lumotlarini tahrirlash' : 'Aloqa qo`shish'
+        " :description="isEditMode
+          ? 'Mavjud aloqa ma`lumotlarini tahrirlash'
+          : 'To`lov uchun aloqa ma`lumotlarini kiritish'
+          ">
         <template #body>
           <div v-if="selectedPayment" class="space-y-4">
-            <div
-              class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg"
-            >
-              <UAvatar
-                :alt="`${selectedPayment.student?.first_name} ${selectedPayment.student?.last_name}`"
-                size="md"
-              >
+            <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+              <UAvatar :alt="`${selectedPayment.student?.first_name} ${selectedPayment.student?.last_name}`" size="md">
                 <template #fallback>
                   {{
                     getInitials(
@@ -383,10 +269,7 @@
             </div>
 
             <!-- Show existing action info in edit mode -->
-            <div
-              v-if="isEditMode && selectedAction"
-              class="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg space-y-1"
-            >
+            <div v-if="isEditMode && selectedAction" class="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg space-y-1">
               <h4 class="font-medium mb-2">Mavjud aloqa ma'lumoti:</h4>
               <p class="text-sm text-gray-600 dark:text-gray-400">
                 <span class="font-medium">Manager:</span>
@@ -409,12 +292,8 @@
                   Aloqa turi
                   <span class="text-red-500">*</span>
                 </label>
-                <USelectMenu
-                  v-model="contactForm.action_type"
-                  :items="contactTypeOptions"
-                  value-key="value"
-                  placeholder="Aloqa turini tanlang"
-                />
+                <USelectMenu v-model="contactForm.action_type" :items="contactTypeOptions" value-key="value"
+                  placeholder="Aloqa turini tanlang" />
               </div>
 
               <div class="space-y-2">
@@ -422,12 +301,8 @@
                   Bosqich
                   <span class="text-red-500">*</span>
                 </label>
-                <USelectMenu
-                  v-model="contactForm.stage"
-                  :items="stageOptions"
-                  value-key="value"
-                  placeholder="Bosqichni tanlang"
-                />
+                <USelectMenu v-model="contactForm.stage" :items="stageOptions" value-key="value"
+                  placeholder="Bosqichni tanlang" />
               </div>
 
               <div class="space-y-2">
@@ -435,13 +310,8 @@
                   Xabar
                   <span class="text-red-500">*</span>
                 </label>
-                <UTextarea
-                  v-model="contactForm.message"
-                  placeholder="Aloqa xabarini kiriting..."
-                  rows="4"
-                  required
-                  class="w-full"
-                />
+                <UTextarea v-model="contactForm.message" placeholder="Aloqa xabarini kiriting..." rows="4" required
+                  class="w-full" />
               </div>
 
               <div class="space-y-2">
@@ -449,11 +319,7 @@
                   Keyingi aloqa sanasi
                   <span class="text-red-500">*</span>
                 </label>
-                <UInput
-                  v-model="contactForm.next_action_date"
-                  type="datetime-local"
-                  required
-                />
+                <UInput v-model="contactForm.next_action_date" type="datetime-local" required />
               </div>
             </form>
           </div>
@@ -461,17 +327,10 @@
 
         <template #footer>
           <div class="flex justify-end gap-2">
-            <UButton
-              label="Bekor qilish"
-              variant="outline"
-              :disabled="isSubmittingContact"
-              @click="contactDialog = false"
-            />
-            <UButton
-              :label="isEditMode ? 'Yangilash' : 'Saqlash'"
-              :loading="isSubmittingContact"
-              @click="submitContactAction"
-            />
+            <UButton label="Bekor qilish" variant="outline" :disabled="isSubmittingContact"
+              @click="contactDialog = false" />
+            <UButton :label="isEditMode ? 'Yangilash' : 'Saqlash'" :loading="isSubmittingContact"
+              @click="submitContactAction" />
           </div>
         </template>
       </UModal>
@@ -480,10 +339,29 @@
 </template>
 
 <script setup lang="ts">
+import type { NavigationMenuItem } from "@nuxt/ui";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 import { useSMS } from "~/composables/useSMS";
 import { h } from "vue";
+
+const paymentNavItems: NavigationMenuItem[] = [
+  {
+    label: 'To\'lovlar',
+    icon: 'i-lucide-credit-card',
+    to: '/payments'
+  },
+  {
+    label: 'Kelayotgan to\'lovlar',
+    icon: 'i-lucide-calendar-clock',
+    to: '/payments/upcoming'
+  },
+  {
+    label: 'Qarzdorlar',
+    icon: 'i-lucide-alert-triangle',
+    to: '/payments/debitor'
+  }
+]
 
 const { apiService, auth } = useAuth();
 const toast = useToast();
@@ -957,9 +835,8 @@ const sendReminder = (payment: any) => {
     return `${day}.${month}.${year}`;
   };
 
-  const fullName = `${payment.student?.first_name || ""} ${
-    payment.student?.last_name || ""
-  }`.trim();
+  const fullName = `${payment.student?.first_name || ""} ${payment.student?.last_name || ""
+    }`.trim();
   const amount = formatCurrencyForSMS(payment.amount);
   const dueDate = formatDateForSMS(payment.next_payment_date);
   reminderMessage.value = `Hurmatli ${fullName}, ${amount} miqdorida to'lovingiz ${dueDate} sanasida muddati tugaydi. O'z vaqtida to'lov qilishingizni so'raymiz. Impulse Study LC`;

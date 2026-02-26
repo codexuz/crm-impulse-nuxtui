@@ -36,32 +36,6 @@ const links = [
       label: "Leadlar",
       icon: "i-lucide-users-round",
       to: "/leads",
-      defaultOpen: true,
-      type: "trigger" as const,
-      children: [
-        {
-          label: "Leadlar",
-          to: "/leads",
-          exact: true,
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-        {
-          label: "Sinov darslari",
-          to: "/leads/lead-trials",
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-        {
-          label: "Arxiv leadlar",
-          to: "/leads/archive",
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-      ],
       onSelect: () => {
         open.value = false;
       },
@@ -69,44 +43,11 @@ const links = [
     {
       label: "SMS Xabarnoma",
       icon: "i-lucide-message-square",
-      to: "/sms/report",
-      defaultOpen: true,
-      type: "trigger" as const,
-      children: [
-        {
-          label: "Hisobot",
-          to: "/sms/report",
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-        {
-          label: "Jo'natmalar",
-          to: "/sms/send-sms",
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-        {
-          label: "Shablonlar",
-          to: "/sms/templates",
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-      ],
+      to: "/sms/send-sms",
       onSelect: () => {
         open.value = false;
       },
     },
-    // {
-    //   label: "Bildirishnomalar",
-    //   icon: "i-lucide-bell",
-    //   to: "/notifications",
-    //   onSelect: () => {
-    //     open.value = false;
-    //   },
-    // },
   ],
   [
     {
@@ -117,33 +58,6 @@ const links = [
       label: "Talabalar",
       icon: "i-lucide-graduation-cap",
       to: "/students",
-      defaultOpen: true,
-      type: "trigger" as const,
-      children: [
-        {
-          label: "Faol talabalar",
-          to: "/students",
-          exact: true,
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-          {
-          label: "Ota-onalar",
-          to: "/students/parents",
-          exact: true,
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-        {
-          label: "Arxiv talabalar",
-          to: "/students/archive",
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-      ],
       onSelect: () => {
         open.value = false;
       },
@@ -152,29 +66,6 @@ const links = [
       label: "O'qituvchilar",
       icon: "i-lucide-users",
       to: "/teachers",
-      defaultOpen: true,
-      type: "trigger" as const,
-      children: [
-        {
-          label: "O'qituvchilar",
-          to: "/teachers",
-          exact: true,
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-        ...(hasFinancialAccess.value
-          ? [
-              {
-                label: "O'qituvchi profili",
-                to: "/teachers/profile",
-                onSelect: () => {
-                  open.value = false;
-                },
-              },
-            ]
-          : []),
-      ],
       onSelect: () => {
         open.value = false;
       },
@@ -205,25 +96,6 @@ const links = [
       label: "Davomat",
       icon: "i-lucide-calendar-check",
       to: "/attendance",
-      defaultOpen: true,
-      type: "trigger" as const,
-      children: [
-        {
-          label: "Davomat olish",
-          to: "/attendance",
-          exact: true,
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-        {
-          label: "Qoldirilgan darslar",
-          to: "/attendance/compensated-lessons",
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-      ],
       onSelect: () => {
         open.value = false;
       },
@@ -238,112 +110,22 @@ const links = [
       label: "To'lovlar",
       icon: "i-lucide-credit-card",
       to: "/payments",
-      defaultOpen: true,
-      type: "trigger" as const,
-      children: [
-        {
-          label: "Qilingan to'lovlar",
-          to: "/payments",
-          exact: true,
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-        {
-          label: "Kelayotgan to'lovlar",
-          to: "/payments/upcoming",
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-        {
-          label: "Qarzdorlar",
-          to: "/payments/debitor",
-          onSelect: () => {
-            open.value = false;
-          },
-        },
-      ],
       onSelect: () => {
         open.value = false;
       },
     },
     ...(hasFinancialAccess.value
       ? [
-          {
-            label: "Xarajatlar",
-            icon: "i-lucide-receipt",
-            to: "/expenses",
-            defaultOpen: true,
-            type: "trigger" as const,
-            children: [
-              {
-                label: "Barcha xarajatlar",
-                to: "/expenses",
-                exact: true,
-                onSelect: () => {
-                  open.value = false;
-                },
-              },
-              {
-                label: "Xarajatlar kategoriyasi",
-                to: "/expenses/categories",
-                onSelect: () => {
-                  open.value = false;
-                },
-              },
-            ],
-            onSelect: () => {
-              open.value = false;
-            },
+        {
+          label: "Xarajatlar",
+          icon: "i-lucide-receipt",
+          to: "/expenses",
+          onSelect: () => {
+            open.value = false;
           },
-        ]
+        },
+      ]
       : []),
-    ...(hasFinancialAccess.value
-      ? [
-          {
-            label: "Oylik maoshlar",
-            icon: "i-lucide-banknote",
-            to: "/salaries",
-            defaultOpen: true,
-            type: "trigger" as const,
-            children: [
-              {
-                label: "Maosh hisoblash",
-                to: "/salaries",
-                exact: true,
-                onSelect: () => {
-                  open.value = false;
-                },
-              },
-              {
-                label: "To'lov tarixi",
-                to: "/salaries/history",
-                onSelect: () => {
-                  open.value = false;
-                },
-              },
-            ],
-            onSelect: () => {
-              open.value = false;
-            },
-          },
-        ]
-      : []),
-  ],
-  [
-    {
-      type: "label" as const,
-      label: "Boshqalar",
-    },
-    {
-      label: "CD IELTS",
-      icon: "i-lucide-file-text",
-      to: "/cd-ielts",
-      onSelect: () => {
-        open.value = false;
-      },
-    },
   ],
 ] satisfies NavigationMenuItem[][];
 
@@ -377,34 +159,18 @@ const handleLogout = async () => {
 
 <template>
   <UDashboardGroup unit="rem">
-    <UDashboardSidebar
-      id="default"
-      v-model:open="open"
-      collapsible
-      resizable
-      class="bg-elevated/25"
-      :ui="{ footer: 'lg:border-t lg:border-default' }"
-    >
+    <UDashboardSidebar id="default" v-model:open="open" collapsible resizable class="bg-elevated/25"
+      :ui="{ footer: 'lg:border-t lg:border-default' }">
       <template #header="{ collapsed }">
         <WorkspaceSwitcher :collapsed="collapsed" />
       </template>
 
       <template #default="{ collapsed }">
-        <UDashboardSearchButton
-          :collapsed="collapsed"
-          class="bg-transparent ring-default"
-        />
+        <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
 
         <div class="space-y-4">
-          <UNavigationMenu
-            v-for="(linkGroup, index) in links"
-            :key="index"
-            :collapsed="collapsed"
-            :items="linkGroup"
-            orientation="vertical"
-            tooltip
-            popover
-          />
+          <UNavigationMenu v-for="(linkGroup, index) in links" :key="index" :collapsed="collapsed" :items="linkGroup"
+            orientation="vertical" tooltip popover />
         </div>
       </template>
 

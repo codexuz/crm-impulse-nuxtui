@@ -1,9 +1,10 @@
 <template>
   <UDashboardPanel id="teachers">
     <template #header>
-      <UDashboardNavbar title="O'qituvchilar" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="teacherNavItems" highlight />
         </template>
 
         <template #description>
@@ -11,30 +12,17 @@
         </template>
 
         <template #right>
-          <UButton
-            icon="i-lucide-plus"
-            label="O'qituvchi qo'shish"
-            @click="openAddDialog"
-          />
+          <UButton icon="i-lucide-plus" label="O'qituvchi qo'shish" @click="openAddDialog" />
         </template>
       </UDashboardNavbar>
 
       <UDashboardToolbar>
         <template #left>
-          <UInput
-            v-model="search"
-            icon="i-lucide-search"
-            placeholder="O'qituvchilarni qidirish..."
-            class="w-64"
-          />
+          <UInput v-model="search" icon="i-lucide-search" placeholder="O'qituvchilarni qidirish..." class="w-64" />
         </template>
 
         <template #right>
-          <USelectMenu
-            v-model="limit"
-            :items="[5, 10, 20, 30, 50]"
-            class="w-24"
-          >
+          <USelectMenu v-model="limit" :items="[5, 10, 20, 30, 50]" class="w-24">
             <template #label> {{ limit }} ta </template>
           </USelectMenu>
         </template>
@@ -49,14 +37,8 @@
             <h3 class="text-base font-semibold">O'qituvchilar ro'yxati</h3>
           </template>
 
-          <UTable
-            ref="table"
-            v-model:sort="sort"
-            :data="teachers"
-            :columns="columns"
-            :loading="isLoading"
-            :empty="'O\'qituvchilar topilmadi'"
-          />
+          <UTable ref="table" v-model:sort="sort" :data="teachers" :columns="columns" :loading="isLoading"
+            :empty="'O\'qituvchilar topilmadi'" />
 
           <template #footer>
             <div class="flex items-center justify-between">
@@ -66,14 +48,8 @@
                 <span class="font-medium">{{ totalItems }}</span> o'qituvchi
               </div>
 
-              <UPagination
-                :model-value="page"
-                :total="totalItems"
-                :items-per-page="limit"
-                show-last
-                show-first
-                @update:page="(p: number) => (page = p)"
-              />
+              <UPagination :model-value="page" :total="totalItems" :items-per-page="limit" show-last show-first
+                @update:page="(p: number) => (page = p)" />
             </div>
           </template>
         </UCard>
@@ -88,46 +64,35 @@
         <template #body>
           <div class="space-y-4">
             <div>
-              <UFormField  label="Ism" required>
+              <UFormField label="Ism" required>
                 <UInput v-model="newTeacher.first_name" placeholder="Ism" />
               </UFormField>
             </div>
 
             <div>
-              <UFormField  label="Familiya" required>
+              <UFormField label="Familiya" required>
                 <UInput v-model="newTeacher.last_name" placeholder="Familiya" />
               </UFormField>
             </div>
 
             <div>
-              <UFormField  label="Login" required>
+              <UFormField label="Login" required>
                 <UInput v-model="newTeacher.username" placeholder="Login" />
               </UFormField>
             </div>
 
             <div>
-              <UFormField  label="Telefon" required>
-                <UInput
-                  v-model="newTeacher.phone"
-                  placeholder="+998 xx xxx xx xx"
-                />
+              <UFormField label="Telefon" required>
+                <UInput v-model="newTeacher.phone" placeholder="+998 xx xxx xx xx" />
               </UFormField>
             </div>
 
             <div>
-              <UFormField  label="Parol" required>
-                <UInput
-                  v-model="newTeacher.password"
-                  :type="showPassword ? 'text' : 'password'"
-                  placeholder="Parol"
-                >
+              <UFormField label="Parol" required>
+                <UInput v-model="newTeacher.password" :type="showPassword ? 'text' : 'password'" placeholder="Parol">
                   <template #trailing>
-                    <UButton
-                      variant="ghost"
-                      :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                      size="xs"
-                      @click="showPassword = !showPassword"
-                    />
+                    <UButton variant="ghost" :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'" size="xs"
+                      @click="showPassword = !showPassword" />
                   </template>
                 </UInput>
               </UFormField>
@@ -137,17 +102,9 @@
 
         <template #footer>
           <div class="flex justify-end gap-3">
-            <UButton
-              color="neutral"
-              variant="subtle"
-              label="Bekor qilish"
-              @click="addDialog = false"
-            />
-            <UButton
-              :label="isLoading ? 'Yaratilmoqda...' : 'O\'qituvchi yaratish'"
-              :loading="isLoading"
-              @click="addTeacher"
-            />
+            <UButton color="neutral" variant="subtle" label="Bekor qilish" @click="addDialog = false" />
+            <UButton :label="isLoading ? 'Yaratilmoqda...' : 'O\'qituvchi yaratish'" :loading="isLoading"
+              @click="addTeacher" />
           </div>
         </template>
       </UModal>
@@ -161,10 +118,7 @@
         <template #body>
           <div v-if="selectedTeacher" class="py-4">
             <div class="flex items-center gap-4 mb-4">
-              <UAvatar
-                :alt="`${selectedTeacher.first_name} ${selectedTeacher.last_name}`"
-                size="lg"
-              >
+              <UAvatar :alt="`${selectedTeacher.first_name} ${selectedTeacher.last_name}`" size="lg">
                 <template #fallback>
                   {{
                     getInitials(
@@ -181,10 +135,7 @@
                 </h3>
                 <p class="text-gray-500">@{{ selectedTeacher.username }}</p>
               </div>
-              <UBadge
-                :variant="selectedTeacher.is_active ? 'solid' : 'outline'"
-                class="ml-auto"
-              >
+              <UBadge :variant="selectedTeacher.is_active ? 'solid' : 'outline'" class="ml-auto">
                 {{ selectedTeacher.is_active ? "Faol" : "Faol emas" }}
               </UBadge>
             </div>
@@ -219,12 +170,7 @@
 
         <template #footer>
           <div class="flex justify-end gap-3">
-            <UButton
-              color="neutral"
-              variant="subtle"
-              label="Yopish"
-              @click="viewDialog = false"
-            />
+            <UButton color="neutral" variant="subtle" label="Yopish" @click="viewDialog = false" />
             <UButton label="Tahrirlash" @click="editTeacher(selectedTeacher)" />
           </div>
         </template>
@@ -239,32 +185,26 @@
         <template #body>
           <div v-if="editingTeacher" class="space-y-4">
             <div>
-              <UFormField  label="Ism" required>
+              <UFormField label="Ism" required>
                 <UInput v-model="editingTeacher.first_name" placeholder="Ism" />
               </UFormField>
             </div>
 
             <div>
-              <UFormField  label="Familiya" required>
-                <UInput
-                  v-model="editingTeacher.last_name"
-                  placeholder="Familiya"
-                />
+              <UFormField label="Familiya" required>
+                <UInput v-model="editingTeacher.last_name" placeholder="Familiya" />
               </UFormField>
             </div>
 
             <div>
-              <UFormField  label="Login" required>
+              <UFormField label="Login" required>
                 <UInput v-model="editingTeacher.username" placeholder="Login" />
               </UFormField>
             </div>
 
             <div>
-              <UFormField  label="Telefon" required>
-                <UInput
-                  v-model="editingTeacher.phone"
-                  placeholder="+998 xx xxx xx xx"
-                />
+              <UFormField label="Telefon" required>
+                <UInput v-model="editingTeacher.phone" placeholder="+998 xx xxx xx xx" />
               </UFormField>
             </div>
           </div>
@@ -272,17 +212,9 @@
 
         <template #footer>
           <div class="flex justify-end gap-3">
-            <UButton
-              color="neutral"
-              variant="subtle"
-              label="Bekor qilish"
-              @click="editDialog = false"
-            />
-            <UButton
-              :label="isUpdating ? 'Yangilanmoqda...' : 'Yangilash'"
-              :loading="isUpdating"
-              @click="updateTeacher"
-            />
+            <UButton color="neutral" variant="subtle" label="Bekor qilish" @click="editDialog = false" />
+            <UButton :label="isUpdating ? 'Yangilanmoqda...' : 'Yangilash'" :loading="isUpdating"
+              @click="updateTeacher" />
           </div>
         </template>
       </UModal>
@@ -291,9 +223,40 @@
 </template>
 
 <script setup lang="ts">
-import type { TableColumn } from "@nuxt/ui";
+import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
+
+const { apiService, auth } = useAuth();
+
+const hasFinancialAccess = computed(() => {
+  return (
+    auth.value?.user?.id === "d6bd8680-ca59-438c-95ed-ba363a86a065" ||
+    auth.value?.user?.phone === "+998900064400"
+  );
+});
+
+const teacherNavItems = computed<NavigationMenuItem[]>(() => [
+  {
+    label: 'O\'qituvchilar',
+    icon: 'i-lucide-users',
+    to: '/teachers'
+  },
+  ...(hasFinancialAccess.value
+    ? [
+      {
+        label: 'Profillar',
+        icon: 'i-lucide-user-cog',
+        to: '/teachers/profile'
+      },
+      {
+        label: 'Oyliklar',
+        icon: 'i-lucide-wallet',
+        to: '/salaries'
+      }
+    ]
+    : []),
+]);
 
 definePageMeta({
   layout: "default",
@@ -326,7 +289,6 @@ const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
 const UPopover = resolveComponent("UPopover");
 
-const { apiService } = useAuth();
 const toast = useToast();
 
 const teachers = ref<Teacher[]>([]);

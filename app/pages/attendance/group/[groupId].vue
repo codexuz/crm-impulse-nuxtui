@@ -1,17 +1,9 @@
 <template>
   <UDashboardPanel id="group-attendance">
     <template #header>
-      <UDashboardNavbar
-        :title="`Guruh davomati - ${group.name || 'Yuklanmoqda...'}`"
-        :ui="{ right: 'gap-3' }"
-      >
+      <UDashboardNavbar :title="`Guruh davomati - ${group.name || 'Yuklanmoqda...'}`" :ui="{ right: 'gap-3' }">
         <template #leading>
-          <UButton
-            icon="i-lucide-arrow-left"
-            color="neutral"
-            variant="ghost"
-            @click="navigateTo('/groups')"
-          />
+          <UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost" @click="navigateTo('/groups')" />
         </template>
 
         <template #description>
@@ -20,12 +12,7 @@
         </template>
 
         <template #right>
-          <UInput
-            v-model="dateInputValue"
-            type="date"
-            icon="i-lucide-calendar"
-            class="w-48"
-          />
+          <UInput v-model="dateInputValue" type="date" icon="i-lucide-calendar" class="w-48" />
         </template>
       </UDashboardNavbar>
     </template>
@@ -40,37 +27,20 @@
                 Talabalar davomati - {{ formatDate(selectedDate) }}
               </h3>
               <div class="flex gap-2">
-                <UButton
-                  icon="i-lucide-refresh-cw"
-                  color="neutral"
-                  variant="outline"
-                  size="sm"
-                  @click="fetchAttendanceData"
-                  :disabled="isLoading || isSaving"
-                  :loading="isLoading"
-                >
+                <UButton icon="i-lucide-refresh-cw" color="neutral" variant="outline" size="sm"
+                  @click="fetchAttendanceData" :disabled="isLoading || isSaving" :loading="isLoading">
                   Yangilash
                 </UButton>
-                <UButton
-                  icon="i-lucide-save"
-                  color="primary"
-                  size="sm"
-                  @click="saveAttendance"
-                  :disabled="isLoading || isSaving || !hasChanges"
-                  :loading="isSaving"
-                >
+                <UButton icon="i-lucide-save" color="primary" size="sm" @click="saveAttendance"
+                  :disabled="isLoading || isSaving || !hasChanges" :loading="isSaving">
                   Saqlash
                 </UButton>
               </div>
             </div>
           </template>
 
-          <UTable
-            :data="groupStudents"
-            :columns="columns"
-            :loading="isLoading"
-            :empty="'Bu guruhda talabalar topilmadi'"
-          />
+          <UTable :data="groupStudents" :columns="columns" :loading="isLoading"
+            :empty="'Bu guruhda talabalar topilmadi'" />
         </UCard>
       </div>
     </template>
@@ -87,6 +57,8 @@ const UAvatar = resolveComponent("UAvatar");
 const UBadge = resolveComponent("UBadge");
 const USelectMenu = resolveComponent("USelectMenu");
 const UInput = resolveComponent("UInput");
+
+
 
 const route = useRoute();
 const groupId = computed(() => route.params.groupId as string);
@@ -150,9 +122,9 @@ const columns: TableColumn<any>[] = [
           student.avatar_url
             ? undefined
             : {
-                fallback: () =>
-                  getInitials(student.first_name, student.last_name),
-              },
+              fallback: () =>
+                getInitials(student.first_name, student.last_name),
+            },
         ),
         h("div", {}, [
           h(
@@ -197,13 +169,12 @@ const columns: TableColumn<any>[] = [
 
               return h("div", { class: "flex items-center gap-2" }, [
                 h("span", {
-                  class: `h-2 w-2 rounded-full ${
-                    currentStatus === "present"
+                  class: `h-2 w-2 rounded-full ${currentStatus === "present"
                       ? "bg-green-500"
                       : currentStatus === "absent"
                         ? "bg-red-500"
                         : "bg-gray-300"
-                  }`,
+                    }`,
                 }),
                 h("span", {}, selected.label),
               ]);
@@ -211,9 +182,8 @@ const columns: TableColumn<any>[] = [
             option: ({ option }: any) => {
               return h("div", { class: "flex items-center gap-2" }, [
                 h("span", {
-                  class: `h-2 w-2 rounded-full ${
-                    option.value === "present" ? "bg-green-500" : "bg-red-500"
-                  }`,
+                  class: `h-2 w-2 rounded-full ${option.value === "present" ? "bg-green-500" : "bg-red-500"
+                    }`,
                 }),
                 h("span", {}, option.label),
               ]);

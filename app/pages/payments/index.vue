@@ -1,9 +1,10 @@
 <template>
   <UDashboardPanel id="payments">
     <template #header>
-      <UDashboardNavbar title="To'lovlar boshqaruvi" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="paymentNavItems" highlight />
         </template>
 
         <template #description>
@@ -11,11 +12,7 @@
         </template>
 
         <template #right>
-          <UButton
-            icon="i-lucide-plus"
-            label="To'lov qo'shish"
-            @click="addPaymentDialog = true"
-          />
+          <UButton icon="i-lucide-plus" label="To'lov qo'shish" @click="addPaymentDialog = true" />
         </template>
       </UDashboardNavbar>
     </template>
@@ -25,22 +22,11 @@
         <!-- Filters Section -->
         <UDashboardToolbar>
           <template #left>
-            <UInput
-              v-model="query"
-              icon="i-lucide-search"
-              placeholder="To'lovlarni qidirish..."
-              class="w-64"
-            />
+            <UInput v-model="query" icon="i-lucide-search" placeholder="To'lovlarni qidirish..." class="w-64" />
           </template>
 
           <template #right>
-            <USelectMenu
-              v-model="status"
-              :items="statusOptions"
-              value-key="value"
-              placeholder="Holat"
-              class="w-40"
-            >
+            <USelectMenu v-model="status" :items="statusOptions" value-key="value" placeholder="Holat" class="w-40">
               <template #label>
                 {{
                   statusOptions.find((s) => s.value === status)?.label ||
@@ -49,13 +35,8 @@
               </template>
             </USelectMenu>
 
-            <USelectMenu
-              v-model="payment_method"
-              :items="paymentMethodOptions"
-              value-key="value"
-              placeholder="To'lov usuli"
-              class="w-40"
-            >
+            <USelectMenu v-model="payment_method" :items="paymentMethodOptions" value-key="value"
+              placeholder="To'lov usuli" class="w-40">
               <template #label>
                 {{
                   paymentMethodOptions.find((m) => m.value === payment_method)
@@ -65,102 +46,57 @@
             </USelectMenu>
 
             <UPopover :popper="{ placement: 'bottom-end' }">
-              <UButton
-                icon="i-lucide-calendar"
-                label="To'lov sanasi"
-                variant="outline"
-                trailing
-              />
+              <UButton icon="i-lucide-calendar" label="To'lov sanasi" variant="outline" trailing />
 
               <template #content>
                 <div class="p-4 space-y-3 w-80">
                   <div class="space-y-2">
                     <label class="text-sm font-medium">Boshlanish</label>
-                    <UInput
-                      v-model="paymentStartDate"
-                      type="date"
-                      placeholder="Boshlanish sanasi"
-                    />
+                    <UInput v-model="paymentStartDate" type="date" placeholder="Boshlanish sanasi" />
                   </div>
                   <div class="space-y-2">
                     <label class="text-sm font-medium">Tugash</label>
-                    <UInput
-                      v-model="paymentEndDate"
-                      type="date"
-                      placeholder="Tugash sanasi"
-                    />
+                    <UInput v-model="paymentEndDate" type="date" placeholder="Tugash sanasi" />
                   </div>
                 </div>
               </template>
             </UPopover>
 
             <UPopover :popper="{ placement: 'bottom-end' }">
-              <UButton
-                icon="i-lucide-calendar-clock"
-                label="Keyingi to'lov"
-                variant="outline"
-                trailing
-              />
+              <UButton icon="i-lucide-calendar-clock" label="Keyingi to'lov" variant="outline" trailing />
 
               <template #content>
                 <div class="p-4 space-y-3 w-80">
                   <div class="space-y-2">
                     <label class="text-sm font-medium">Boshlanish</label>
-                    <UInput
-                      v-model="nextPaymentStartDate"
-                      type="date"
-                      placeholder="Boshlanish sanasi"
-                    />
+                    <UInput v-model="nextPaymentStartDate" type="date" placeholder="Boshlanish sanasi" />
                   </div>
                   <div class="space-y-2">
                     <label class="text-sm font-medium">Tugash</label>
-                    <UInput
-                      v-model="nextPaymentEndDate"
-                      type="date"
-                      placeholder="Tugash sanasi"
-                    />
+                    <UInput v-model="nextPaymentEndDate" type="date" placeholder="Tugash sanasi" />
                   </div>
                 </div>
               </template>
             </UPopover>
 
             <UPopover :popper="{ placement: 'bottom-end' }">
-              <UButton
-                icon="i-lucide-calendar-range"
-                label="Yaratilgan sana"
-                variant="outline"
-                trailing
-              />
+              <UButton icon="i-lucide-calendar-range" label="Yaratilgan sana" variant="outline" trailing />
 
               <template #content>
                 <div class="p-4 space-y-3 w-80">
                   <div class="space-y-2">
                     <label class="text-sm font-medium">Boshlanish</label>
-                    <UInput
-                      v-model="startDate"
-                      type="date"
-                      placeholder="Boshlanish sanasi"
-                    />
+                    <UInput v-model="startDate" type="date" placeholder="Boshlanish sanasi" />
                   </div>
                   <div class="space-y-2">
                     <label class="text-sm font-medium">Tugash</label>
-                    <UInput
-                      v-model="endDate"
-                      type="date"
-                      placeholder="Tugash sanasi"
-                    />
+                    <UInput v-model="endDate" type="date" placeholder="Tugash sanasi" />
                   </div>
                 </div>
               </template>
             </UPopover>
 
-            <UButton
-              v-if="hasActiveFilters"
-              icon="i-lucide-x"
-              label="Tozalash"
-              variant="ghost"
-              @click="clearFilters"
-            />
+            <UButton v-if="hasActiveFilters" icon="i-lucide-x" label="Tozalash" variant="ghost" @click="clearFilters" />
           </template>
         </UDashboardToolbar>
 
@@ -170,13 +106,8 @@
             <h3 class="text-base font-semibold">To'lovlar ro'yxati</h3>
           </template>
 
-          <UTable
-            v-model:sorting="sorting"
-            :data="payments"
-            :columns="columns"
-            :loading="isLoading"
-            :empty="'To\'lovlar topilmadi'"
-          />
+          <UTable v-model:sorting="sorting" :data="payments" :columns="columns" :loading="isLoading"
+            :empty="'To\'lovlar topilmadi'" />
 
           <template #footer>
             <div class="flex items-center justify-between">
@@ -186,14 +117,8 @@
                 <span class="font-medium">{{ totalPayments }}</span> to'lov
               </div>
 
-              <UPagination
-                :model-value="page"
-                :total="totalPayments"
-                :items-per-page="limit"
-                show-last
-                show-first
-                @update:page="(p: number) => (page = p)"
-              />
+              <UPagination :model-value="page" :total="totalPayments" :items-per-page="limit" show-last show-first
+                @update:page="(p: number) => (page = p)" />
             </div>
           </template>
         </UCard>
@@ -208,17 +133,10 @@
                 Talaba
                 <span class="text-red-500">*</span>
               </label>
-              <USelectMenu
-                v-model="selectedStudent"
-                v-model:search-term="studentSearchTerm"
-                :items="studentOptions"
-                :loading="isLoadingStudents"
-                searchable
-                ignore-filter
-                searchable-placeholder="Talaba ismi yoki telefon raqami..."
-                placeholder="Talabani tanlang"
-                class="w-full"
-              />
+              <USelectMenu v-model="selectedStudent" v-model:search-term="studentSearchTerm" :items="studentOptions"
+                :loading="isLoadingStudents" searchable ignore-filter
+                searchable-placeholder="Talaba ismi yoki telefon raqami..." placeholder="Talabani tanlang"
+                class="w-full" />
               <p class="text-xs text-gray-500">
                 Qidirish uchun kamida 2 ta harf kiriting
               </p>
@@ -230,14 +148,8 @@
                   Summa
                   <span class="text-red-500">*</span>
                 </label>
-                <UInput
-                  v-model="newPayment.amount"
-                  type="number"
-                  step="0.01"
-                  placeholder="Summa"
-                  required
-                  class="w-full"
-                />
+                <UInput v-model="newPayment.amount" type="number" step="0.01" placeholder="Summa" required
+                  class="w-full" />
               </div>
 
               <div class="space-y-2">
@@ -245,13 +157,9 @@
                   To'lov usuli
                   <span class="text-red-500">*</span>
                 </label>
-                <USelectMenu
-                  v-model="newPayment.payment_method"
-                  :items="paymentMethodOptions.filter((m) => m.value !== null)"
-                  value-key="value"
-                  placeholder="Usulni tanlang"
-                  class="w-full"
-                />
+                <USelectMenu v-model="newPayment.payment_method"
+                  :items="paymentMethodOptions.filter((m) => m.value !== null)" value-key="value"
+                  placeholder="Usulni tanlang" class="w-full" />
               </div>
             </div>
 
@@ -261,23 +169,14 @@
                   To'lov sanasi
                   <span class="text-red-500">*</span>
                 </label>
-                <UInput
-                  v-model="newPayment.payment_date"
-                  type="date"
-                  required
-                  class="w-full"
-                />
+                <UInput v-model="newPayment.payment_date" type="date" required class="w-full" />
               </div>
 
               <div class="space-y-2">
                 <label class="block text-sm font-medium">
                   Keyingi to'lov sanasi
                 </label>
-                <UInput
-                  v-model="newPayment.next_payment_date"
-                  type="date"
-                  class="w-full"
-                />
+                <UInput v-model="newPayment.next_payment_date" type="date" class="w-full" />
               </div>
             </div>
 
@@ -286,40 +185,21 @@
                 Holat
                 <span class="text-red-500">*</span>
               </label>
-              <USelectMenu
-                v-model="newPayment.status"
-                :items="statusOptions.filter((s) => s.value !== null)"
-                value-key="value"
-                placeholder="Holatni tanlang"
-                class="w-full"
-              />
+              <USelectMenu v-model="newPayment.status" :items="statusOptions.filter((s) => s.value !== null)"
+                value-key="value" placeholder="Holatni tanlang" class="w-full" />
             </div>
 
             <div class="space-y-2">
               <label class="block text-sm font-medium">Izohlar</label>
-              <UTextarea
-                v-model="newPayment.notes"
-                placeholder="To'lov tafsilotlari"
-                rows="3"
-                class="w-full"
-              />
+              <UTextarea v-model="newPayment.notes" placeholder="To'lov tafsilotlari" rows="3" class="w-full" />
             </div>
           </form>
         </template>
 
         <template #footer="{ close }">
           <div class="flex justify-end gap-2">
-            <UButton
-              color="neutral"
-              variant="outline"
-              label="Bekor qilish"
-              @click="close"
-            />
-            <UButton
-              label="To'lovni qayd qilish"
-              :loading="isSubmitting"
-              @click="handleAddPayment"
-            />
+            <UButton color="neutral" variant="outline" label="Bekor qilish" @click="close" />
+            <UButton label="To'lovni qayd qilish" :loading="isSubmitting" @click="handleAddPayment" />
           </div>
         </template>
       </UModal>
@@ -333,17 +213,10 @@
                 Talaba
                 <span class="text-red-500">*</span>
               </label>
-              <USelectMenu
-                v-model="selectedStudent"
-                v-model:search-term="studentSearchTerm"
-                :items="studentOptions"
-                :loading="isLoadingStudents"
-                searchable
-                ignore-filter
-                searchable-placeholder="Talaba ismi yoki telefon raqami..."
-                placeholder="Talabani tanlang"
-                class="w-full"
-              />
+              <USelectMenu v-model="selectedStudent" v-model:search-term="studentSearchTerm" :items="studentOptions"
+                :loading="isLoadingStudents" searchable ignore-filter
+                searchable-placeholder="Talaba ismi yoki telefon raqami..." placeholder="Talabani tanlang"
+                class="w-full" />
               <p class="text-xs text-gray-500">
                 Qidirish uchun kamida 2 ta harf kiriting
               </p>
@@ -355,14 +228,8 @@
                   Summa
                   <span class="text-red-500">*</span>
                 </label>
-                <UInput
-                  v-model="editPayment.amount"
-                  type="number"
-                  step="0.01"
-                  placeholder="Summa"
-                  required
-                  class="w-full"
-                />
+                <UInput v-model="editPayment.amount" type="number" step="0.01" placeholder="Summa" required
+                  class="w-full" />
               </div>
 
               <div class="space-y-2">
@@ -370,13 +237,9 @@
                   To'lov usuli
                   <span class="text-red-500">*</span>
                 </label>
-                <USelectMenu
-                  v-model="editPayment.payment_method"
-                  :items="paymentMethodOptions.filter((m) => m.value !== null)"
-                  value-key="value"
-                  placeholder="Usulni tanlang"
-                  class="w-full"
-                />
+                <USelectMenu v-model="editPayment.payment_method"
+                  :items="paymentMethodOptions.filter((m) => m.value !== null)" value-key="value"
+                  placeholder="Usulni tanlang" class="w-full" />
               </div>
             </div>
 
@@ -386,23 +249,14 @@
                   To'lov sanasi
                   <span class="text-red-500">*</span>
                 </label>
-                <UInput
-                  v-model="editPayment.payment_date"
-                  type="date"
-                  required
-                  class="w-full"
-                />
+                <UInput v-model="editPayment.payment_date" type="date" required class="w-full" />
               </div>
 
               <div class="space-y-2">
                 <label class="block text-sm font-medium">
                   Keyingi to'lov sanasi
                 </label>
-                <UInput
-                  v-model="editPayment.next_payment_date"
-                  type="date"
-                  class="w-full"
-                />
+                <UInput v-model="editPayment.next_payment_date" type="date" class="w-full" />
               </div>
             </div>
             <div class="space-y-2">
@@ -410,40 +264,21 @@
                 Holat
                 <span class="text-red-500">*</span>
               </label>
-              <USelectMenu
-                v-model="editPayment.status"
-                :items="statusOptions.filter((s) => s.value !== null)"
-                value-key="value"
-                placeholder="Holatni tanlang"
-                class="w-full"
-              />
+              <USelectMenu v-model="editPayment.status" :items="statusOptions.filter((s) => s.value !== null)"
+                value-key="value" placeholder="Holatni tanlang" class="w-full" />
             </div>
 
             <div class="space-y-2">
               <label class="block text-sm font-medium">Izohlar</label>
-              <UTextarea
-                v-model="editPayment.notes"
-                placeholder="To'lov tafsilotlari"
-                rows="3"
-                class="w-full"
-              />
+              <UTextarea v-model="editPayment.notes" placeholder="To'lov tafsilotlari" rows="3" class="w-full" />
             </div>
           </form>
         </template>
 
         <template #footer="{ close }">
           <div class="flex justify-end gap-2">
-            <UButton
-              color="neutral"
-              variant="outline"
-              label="Bekor qilish"
-              @click="close"
-            />
-            <UButton
-              label="Saqlash"
-              :loading="isSubmitting"
-              @click="handleEditPayment"
-            />
+            <UButton color="neutral" variant="outline" label="Bekor qilish" @click="close" />
+            <UButton label="Saqlash" :loading="isSubmitting" @click="handleEditPayment" />
           </div>
         </template>
       </UModal>
@@ -536,13 +371,31 @@
 
 <script setup lang="ts">
 import { refDebounced } from "@vueuse/core";
-import type { TableColumn } from "@nuxt/ui";
+import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
 const UPopover = resolveComponent("UPopover");
+
+const paymentNavItems: NavigationMenuItem[] = [
+  {
+    label: 'To\'lovlar',
+    icon: 'i-lucide-credit-card',
+    to: '/payments'
+  },
+  {
+    label: 'Kelayotgan to\'lovlar',
+    icon: 'i-lucide-calendar-clock',
+    to: '/payments/upcoming'
+  },
+  {
+    label: 'Qarzdorlar',
+    icon: 'i-lucide-alert-triangle',
+    to: '/payments/debitor'
+  }
+]
 
 definePageMeta({
   middleware: ["auth"],
@@ -1054,8 +907,7 @@ const downloadReceipt = async (payment: any) => {
     );
     pdf.text("Tel: +998 95 525 99 66", 5, logoHeight + 23);
     pdf.text(
-      `Menejer: ${payment.manager?.first_name || ""} ${
-        payment.manager?.last_name || ""
+      `Menejer: ${payment.manager?.first_name || ""} ${payment.manager?.last_name || ""
       }`,
       5,
       logoHeight + 27,
@@ -1076,8 +928,7 @@ const downloadReceipt = async (payment: any) => {
 
     // Student and Payment Info
     pdf.text(
-      `F.I.Sh: ${payment.student?.first_name || ""} ${
-        payment.student?.last_name || ""
+      `F.I.Sh: ${payment.student?.first_name || ""} ${payment.student?.last_name || ""
       }`,
       5,
       logoHeight + 35,
@@ -1164,13 +1015,10 @@ const downloadReceipt = async (payment: any) => {
       : "N/A";
 
     // QR Code
-    const qrData = `To'lov ID: ${payment.id}\nTalaba: ${
-      payment.student?.first_name || ""
-    } ${
-      payment.student?.last_name || ""
-    }\nSumma: ${amount} so'm\nSana: ${creationDate}, ${creationTime}\nQabul qiluvchi: ${
-      payment.manager?.first_name || ""
-    } ${payment.manager?.last_name || ""}`;
+    const qrData = `To'lov ID: ${payment.id}\nTalaba: ${payment.student?.first_name || ""
+      } ${payment.student?.last_name || ""
+      }\nSumma: ${amount} so'm\nSana: ${creationDate}, ${creationTime}\nQabul qiluvchi: ${payment.manager?.first_name || ""
+      } ${payment.manager?.last_name || ""}`;
     // Use the toDataURL method from the imported QRCode module
     const qrCodeUrl = await QRCodeModule.toDataURL(qrData, {
       width: 30,

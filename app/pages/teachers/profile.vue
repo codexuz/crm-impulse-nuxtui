@@ -1,9 +1,10 @@
 <template>
   <UDashboardPanel id="teacher-profiles">
     <template #header>
-      <UDashboardNavbar title="O'qituvchi profillar" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="teacherNavItems" highlight />
         </template>
 
         <template #description>
@@ -11,43 +12,24 @@
         </template>
 
         <template #right>
-          <UButton
-            icon="i-lucide-refresh-cw"
-            variant="outline"
-            @click="refreshData"
-          />
-          <UButton
-            icon="i-lucide-plus"
-            label="Yangi profil"
-            @click="openCreateDialog"
-          />
+          <UButton icon="i-lucide-refresh-cw" variant="outline" @click="refreshData" />
+          <UButton icon="i-lucide-plus" label="Yangi profil" @click="openCreateDialog" />
         </template>
       </UDashboardNavbar>
 
       <UDashboardToolbar>
         <template #left>
-          <UInput
-            v-model="searchQuery"
-            icon="i-lucide-search"
-            placeholder="O'qituvchi ismi bilan qidirish..."
-            class="w-64"
-          />
+          <UInput v-model="searchQuery" icon="i-lucide-search" placeholder="O'qituvchi ismi bilan qidirish..."
+            class="w-64" />
         </template>
 
         <template #right>
-          <USelectMenu
-            :model-value="paymentTypeFilter"
-            @update:model-value="
-              (val: string | any) =>
-                (paymentTypeFilter =
-                  typeof val === 'string' ? val : val?.value || 'all')
-            "
-            :items="paymentTypeOptions"
-            value-attribute="value"
-            option-attribute="label"
-            placeholder="To'lov turi"
-            class="w-48"
-          />
+          <USelectMenu :model-value="paymentTypeFilter" @update:model-value="
+            (val: string | any) =>
+            (paymentTypeFilter =
+              typeof val === 'string' ? val : val?.value || 'all')
+          " :items="paymentTypeOptions" value-attribute="value" option-attribute="label" placeholder="To'lov turi"
+            class="w-48" />
         </template>
       </UDashboardToolbar>
     </template>
@@ -60,12 +42,7 @@
             <h3 class="text-base font-semibold">Profillar ro'yxati</h3>
           </template>
 
-          <UTable
-            :data="paginatedProfiles"
-            :columns="columns"
-            :loading="loading"
-            :empty="'Profillar topilmadi'"
-          />
+          <UTable :data="paginatedProfiles" :columns="columns" :loading="loading" :empty="'Profillar topilmadi'" />
 
           <template #footer>
             <div class="flex items-center justify-between">
@@ -75,14 +52,8 @@
                 <span class="font-medium">{{ totalItems }}</span> ta profil
               </div>
 
-              <UPagination
-                :model-value="currentPage"
-                :total="totalItems"
-                :items-per-page="itemsPerPage"
-                show-last
-                show-first
-                @update:page="(p: number) => (currentPage = p)"
-              />
+              <UPagination :model-value="currentPage" :total="totalItems" :items-per-page="itemsPerPage" show-last
+                show-first @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>
         </UCard>
@@ -100,49 +71,28 @@
           <div class="space-y-4">
             <div>
               <UFormField label="O'qituvchi" required>
-                <USelectMenu
-                  v-model="profileForm.user_id"
-                  :items="teacherOptions"
-                  value-attribute="value"
-                  option-attribute="label"
-                  placeholder="O'qituvchini tanlang"
-                  :disabled="isEditMode"
-                />
+                <USelectMenu v-model="profileForm.user_id" :items="teacherOptions" value-attribute="value"
+                  option-attribute="label" placeholder="O'qituvchini tanlang" :disabled="isEditMode" />
               </UFormField>
             </div>
 
             <div>
               <UFormField label="To'lov turi" required>
-                <USelectMenu
-                  v-model="profileForm.payment_type"
-                  :items="paymentTypeSelectOptions"
-                  value-attribute="value"
-                  option-attribute="label"
-                  placeholder="To'lov turini tanlang"
-                />
+                <USelectMenu v-model="profileForm.payment_type" :items="paymentTypeSelectOptions"
+                  value-attribute="value" option-attribute="label" placeholder="To'lov turini tanlang" />
               </UFormField>
             </div>
 
             <div>
               <UFormField label="Bir dars uchun to'lov" required>
-                <UInput
-                  v-model.number="profileForm.payment_value"
-                  type="number"
-                  placeholder="Summani kiriting"
-                  :min="0"
-                />
+                <UInput v-model.number="profileForm.payment_value" type="number" placeholder="Summani kiriting"
+                  :min="0" />
               </UFormField>
             </div>
 
             <div>
               <UFormField label="To'lov kuni">
-                <UInput
-                  v-model.number="profileForm.payment_day"
-                  type="number"
-                  placeholder="1-31"
-                  :min="1"
-                  :max="31"
-                />
+                <UInput v-model.number="profileForm.payment_day" type="number" placeholder="1-31" :min="1" :max="31" />
               </UFormField>
             </div>
           </div>
@@ -150,22 +100,14 @@
 
         <template #footer>
           <div class="flex justify-end gap-3">
-            <UButton
-              color="neutral"
-              variant="subtle"
-              label="Bekor qilish"
-              @click="isDialogOpen = false"
-            />
+            <UButton color="neutral" variant="subtle" label="Bekor qilish" @click="isDialogOpen = false" />
             <UButton label="Saqlash" @click="saveProfile" />
           </div>
         </template>
       </UModal>
 
       <!-- View Dialog -->
-      <UModal
-        v-model:open="isViewDialogOpen"
-        :ui="{ width: 'sm:max-w-[500px]' }"
-      >
+      <UModal v-model:open="isViewDialogOpen" :ui="{ width: 'sm:max-w-[500px]' }">
         <template #header>
           <h3 class="text-lg font-semibold">Profil ma'lumotlari</h3>
         </template>
@@ -181,13 +123,10 @@
             <div class="grid grid-cols-3 gap-4">
               <span class="font-semibold">To'lov turi:</span>
               <span class="col-span-2">
-                <UBadge
-                  :color="
-                    selectedProfile.payment_type === 'percentage'
-                      ? 'blue'
-                      : 'gray'
-                  "
-                >
+                <UBadge :color="selectedProfile.payment_type === 'percentage'
+                  ? 'blue'
+                  : 'gray'
+                  ">
                   {{
                     selectedProfile.payment_type === "percentage"
                       ? "Foiz"
@@ -204,9 +143,7 @@
             </div>
             <div class="grid grid-cols-3 gap-4">
               <span class="font-semibold">To'lov kuni:</span>
-              <span class="col-span-2"
-                >{{ selectedProfile.payment_day || "N/A" }}-kun</span
-              >
+              <span class="col-span-2">{{ selectedProfile.payment_day || "N/A" }}-kun</span>
             </div>
           </div>
         </template>
@@ -222,9 +159,40 @@
 </template>
 
 <script setup lang="ts">
-import type { TableColumn } from "@nuxt/ui";
+import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import { useAuth } from "~/composables/useAuth";
 import { api } from "~/lib/api";
+
+const { apiService, auth } = useAuth();
+
+const hasFinancialAccess = computed(() => {
+  return (
+    auth.value?.user?.id === "d6bd8680-ca59-438c-95ed-ba363a86a065" ||
+    auth.value?.user?.phone === "+998900064400"
+  );
+});
+
+const teacherNavItems = computed<NavigationMenuItem[]>(() => [
+  {
+    label: 'O\'qituvchilar',
+    icon: 'i-lucide-users',
+    to: '/teachers'
+  },
+  ...(hasFinancialAccess.value
+    ? [
+      {
+        label: 'Profillar',
+        icon: 'i-lucide-user-cog',
+        to: '/teachers/profile'
+      },
+      {
+        label: 'Oyliklar',
+        icon: 'i-lucide-wallet',
+        to: '/salaries'
+      }
+    ]
+    : []),
+]);
 
 definePageMeta({
   layout: "default",
@@ -253,7 +221,6 @@ interface Teacher {
   teacher_profile?: TeacherProfile;
 }
 
-const { apiService } = useAuth();
 const router = useRouter();
 const route = useRoute();
 const toast = useToast();

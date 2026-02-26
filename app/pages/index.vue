@@ -146,7 +146,7 @@
                     <span class="text-sm">{{ status }}</span>
                   </div>
                   <div class="flex items-center gap-3">
-                    <div class="w-full max-w-[150px] bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div class="w-full max-w-37.5 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div class="h-2 rounded-full transition-all" :style="{
                         width: `${(count / leadsStats.totalLeads) * 100}%`,
                         backgroundColor: getStatusColor(status as string),
@@ -169,7 +169,7 @@
                     <span class="text-sm">{{ source }}</span>
                   </div>
                   <div class="flex items-center gap-3">
-                    <div class="w-full max-w-[150px] bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div class="w-full max-w-37.5 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div class="h-2 rounded-full transition-all" :style="{
                         width: `${(count / leadsStats.totalLeads) * 100}%`,
                         backgroundColor: getSourceColor(source as string),
@@ -369,8 +369,15 @@ const selectedLesson = ref<any>(null);
 
 // Leads stats state
 const leadsDateRange = reactive({
-  startDate: "2026-01-01",
-  endDate: new Date().toISOString().split("T")[0] as string,
+  startDate: (() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  })(),
+  endDate: (() => {
+    const now = new Date();
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  })(),
 });
 
 const leadsStats = reactive({

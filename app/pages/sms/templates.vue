@@ -1,9 +1,10 @@
 <template>
   <UDashboardPanel id="sms-templates">
     <template #header>
-      <UDashboardNavbar title="SMS Shablonlari">
+      <UDashboardNavbar>
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="smsNavItems" highlight />
         </template>
 
         <template #description>
@@ -11,81 +12,77 @@
         </template>
 
         <template #right>
-          <UButton
-            icon="i-lucide-plus"
-            label="Yangi shablon"
-            @click="openCreateModal"
-          />
+          <UButton icon="i-lucide-plus" label="Yangi shablon" @click="openCreateModal" />
         </template>
       </UDashboardNavbar>
     </template>
 
     <template #body>
-      <UCard>
-        <template #header>
-          <h3 class="text-base font-semibold">Mavjud shablonlar</h3>
-        </template>
+      <div>
+        <UCard>
+          <template #header>
+            <h3 class="text-base font-semibold">Mavjud shablonlar</h3>
+          </template>
 
-        <UTable
-          :loading="isLoading"
-          :columns="columns"
-          :data="templates"
-          :empty="'Hech qanday shablon topilmadi'"
-        />
-      </UCard>
+          <UTable :loading="isLoading" :columns="columns" :data="templates" :empty="'Hech qanday shablon topilmadi'" />
+        </UCard>
 
-      <!-- Create/Edit Template Modal -->
-      <UModal v-model:open="isModalOpen">
-        <template #header>
-          <h3 class="text-lg font-semibold">
-            {{ isEditMode ? "Shablonni tahrirlash" : "Yangi shablon yaratish" }}
-          </h3>
-        </template>
+        <!-- Create/Edit Template Modal -->
+        <UModal v-model:open="isModalOpen">
+          <template #header>
+            <h3 class="text-lg font-semibold">
+              {{ isEditMode ? "Shablonni tahrirlash" : "Yangi shablon yaratish" }}
+            </h3>
+          </template>
 
-        <template #body>
-          <form @submit.prevent="submitTemplate" class="space-y-4">
-            <div>
-              <UFormField  label="Shablon matni" required>
-                <UTextarea
-                  v-model="templateForm.template"
-                  placeholder="Shu yerga kiriting...."
-                  :rows="4"
-                  required
-                  class="w-full"
-                />
-              </UFormField>
-            </div>
+          <template #body>
+            <form @submit.prevent="submitTemplate" class="space-y-4">
+              <div>
+                <UFormField label="Shablon matni" required>
+                  <UTextarea v-model="templateForm.template" placeholder="Shu yerga kiriting...." :rows="4" required
+                    class="w-full" />
+                </UFormField>
+              </div>
 
-            <div class="flex justify-end gap-2">
-              <UButton
-                type="button"
-                variant="outline"
-                label="Bekor qilish"
-                @click="closeModal"
-              />
-              <UButton
-                type="submit"
-                :loading="isSubmitting"
-                :label="
-                  isSubmitting
-                    ? 'Saqlanmoqda...'
-                    : isEditMode
-                      ? 'Yangilash'
-                      : 'Yaratish'
-                "
-              />
-            </div>
-          </form>
-        </template>
-      </UModal>
+              <div class="flex justify-end gap-2">
+                <UButton type="button" variant="outline" label="Bekor qilish" @click="closeModal" />
+                <UButton type="submit" :loading="isSubmitting" :label="isSubmitting
+                  ? 'Saqlanmoqda...'
+                  : isEditMode
+                    ? 'Yangilash'
+                    : 'Yaratish'
+                  " />
+              </div>
+            </form>
+          </template>
+        </UModal>
+      </div>
     </template>
   </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, h } from "vue";
-import type { TableColumn } from "@nuxt/ui";
+import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import { useSMS } from "~/composables/useSMS";
+
+const smsNavItems: NavigationMenuItem[] = [
+  {
+    label: 'SMS Jo\'natmalar',
+    icon: 'i-lucide-send',
+    to: '/sms/send-sms'
+  },
+  {
+    label: 'Shablonlar',
+    icon: 'i-lucide-file-text',
+    to: '/sms/templates'
+  },
+  {
+    label: 'Hisobot',
+    icon: 'i-lucide-bar-chart-3',
+    to: '/sms/report'
+  }
+]
 
 definePageMeta({
   middleware: ["auth"],
@@ -161,7 +158,16 @@ const loadTemplates = async () => {
   try {
     const { getSMSTemplates } = useSMS();
     const response = await getSMSTemplates();
-    templates.value = response.data?.result || [];
+    console.log("SMS Templates response:", JSON.stringify(response));
+    // Handle different response shapes
+    if (Array.isArray(response)) {
+      templates.value = response;
+    } else if (response && typeof response === 'object') {
+      const res = response as any;
+      templates.value = res.data?.result || res.data || res.result || res.templates || [];
+    } else {
+      templates.value = [];
+    }
   } catch (error) {
     console.error("Failed to load SMS templates:", error);
     toast.add({

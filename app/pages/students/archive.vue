@@ -1,9 +1,10 @@
 <template>
   <UDashboardPanel id="archived-students">
     <template #header>
-      <UDashboardNavbar title="Arxiv talabalar" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="studentNavItems" highlight />
         </template>
 
         <template #description>
@@ -13,20 +14,11 @@
 
       <UDashboardToolbar>
         <template #left>
-          <UInput
-            v-model="search"
-            icon="i-lucide-search"
-            placeholder="Talabalarni qidirish..."
-            class="w-64"
-          />
+          <UInput v-model="search" icon="i-lucide-search" placeholder="Talabalarni qidirish..." class="w-64" />
         </template>
 
         <template #right>
-          <USelectMenu
-            v-model="limit"
-            :items="[5, 10, 20, 30, 50]"
-            class="w-24"
-          >
+          <USelectMenu v-model="limit" :items="[5, 10, 20, 30, 50]" class="w-24">
             <template #label> {{ limit }} ta </template>
           </USelectMenu>
         </template>
@@ -43,12 +35,7 @@
             </h3>
           </template>
 
-          <UTable
-            :data="students"
-            :columns="columns"
-            :loading="isLoading"
-            :empty="'Arxivlangan talabalar topilmadi'"
-          />
+          <UTable :data="students" :columns="columns" :loading="isLoading" :empty="'Arxivlangan talabalar topilmadi'" />
 
           <template #footer>
             <div class="flex items-center justify-between">
@@ -58,164 +45,138 @@
                 <span class="font-medium">{{ totalItems }}</span> talaba
               </div>
 
-              <UPagination
-                :model-value="page"
-                :total="totalItems"
-                :items-per-page="limit"
-                show-last
-                show-first
-                @update:page="(p: number) => page = p"
-              />
+              <UPagination :model-value="page" :total="totalItems" :items-per-page="limit" show-last show-first
+                @update:page="(p: number) => page = p" />
             </div>
           </template>
         </UCard>
       </div>
 
-      
-  <!-- View Student Modal -->
 
-  <UModal v-model:open="viewDialog" :ui="{ width: 'sm:max-w-3xl' }">
-      <template #header>
-        <h3 class="text-base font-semibold">Talaba ma'lumotlari</h3>
-      </template>
-      
-      <template #body>
-      <div v-if="selectedStudent" class="space-y-4">
-        <div class="flex items-center gap-4">
-          <UAvatar
-            :alt="`${selectedStudent.first_name} ${selectedStudent.last_name}`"
-            size="xl"
-          >
-            {{
-              getInitials(selectedStudent.first_name, selectedStudent.last_name)
-            }}
-          </UAvatar>
-          <div class="flex-1">
-            <h3 class="text-lg font-semibold">
-              {{ selectedStudent.first_name }} {{ selectedStudent.last_name }}
-            </h3>
-            <p class="text-gray-500">{{ selectedStudent.username }}</p>
-          </div>
-          <UBadge :color="selectedStudent.is_active ? 'green' : 'gray'">
-            {{ selectedStudent.is_active ? "Faol" : "Nofaol" }}
-          </UBadge>
-        </div>
+      <!-- View Student Modal -->
 
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <h4 class="font-medium text-sm mb-2">Aloqa ma'lumotlari</h4>
-            <div class="space-y-2 text-sm">
-              <div class="flex">
-                <span class="text-gray-500 w-20">Telefon:</span>
-                <span>{{ selectedStudent.phone }}</span>
-              </div>
-              <div class="flex">
-                <span class="text-gray-500 w-20">Email:</span>
-                <span>{{ selectedStudent.email || "Berilmagan" }}</span>
-              </div>
-              <div class="flex">
-                <span class="text-gray-500 w-20">Kurs:</span>
-                <UBadge
-                  v-if="getStudentCourse(selectedStudent)"
-                  variant="subtle"
-                >
-                  {{ getStudentCourse(selectedStudent)?.title }}
-                </UBadge>
-                <span v-else>Yo'q</span>
-              </div>
-            </div>
-          </div>
-          <div>
-            <h4 class="font-medium text-sm mb-2">Tizim ma'lumotlari</h4>
-            <div class="space-y-2 text-sm">
-              <div class="flex">
-                <span class="text-gray-500 w-20">ID:</span>
-                <span class="text-xs font-mono">{{
-                  selectedStudent.user_id
-                }}</span>
-              </div>
-              <div class="flex">
-                <span class="text-gray-500 w-20">Rollar:</span>
-                <div class="flex gap-1 flex-wrap">
-                  <UBadge
-                    v-for="role in selectedStudent.roles"
-                    :key="typeof role === 'string' ? role : role.id"
-                    size="xs"
-                    variant="subtle"
-                  >
-                    {{ typeof role === "string" ? role : role.name }}
-                  </UBadge>
-                </div>
-              </div>
-              <div class="flex">
-                <span class="text-gray-500 w-20">Yaratilgan:</span>
-                <span>{{ formatDate(selectedStudent?.created_at) }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+      <UModal v-model:open="viewDialog" :ui="{ width: 'sm:max-w-3xl' }">
+        <template #header>
+          <h3 class="text-base font-semibold">Talaba ma'lumotlari</h3>
+        </template>
 
-        <div>
-          <h4 class="font-medium text-sm mb-2">Profil statistikasi</h4>
-          <div class="grid grid-cols-3 gap-4">
-            <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-              <div class="text-sm text-gray-500">Ballar</div>
-              <div class="text-2xl font-semibold">
-                {{ selectedStudent.student_profile?.points || 0 }}
+        <template #body>
+          <div v-if="selectedStudent" class="space-y-4">
+            <div class="flex items-center gap-4">
+              <UAvatar :alt="`${selectedStudent.first_name} ${selectedStudent.last_name}`" size="xl">
+                {{
+                  getInitials(selectedStudent.first_name, selectedStudent.last_name)
+                }}
+              </UAvatar>
+              <div class="flex-1">
+                <h3 class="text-lg font-semibold">
+                  {{ selectedStudent.first_name }} {{ selectedStudent.last_name }}
+                </h3>
+                <p class="text-gray-500">{{ selectedStudent.username }}</p>
               </div>
+              <UBadge :color="selectedStudent.is_active ? 'green' : 'gray'">
+                {{ selectedStudent.is_active ? "Faol" : "Nofaol" }}
+              </UBadge>
             </div>
-            <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-              <div class="text-sm text-gray-500">Tangalar</div>
-              <div class="text-2xl font-semibold">
-                {{ selectedStudent.student_profile?.coins || 0 }}
-              </div>
-            </div>
-            <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-              <div class="text-sm text-gray-500">Izchillik</div>
-              <div class="text-2xl font-semibold">
-                {{ selectedStudent.student_profile?.streaks || 0 }} kun
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div>
-          <h4 class="font-medium text-sm mb-2">Yozilgan guruhlar</h4>
-          <div class="space-y-2">
-            <div
-              v-if="studentGroups.length === 0"
-              class="text-sm text-gray-500"
-            >
-              Hech qanday guruhga yozilmagan
-            </div>
-            <div
-              v-for="group in studentGroups"
-              :key="group.id"
-              class="flex justify-between items-center p-2 rounded-md bg-gray-50 dark:bg-gray-800"
-            >
+            <div class="grid grid-cols-2 gap-4">
               <div>
-                <div class="font-medium">{{ group.name }}</div>
-                <div class="text-xs text-gray-500">
-                  Yozilgan: {{ formatDate(group.enrolled_at) }}
+                <h4 class="font-medium text-sm mb-2">Aloqa ma'lumotlari</h4>
+                <div class="space-y-2 text-sm">
+                  <div class="flex">
+                    <span class="text-gray-500 w-20">Telefon:</span>
+                    <span>{{ selectedStudent.phone }}</span>
+                  </div>
+                  <div class="flex">
+                    <span class="text-gray-500 w-20">Email:</span>
+                    <span>{{ selectedStudent.email || "Berilmagan" }}</span>
+                  </div>
+                  <div class="flex">
+                    <span class="text-gray-500 w-20">Kurs:</span>
+                    <UBadge v-if="getStudentCourse(selectedStudent)" variant="subtle">
+                      {{ getStudentCourse(selectedStudent)?.title }}
+                    </UBadge>
+                    <span v-else>Yo'q</span>
+                  </div>
                 </div>
               </div>
-              <UBadge>{{ group.status }}</UBadge>
+              <div>
+                <h4 class="font-medium text-sm mb-2">Tizim ma'lumotlari</h4>
+                <div class="space-y-2 text-sm">
+                  <div class="flex">
+                    <span class="text-gray-500 w-20">ID:</span>
+                    <span class="text-xs font-mono">{{
+                      selectedStudent.user_id
+                    }}</span>
+                  </div>
+                  <div class="flex">
+                    <span class="text-gray-500 w-20">Rollar:</span>
+                    <div class="flex gap-1 flex-wrap">
+                      <UBadge v-for="role in selectedStudent.roles" :key="typeof role === 'string' ? role : role.id"
+                        size="xs" variant="subtle">
+                        {{ typeof role === "string" ? role : role.name }}
+                      </UBadge>
+                    </div>
+                  </div>
+                  <div class="flex">
+                    <span class="text-gray-500 w-20">Yaratilgan:</span>
+                    <span>{{ formatDate(selectedStudent?.created_at) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 class="font-medium text-sm mb-2">Profil statistikasi</h4>
+              <div class="grid grid-cols-3 gap-4">
+                <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                  <div class="text-sm text-gray-500">Ballar</div>
+                  <div class="text-2xl font-semibold">
+                    {{ selectedStudent.student_profile?.points || 0 }}
+                  </div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                  <div class="text-sm text-gray-500">Tangalar</div>
+                  <div class="text-2xl font-semibold">
+                    {{ selectedStudent.student_profile?.coins || 0 }}
+                  </div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                  <div class="text-sm text-gray-500">Izchillik</div>
+                  <div class="text-2xl font-semibold">
+                    {{ selectedStudent.student_profile?.streaks || 0 }} kun
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 class="font-medium text-sm mb-2">Yozilgan guruhlar</h4>
+              <div class="space-y-2">
+                <div v-if="studentGroups.length === 0" class="text-sm text-gray-500">
+                  Hech qanday guruhga yozilmagan
+                </div>
+                <div v-for="group in studentGroups" :key="group.id"
+                  class="flex justify-between items-center p-2 rounded-md bg-gray-50 dark:bg-gray-800">
+                  <div>
+                    <div class="font-medium">{{ group.name }}</div>
+                    <div class="text-xs text-gray-500">
+                      Yozilgan: {{ formatDate(group.enrolled_at) }}
+                    </div>
+                  </div>
+                  <UBadge>{{ group.status }}</UBadge>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-     </template>
+        </template>
 
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <UButton
-            variant="outline"
-            label="Yopish"
-            @click="viewDialog = false"
-          />
-        </div>
-      </template>
-  </UModal>
+        <template #footer>
+          <div class="flex justify-end gap-2">
+            <UButton variant="outline" label="Yopish" @click="viewDialog = false" />
+          </div>
+        </template>
+      </UModal>
 
 
     </template>
@@ -224,7 +185,7 @@
 </template>
 
 <script setup lang="ts">
-import type { TableColumn } from "@nuxt/ui";
+import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import type { Student, GroupStudent } from "~/types";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
@@ -234,6 +195,24 @@ const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
 const UPopover = resolveComponent("UPopover");
+
+const studentNavItems: NavigationMenuItem[] = [
+  {
+    label: 'Talabalar',
+    icon: 'i-lucide-users',
+    to: '/students'
+  },
+  {
+    label: 'Arxiv Talabalar',
+    icon: 'i-lucide-archive',
+    to: '/students/archive'
+  },
+  {
+    label: 'Ota-onalar',
+    icon: 'i-lucide-user-round',
+    to: '/students/parents'
+  }
+]
 
 definePageMeta({
   middleware: ["auth"],
@@ -634,9 +613,8 @@ const toggleStudentStatus = async (student: Student) => {
 
     toast.add({
       title: "Muvaffaqiyat",
-      description: `Talaba ${
-        student.is_active ? "faolsizlantirildi" : "faollashtirildi"
-      }`,
+      description: `Talaba ${student.is_active ? "faolsizlantirildi" : "faollashtirildi"
+        }`,
       color: "success",
     });
   } catch (error) {
@@ -689,7 +667,7 @@ const loadCourses = async () => {
     courses.value = response.data || [];
   } catch (error) {
     console.error("Failed to load courses:", error);
-   toast.add({
+    toast.add({
       title: "Xatolik",
       description: "Kurslarni yuklashda xatolik yuz berdi",
       color: "error",

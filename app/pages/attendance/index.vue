@@ -1,9 +1,10 @@
 <template>
   <UDashboardPanel id="attendance">
     <template #header>
-      <UDashboardNavbar title="Davomat boshqaruvi" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="attendanceNavItems" highlight />
         </template>
 
         <template #description>
@@ -12,35 +13,21 @@
 
         <template #right>
           <!-- Add Attendance Modal -->
-          <LeadsAddAttendanceModal
-            :teachers="teachers"
-            :groups="groups"
-            :group-students="groupStudents"
-            :status-form-options="statusFormOptions"
-            @submit="loadAttendance"
-            @load-group-students="loadGroupStudents"
-          />
+          <LeadsAddAttendanceModal :teachers="teachers" :groups="groups" :group-students="groupStudents"
+            :status-form-options="statusFormOptions" @submit="loadAttendance"
+            @load-group-students="loadGroupStudents" />
         </template>
       </UDashboardNavbar>
 
       <UDashboardToolbar>
         <template #left>
-          <UInput
-            v-model="filters.query"
-            icon="i-lucide-search"
-            placeholder="Talaba, guruh yoki holat bo'yicha qidirish..."
-            class="w-64"
-          />
+          <UInput v-model="filters.query" icon="i-lucide-search"
+            placeholder="Talaba, guruh yoki holat bo'yicha qidirish..." class="w-64" />
         </template>
 
         <template #right>
-          <USelectMenu
-            v-model="filters.teacherId"
-            :items="teacherOptions"
-            value-key="value"
-            placeholder="O'qituvchi"
-            class="w-45"
-          >
+          <USelectMenu v-model="filters.teacherId" :items="teacherOptions" value-key="value" placeholder="O'qituvchi"
+            class="w-45">
             <template #label>
               {{
                 teacherOptions.find((t) => t.value === filters.teacherId)
@@ -49,13 +36,8 @@
             </template>
           </USelectMenu>
 
-          <USelectMenu
-            v-model="filters.groupId"
-            :items="groupOptions"
-            value-key="value"
-            placeholder="Guruh"
-            class="w-45"
-          >
+          <USelectMenu v-model="filters.groupId" :items="groupOptions" value-key="value" placeholder="Guruh"
+            class="w-45">
             <template #label>
               {{
                 groupOptions.find((g) => g.value === filters.groupId)?.label ||
@@ -64,13 +46,8 @@
             </template>
           </USelectMenu>
 
-          <USelectMenu
-            v-model="filters.status"
-            :items="statusOptions"
-            value-key="value"
-            placeholder="Holat"
-            class="w-40"
-          >
+          <USelectMenu v-model="filters.status" :items="statusOptions" value-key="value" placeholder="Holat"
+            class="w-40">
             <template #label>
               {{
                 statusOptions.find((s) => s.value === filters.status)?.label ||
@@ -79,19 +56,9 @@
             </template>
           </USelectMenu>
 
-          <UInput
-            v-model="filters.startDate"
-            type="date"
-            placeholder="Boshlanish"
-            class="w-48"
-          />
+          <UInput v-model="filters.startDate" type="date" placeholder="Boshlanish" class="w-48" />
 
-          <UInput
-            v-model="filters.endDate"
-            type="date"
-            placeholder="Tugash"
-            class="w-48"
-          />
+          <UInput v-model="filters.endDate" type="date" placeholder="Tugash" class="w-48" />
         </template>
       </UDashboardToolbar>
     </template>
@@ -104,12 +71,8 @@
             <h3 class="text-base font-semibold">Davomat yozuvlari</h3>
           </template>
 
-          <UTable
-            :data="attendanceRecords"
-            :columns="columns"
-            :loading="pending"
-            :empty="'Davomat yozuvlari topilmadi'"
-          />
+          <UTable :data="attendanceRecords" :columns="columns" :loading="pending"
+            :empty="'Davomat yozuvlari topilmadi'" />
 
           <template #footer>
             <div class="flex items-center justify-between">
@@ -119,35 +82,24 @@
                 <span class="font-medium">{{ totalRecords }}</span> ta yozuv
               </div>
 
-              <UPagination
-                :model-value="currentPage"
-                :total="totalRecords"
-                :items-per-page="filters.limit"
-                show-last
-                show-first
-                @update:page="(p: number) => (currentPage = p)"
-              />
+              <UPagination :model-value="currentPage" :total="totalRecords" :items-per-page="filters.limit" show-last
+                show-first @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>
         </UCard>
       </div>
 
       <!-- Edit Attendance Modal -->
-      <LeadsEditAttendanceModal
-        v-model:open="isEditModalOpen"
-        :record="editingRecord"
-        :teachers="teachers"
-        :groups="groups"
-        :group-students="groupStudents"
-        :status-form-options="statusFormOptions"
-        @updated="loadAttendance"
-      />
+      <LeadsEditAttendanceModal v-model:open="isEditModalOpen" :record="editingRecord" :teachers="teachers"
+        :groups="groups" :group-students="groupStudents" :status-form-options="statusFormOptions"
+        @updated="loadAttendance" />
     </template>
   </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, h, resolveComponent } from "vue";
+import type { NavigationMenuItem } from "@nuxt/ui";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 
@@ -157,6 +109,19 @@ const UAvatar = resolveComponent("UAvatar");
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
 const UPopover = resolveComponent("UPopover");
+
+const attendanceNavItems: NavigationMenuItem[] = [
+  {
+    label: 'Davomat',
+    icon: 'i-lucide-clipboard-check',
+    to: '/attendance'
+  },
+  {
+    label: 'Qoplangan darslar',
+    icon: 'i-lucide-calendar-check',
+    to: '/attendance/compensated-lessons'
+  }
+]
 
 // Define types
 interface Attendance {

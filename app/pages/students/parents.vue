@@ -1,9 +1,10 @@
 <template>
   <UDashboardPanel id="parents">
     <template #header>
-      <UDashboardNavbar title="Ota-onalar" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="studentNavItems" highlight />
         </template>
 
         <template #description>
@@ -17,26 +18,12 @@
 
       <UDashboardToolbar>
         <template #left>
-          <UInput
-            v-model="parentName"
-            icon="i-lucide-user"
-            placeholder="Ota-ona ismi..."
-            class="w-48"
-          />
-          <UInput
-            v-model="parentPhone"
-            icon="i-lucide-phone"
-            placeholder="Telefon raqami..."
-            class="w-48"
-          />
+          <UInput v-model="parentName" icon="i-lucide-user" placeholder="Ota-ona ismi..." class="w-48" />
+          <UInput v-model="parentPhone" icon="i-lucide-phone" placeholder="Telefon raqami..." class="w-48" />
         </template>
 
         <template #right>
-          <USelectMenu
-            v-model="limit"
-            :items="[5, 10, 20, 30, 50]"
-            class="w-24"
-          >
+          <USelectMenu v-model="limit" :items="[5, 10, 20, 30, 50]" class="w-24">
             <template #label> {{ limit }} ta </template>
           </USelectMenu>
         </template>
@@ -51,14 +38,8 @@
             <h3 class="text-base font-semibold">Ota-onalar ro'yxati</h3>
           </template>
 
-          <UTable
-            ref="table"
-            v-model:sort="sort"
-            :data="parents"
-            :columns="columns"
-            :loading="isLoading"
-            :empty="'Ota-onalar topilmadi'"
-          />
+          <UTable ref="table" v-model:sort="sort" :data="parents" :columns="columns" :loading="isLoading"
+            :empty="'Ota-onalar topilmadi'" />
 
           <template #footer>
             <div class="flex items-center justify-between">
@@ -68,37 +49,23 @@
                 <span class="font-medium">{{ totalItems }}</span> ota-ona
               </div>
 
-              <UPagination
-                :model-value="page"
-                :total="totalItems"
-                :items-per-page="limit"
-                show-last
-                show-first
-                @update:page="(p: number) => (page = p)"
-              />
+              <UPagination :model-value="page" :total="totalItems" :items-per-page="limit" show-last show-first
+                @update:page="(p: number) => (page = p)" />
             </div>
           </template>
         </UCard>
       </div>
       <!-- View Parent Modal -->
-      <StudentsViewParentModal
-        v-model:open="viewDialog"
-        :parent="selectedParent"
-        @edit="editParent"
-      />
+      <StudentsViewParentModal v-model:open="viewDialog" :parent="selectedParent" @edit="editParent" />
 
       <!-- Edit Parent Modal -->
-      <StudentsEditParentModal
-        v-model:open="editDialog"
-        :parent="editingParent"
-        @updated="loadParents"
-      />
+      <StudentsEditParentModal v-model:open="editDialog" :parent="editingParent" @updated="loadParents" />
     </template>
   </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
-import type { TableColumn } from "@nuxt/ui";
+import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import type { StudentParent } from "~/types";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
@@ -106,6 +73,24 @@ import { useAuth } from "~/composables/useAuth";
 const UAvatar = resolveComponent("UAvatar");
 const UButton = resolveComponent("UButton");
 const UPopover = resolveComponent("UPopover");
+
+const studentNavItems: NavigationMenuItem[] = [
+  {
+    label: 'Talabalar',
+    icon: 'i-lucide-users',
+    to: '/students'
+  },
+  {
+    label: 'Arxiv Talabalar',
+    icon: 'i-lucide-archive',
+    to: '/students/archive'
+  },
+  {
+    label: 'Ota-onalar',
+    icon: 'i-lucide-user-round',
+    to: '/students/parents'
+  }
+]
 
 const { apiService } = useAuth();
 const toast = useToast();

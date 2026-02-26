@@ -1,22 +1,16 @@
 <template>
   <UDashboardPanel id="categories">
     <template #header>
-      <UDashboardNavbar
-        title="Xarajatlar kategoriyasi"
-        :ui="{ right: 'gap-3' }"
-      >
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="expenseNavItems" highlight />
         </template>
 
         <template #description> Xarajat kategoriyalarini boshqarish </template>
 
         <template #right>
-          <UButton
-            icon="i-lucide-plus"
-            label="Yangi kategoriya"
-            @click="openCreateDialog"
-          />
+          <UButton icon="i-lucide-plus" label="Yangi kategoriya" @click="openCreateDialog" />
         </template>
       </UDashboardNavbar>
     </template>
@@ -26,21 +20,12 @@
         <!-- Filters Section -->
         <UDashboardToolbar>
           <template #left>
-            <UInput
-              v-model="searchQuery"
-              icon="i-lucide-search"
-              placeholder="Kategoriya nomini qidirish..."
-              class="w-64"
-            />
+            <UInput v-model="searchQuery" icon="i-lucide-search" placeholder="Kategoriya nomini qidirish..."
+              class="w-64" />
           </template>
 
           <template #right>
-            <UButton
-              icon="i-lucide-refresh-cw"
-              label="Yangilash"
-              variant="outline"
-              @click="refreshData"
-            />
+            <UButton icon="i-lucide-refresh-cw" label="Yangilash" variant="outline" @click="refreshData" />
           </template>
         </UDashboardToolbar>
 
@@ -50,12 +35,8 @@
             <h3 class="text-base font-semibold">Kategoriyalar ro'yxati</h3>
           </template>
 
-          <UTable
-            :data="paginatedCategories"
-            :columns="columns"
-            :loading="loading"
-            :empty="'Kategoriyalar topilmadi'"
-          />
+          <UTable :data="paginatedCategories" :columns="columns" :loading="loading"
+            :empty="'Kategoriyalar topilmadi'" />
 
           <template #footer>
             <div class="flex items-center justify-between">
@@ -66,24 +47,15 @@
                 ta kategoriya
               </div>
 
-              <UPagination
-                :model-value="currentPage"
-                :total="filteredCategories.length"
-                :items-per-page="itemsPerPage"
-                show-last
-                show-first
-                @update:page="onPageChange"
-              />
+              <UPagination :model-value="currentPage" :total="filteredCategories.length" :items-per-page="itemsPerPage"
+                show-last show-first @update:page="onPageChange" />
             </div>
           </template>
         </UCard>
       </div>
 
       <!-- Create/Edit Modal -->
-      <UModal
-        v-model:open="showCategoryDialog"
-        :title="isEditMode ? 'Kategoriyani tahrirlash' : 'Yangi kategoriya'"
-      >
+      <UModal v-model:open="showCategoryDialog" :title="isEditMode ? 'Kategoriyani tahrirlash' : 'Yangi kategoriya'">
         <template #body>
           <form @submit.prevent="saveCategory" class="space-y-4">
             <div class="space-y-2">
@@ -91,30 +63,16 @@
                 Kategoriya nomi
                 <span class="text-red-500">*</span>
               </label>
-              <UInput
-                v-model="categoryForm.name"
-                placeholder="Kategoriya nomi"
-                required
-                class="w-full"
-                @keyup.enter="saveCategory"
-              />
+              <UInput v-model="categoryForm.name" placeholder="Kategoriya nomi" required class="w-full"
+                @keyup.enter="saveCategory" />
             </div>
           </form>
         </template>
 
         <template #footer="{ close }">
           <div class="flex justify-end gap-2">
-            <UButton
-              color="neutral"
-              variant="outline"
-              label="Bekor qilish"
-              @click="close"
-            />
-            <UButton
-              :label="isSaving ? 'Saqlanmoqda...' : 'Saqlash'"
-              :loading="isSaving"
-              @click="saveCategory"
-            />
+            <UButton color="neutral" variant="outline" label="Bekor qilish" @click="close" />
+            <UButton :label="isSaving ? 'Saqlanmoqda...' : 'Saqlash'" :loading="isSaving" @click="saveCategory" />
           </div>
         </template>
       </UModal>
@@ -123,13 +81,26 @@
 </template>
 
 <script setup lang="ts">
-import type { TableColumn } from "@nuxt/ui";
+import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
 const UPopover = resolveComponent("UPopover");
+
+const expenseNavItems: NavigationMenuItem[] = [
+  {
+    label: 'Xarajatlar',
+    icon: 'i-lucide-receipt',
+    to: '/expenses'
+  },
+  {
+    label: 'Kategoriyalar',
+    icon: 'i-lucide-tags',
+    to: '/expenses/categories'
+  }
+]
 
 definePageMeta({
   middleware: ["auth"],

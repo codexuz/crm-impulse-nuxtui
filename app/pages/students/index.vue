@@ -1,9 +1,10 @@
 <template>
   <UDashboardPanel id="students">
     <template #header>
-      <UDashboardNavbar title="Talabalar" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="studentNavItems" highlight />
         </template>
 
         <template #description>
@@ -67,7 +68,7 @@
 </template>
 
 <script setup lang="ts">
-import type { TableColumn } from "@nuxt/ui";
+import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import type { Student, GroupStudent } from "~/types";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
@@ -77,6 +78,24 @@ const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
 const UPopover = resolveComponent("UPopover");
+
+const studentNavItems: NavigationMenuItem[] = [
+  {
+    label: 'Talabalar',
+    icon: 'i-lucide-users',
+    to: '/students'
+  },
+  {
+    label: 'Arxiv Talabalar',
+    icon: 'i-lucide-archive',
+    to: '/students/archive'
+  },
+  {
+    label: 'Ota-onalar',
+    icon: 'i-lucide-user-round',
+    to: '/students/parents'
+  }
+]
 
 const { apiService } = useAuth();
 const toast = useToast();

@@ -1,9 +1,10 @@
 <template>
   <UDashboardPanel id="trial-lessons">
     <template #header>
-      <UDashboardNavbar title="Sinov darslari" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="leadNavItems" highlight />
         </template>
 
         <template #description>
@@ -17,32 +18,15 @@
         <!-- Filters Section -->
         <UDashboardToolbar>
           <template #left>
-            <UInput
-              v-model="searchQuery"
-              icon="i-lucide-search"
-              placeholder="Qidirish..."
-              class="w-64"
-            />
+            <UInput v-model="searchQuery" icon="i-lucide-search" placeholder="Qidirish..." class="w-64" />
           </template>
 
           <template #right>
-            <USelectMenu
-              v-model="statusFilter"
-              value-key="id"
-              :items="statusOptions"
-              placeholder="Barcha holatlar"
-              nullable
-              class="w-45"
-            />
+            <USelectMenu v-model="statusFilter" value-key="id" :items="statusOptions" placeholder="Barcha holatlar"
+              nullable class="w-45" />
 
-            <USelectMenu
-              v-model="teacherFilter"
-              value-key="id"
-              :items="teacherOptions"
-              placeholder="Barcha o'qituvchilar"
-              nullable
-              class="w-48"
-            />
+            <USelectMenu v-model="teacherFilter" value-key="id" :items="teacherOptions"
+              placeholder="Barcha o'qituvchilar" nullable class="w-48" />
           </template>
         </UDashboardToolbar>
 
@@ -52,12 +36,8 @@
             <h3 class="text-base font-semibold">Sinov darslari ro'yxati</h3>
           </template>
 
-          <UTable
-            :data="paginatedTrialLessons"
-            :columns="columns"
-            :loading="loading"
-            :empty="'Sinov darslari topilmadi'"
-          />
+          <UTable :data="paginatedTrialLessons" :columns="columns" :loading="loading"
+            :empty="'Sinov darslari topilmadi'" />
 
           <template #footer>
             <div class="flex items-center justify-between">
@@ -67,14 +47,8 @@
                 <span class="font-medium">{{ total }}</span> sinov darsi
               </div>
 
-              <UPagination
-                :model-value="currentPage"
-                :total="total"
-                :items-per-page="itemsPerPage"
-                show-last
-                show-first
-                @update:page="(p: number) => (currentPage = p)"
-              />
+              <UPagination :model-value="currentPage" :total="total" :items-per-page="itemsPerPage" show-last show-first
+                @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>
         </UCard>
@@ -90,52 +64,33 @@
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium mb-2">Sana va vaqt</label>
-              <UInput
-                v-model="editingTrial.scheduledAt"
-                type="datetime-local"
-                placeholder="Sinov darsi sanasini tanlang"
-              />
+              <UInput v-model="editingTrial.scheduledAt" type="datetime-local"
+                placeholder="Sinov darsi sanasini tanlang" />
             </div>
 
             <div>
               <label class="block text-sm font-medium mb-2">O'qituvchi</label>
-              <USelectMenu
-                v-model="editingTrial.teacher_id"
-                value-key="id"
-                :items="teacherOptions"
-                placeholder="O'qituvchini tanlang"
-              />
+              <USelectMenu v-model="editingTrial.teacher_id" value-key="id" :items="teacherOptions"
+                placeholder="O'qituvchini tanlang" />
             </div>
 
             <div>
               <label class="block text-sm font-medium mb-2">Holat</label>
-              <USelectMenu
-                v-model="editingTrial.status"
-                value-key="id"
-                :items="statusOptions"
-                placeholder="Holatni tanlang"
-              />
+              <USelectMenu v-model="editingTrial.status" value-key="id" :items="statusOptions"
+                placeholder="Holatni tanlang" />
             </div>
 
             <div>
               <label class="block text-sm font-medium mb-2">Izohlar</label>
-              <UTextarea
-                v-model="editingTrial.notes"
-                placeholder="Sinov darsi haqida izoh qo'shing"
-                :rows="3"
-                class="w-full"
-              />
+              <UTextarea v-model="editingTrial.notes" placeholder="Sinov darsi haqida izoh qo'shing" :rows="3"
+                class="w-full" />
             </div>
           </div>
         </template>
 
         <template #footer>
           <div class="flex justify-end gap-2">
-            <UButton
-              variant="outline"
-              label="Bekor qilish"
-              @click="showEditDialog = false"
-            />
+            <UButton variant="outline" label="Bekor qilish" @click="showEditDialog = false" />
             <UButton label="O'zgarishlarni saqlash" @click="saveTrialChanges" />
           </div>
         </template>
@@ -145,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import type { TableColumn } from "@nuxt/ui";
+import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import { format } from "date-fns";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
@@ -153,6 +108,24 @@ import { useAuth } from "~/composables/useAuth";
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
 const UPopover = resolveComponent("UPopover");
+
+const leadNavItems: NavigationMenuItem[] = [
+  {
+    label: 'Leadlar',
+    icon: 'i-lucide-users',
+    to: '/leads'
+  },
+  {
+    label: 'Arxiv Leadlar',
+    icon: 'i-lucide-archive',
+    to: '/leads/archive'
+  },
+  {
+    label: 'Sinov darslari',
+    icon: 'i-lucide-calendar',
+    to: '/leads/lead-trials'
+  }
+]
 
 definePageMeta({
   middleware: ["auth"],

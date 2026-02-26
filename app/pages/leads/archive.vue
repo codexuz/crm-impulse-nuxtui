@@ -1,9 +1,10 @@
 <template>
   <UDashboardPanel id="leads">
     <template #header>
-      <UDashboardNavbar title="Lead boshqaruvi" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="leadNavItems" highlight />
         </template>
 
         <template #description>
@@ -11,11 +12,7 @@
         </template>
 
         <template #right>
-          <LeadsAddLeadModal
-            :status-options="statusOptions"
-            :source-options="sourceOptions"
-            @submit="loadLeads"
-          />
+          <LeadsAddLeadModal :status-options="statusOptions" :source-options="sourceOptions" @submit="loadLeads" />
         </template>
       </UDashboardNavbar>
     </template>
@@ -25,56 +22,27 @@
         <!-- Filters Section -->
         <UDashboardToolbar>
           <template #left>
-            <UInput
-              v-model="search"
-              icon="i-lucide-search"
-              placeholder="Leadlarni qidirish..."
-              class="w-64"
-            />
+            <UInput v-model="search" icon="i-lucide-search" placeholder="Leadlarni qidirish..." class="w-64" />
           </template>
 
           <template #right>
-            <USelectMenu
-              :model-value="filterStatus"
-              @update:model-value="
-                (val: string | any) =>
-                  (filterStatus =
-                    typeof val === 'string' ? val : val?.value || '')
-              "
-              :items="statusOptions"
-              value-attribute="value"
-              option-attribute="label"
-              placeholder="Holat"
-              class="w-45"
-            />
+            <USelectMenu :model-value="filterStatus" @update:model-value="
+              (val: string | any) =>
+              (filterStatus =
+                typeof val === 'string' ? val : val?.value || '')
+            " :items="statusOptions" value-attribute="value" option-attribute="label" placeholder="Holat"
+              class="w-45" />
 
-            <USelectMenu
-              :model-value="filterSource"
-              @update:model-value="
-                (val: string | any) =>
-                  (filterSource =
-                    typeof val === 'string' ? val : val?.value || '')
-              "
-              :items="sourceOptions"
-              value-attribute="value"
-              option-attribute="label"
-              placeholder="Manba"
-              class="w-45"
-            />
+            <USelectMenu :model-value="filterSource" @update:model-value="
+              (val: string | any) =>
+              (filterSource =
+                typeof val === 'string' ? val : val?.value || '')
+            " :items="sourceOptions" value-attribute="value" option-attribute="label" placeholder="Manba"
+              class="w-45" />
 
-            <UInput
-              v-model="startDate"
-              type="date"
-              placeholder="Boshlanish sanasi"
-              class="w-48"
-            />
+            <UInput v-model="startDate" type="date" placeholder="Boshlanish sanasi" class="w-48" />
 
-            <UInput
-              v-model="endDate"
-              type="date"
-              placeholder="Tugash sanasi"
-              class="w-48"
-            />
+            <UInput v-model="endDate" type="date" placeholder="Tugash sanasi" class="w-48" />
           </template>
         </UDashboardToolbar>
 
@@ -84,12 +52,7 @@
             <h3 class="text-base font-semibold">Leadlar ro'yxati</h3>
           </template>
 
-          <UTable
-            :data="filteredLeads"
-            :columns="columns"
-            :loading="isLoading"
-            :empty="'Leadlar topilmadi'"
-          />
+          <UTable :data="filteredLeads" :columns="columns" :loading="isLoading" :empty="'Leadlar topilmadi'" />
 
           <template #footer>
             <div class="flex items-center justify-between">
@@ -99,70 +62,59 @@
                 <span class="font-medium">{{ totalLeads }}</span> lead
               </div>
 
-              <UPagination
-                :model-value="currentPage"
-                :total="totalLeads"
-                :items-per-page="itemsPerPage"
-                show-last
-                show-first
-                @update:page="(p: number) => (currentPage = p)"
-              />
+              <UPagination :model-value="currentPage" :total="totalLeads" :items-per-page="itemsPerPage" show-last
+                show-first @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>
         </UCard>
       </div>
 
       <!-- View Lead Modal -->
-      <LeadsViewLeadModal
-        v-model:open="viewLeadDialog"
-        :lead="selectedLead"
-        :courses="courses"
-        @edit="editFromView"
-      />
+      <LeadsViewLeadModal v-model:open="viewLeadDialog" :lead="selectedLead" :courses="courses" @edit="editFromView" />
 
       <!-- Edit Lead Modal -->
-      <LeadsEditLeadModal
-        v-model:open="editLeadDialog"
-        :lead="selectedLead"
-        :status-options="statusOptions"
-        :source-options="sourceOptions"
-        :courses="courses"
-        @updated="loadLeads"
-      />
+      <LeadsEditLeadModal v-model:open="editLeadDialog" :lead="selectedLead" :status-options="statusOptions"
+        :source-options="sourceOptions" :courses="courses" @updated="loadLeads" />
 
       <!-- Change Status Modal -->
-      <LeadsChangeLeadStatusModal
-        v-model:open="changeStatusDialog"
-        :lead="selectedLead"
-        :status-options="statusOptions"
-        @updated="loadLeads"
-      />
+      <LeadsChangeLeadStatusModal v-model:open="changeStatusDialog" :lead="selectedLead" :status-options="statusOptions"
+        @updated="loadLeads" />
 
       <!-- Trial Lesson Modal -->
-      <LeadsLeadTrialLessonModal
-        v-model:open="trialLessonDialog"
-        :lead="selectedLead"
-        @created="loadLeads"
-      />
+      <LeadsLeadTrialLessonModal v-model:open="trialLessonDialog" :lead="selectedLead" @created="loadLeads" />
 
       <!-- Convert to Student Modal -->
-      <LeadsConvertLeadStudentModal
-        v-model:open="convertToStudentDialog"
-        :lead="selectedLead"
-        @converted="loadLeads"
-      />
+      <LeadsConvertLeadStudentModal v-model:open="convertToStudentDialog" :lead="selectedLead" @converted="loadLeads" />
     </template>
   </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
-import type { TableColumn } from "@nuxt/ui";
+import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
 const UPopover = resolveComponent("UPopover");
+
+const leadNavItems: NavigationMenuItem[] = [
+  {
+    label: 'Leadlar',
+    icon: 'i-lucide-users',
+    to: '/leads'
+  },
+  {
+    label: 'Arxiv Leadlar',
+    icon: 'i-lucide-archive',
+    to: '/leads/archive'
+  },
+  {
+    label: 'Sinov darslari',
+    icon: 'i-lucide-calendar',
+    to: '/leads/lead-trials'
+  }
+]
 
 definePageMeta({
   middleware: ["auth"],
@@ -508,7 +460,7 @@ const loadCourses = async () => {
     courses.value = response.data || [];
   } catch (error) {
     console.error("Failed to load courses:", error);
-   toast.add({
+    toast.add({
       title: "Xatolik",
       description: "Kurslarni yuklashda xatolik yuz berdi",
       color: "error",

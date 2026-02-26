@@ -1,9 +1,10 @@
 <template>
   <UDashboardPanel id="sms-report">
     <template #header>
-      <UDashboardNavbar title="SMS Hisobot">
+      <UDashboardNavbar>
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="smsNavItems" highlight />
         </template>
 
         <template #description>
@@ -11,12 +12,7 @@
         </template>
 
         <template #right>
-          <UButton
-            icon="i-lucide-refresh-cw"
-            label="Yangilash"
-            variant="outline"
-            @click="refreshData"
-          />
+          <UButton icon="i-lucide-refresh-cw" label="Yangilash" variant="outline" @click="refreshData" />
         </template>
       </UDashboardNavbar>
     </template>
@@ -32,14 +28,8 @@
             </div>
           </template>
 
-          <div
-            v-if="isLoadingBalance"
-            class="flex items-center justify-center py-8"
-          >
-            <Icon
-              name="lucide:loader-2"
-              class="h-8 w-8 animate-spin text-primary"
-            />
+          <div v-if="isLoadingBalance" class="flex items-center justify-center py-8">
+            <Icon name="lucide:loader-2" class="h-8 w-8 animate-spin text-primary" />
           </div>
           <div v-else-if="balance" class="space-y-2">
             <div class="text-3xl font-bold">
@@ -64,54 +54,32 @@
           <form @submit.prevent="generateReport" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <UFormField  label="Boshlanish sanasi" required>
-                  <UInput
-                    type="datetime-local"
-                    v-model="reportFilters.start_date"
-                    required
-                  />
+                <UFormField label="Boshlanish sanasi" required>
+                  <UInput type="datetime-local" v-model="reportFilters.start_date" required />
                 </UFormField>
               </div>
               <div>
-                <UFormField  label="Tugash sanasi" required>
-                  <UInput
-                    type="datetime-local"
-                    v-model="reportFilters.end_date"
-                    required
-                  />
+                <UFormField label="Tugash sanasi" required>
+                  <UInput type="datetime-local" v-model="reportFilters.end_date" required />
                 </UFormField>
               </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <UFormField  label="Holat">
-                  <USelect
-                    v-model="reportFilters.status"
-                    :items="statusOptions"
-                    placeholder="Holatni tanlang"
-                  />
+                <UFormField label="Holat">
+                  <USelect v-model="reportFilters.status" :items="statusOptions" placeholder="Holatni tanlang" />
                 </UFormField>
               </div>
               <div>
-                <UFormField  label="Reklama">
-                  <USelect
-                    v-model="reportFilters.is_ad"
-                    :items="adOptions"
-                    placeholder="Reklama turini tanlang"
-                  />
+                <UFormField label="Reklama">
+                  <USelect v-model="reportFilters.is_ad" :items="adOptions" placeholder="Reklama turini tanlang" />
                 </UFormField>
               </div>
             </div>
 
-            <UButton
-              type="submit"
-              :loading="isLoadingReport"
-              :label="
-                isLoadingReport ? 'Hisobot tayyorlanmoqda...' : 'Hisobot olish'
-              "
-              block
-            />
+            <UButton type="submit" :loading="isLoadingReport" :label="isLoadingReport ? 'Hisobot tayyorlanmoqda...' : 'Hisobot olish'
+              " block />
           </form>
         </UCard>
 
@@ -125,9 +93,7 @@
           </template>
 
           <!-- Main Statistics -->
-          <div
-            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
-          >
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="space-y-2">
               <div class="text-2xl font-bold">
                 {{ reportData.data?.data?.total_parts || 0 }}
@@ -204,8 +170,27 @@
 </template>
 
 <script setup lang="ts">
+import type { NavigationMenuItem } from "@nuxt/ui";
 import { ref, reactive, onMounted } from "vue";
 import { useSMS } from "~/composables/useSMS";
+
+const smsNavItems: NavigationMenuItem[] = [
+  {
+    label: 'SMS Jo\'natmalar',
+    icon: 'i-lucide-send',
+    to: '/sms/send-sms'
+  },
+  {
+    label: 'Shablonlar',
+    icon: 'i-lucide-file-text',
+    to: '/sms/templates'
+  },
+  {
+    label: 'Hisobot',
+    icon: 'i-lucide-bar-chart-3',
+    to: '/sms/report'
+  }
+]
 
 definePageMeta({
   middleware: ["auth"],

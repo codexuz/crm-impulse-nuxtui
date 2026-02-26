@@ -1,9 +1,10 @@
 <template>
   <UDashboardPanel id="compensated-lessons">
     <template #header>
-      <UDashboardNavbar title="Qoplangan darslar" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="attendanceNavItems" highlight />
         </template>
 
         <template #description>
@@ -13,26 +14,11 @@
 
       <UDashboardToolbar>
         <template #right>
-          <UInput
-            v-model="filters.start_date"
-            type="date"
-            placeholder="Boshlanish sanasi"
-            class="w-48"
-          />
+          <UInput v-model="filters.start_date" type="date" placeholder="Boshlanish sanasi" class="w-48" />
 
-          <UInput
-            v-model="filters.end_date"
-            type="date"
-            placeholder="Tugash sanasi"
-            class="w-48"
-          />
-          <USelectMenu
-            v-model="filters.teacherId"
-            :items="teacherOptions"
-            value-key="value"
-            placeholder="O'qituvchi"
-            class="w-48"
-          >
+          <UInput v-model="filters.end_date" type="date" placeholder="Tugash sanasi" class="w-48" />
+          <USelectMenu v-model="filters.teacherId" :items="teacherOptions" value-key="value" placeholder="O'qituvchi"
+            class="w-48">
             <template #label>
               {{
                 teacherOptions.find((t) => t.value === filters.teacherId)
@@ -41,13 +27,8 @@
             </template>
           </USelectMenu>
 
-          <USelectMenu
-            v-model="filters.compensated"
-            :items="compensatedOptions"
-            value-key="value"
-            placeholder="Holat"
-            class="w-40"
-          >
+          <USelectMenu v-model="filters.compensated" :items="compensatedOptions" value-key="value" placeholder="Holat"
+            class="w-40">
             <template #label>
               {{
                 compensatedOptions.find((c) => c.value === filters.compensated)
@@ -67,12 +48,8 @@
             <h3 class="text-base font-semibold">Qoplangan darslar ro'yxati</h3>
           </template>
 
-          <UTable
-            :data="compensatedLessons"
-            :columns="columns"
-            :loading="pending"
-            :empty="'Qoplangan darslar topilmadi'"
-          />
+          <UTable :data="compensatedLessons" :columns="columns" :loading="pending"
+            :empty="'Qoplangan darslar topilmadi'" />
 
           <template #footer>
             <div class="flex items-center justify-between">
@@ -82,14 +59,8 @@
                 <span class="font-medium">{{ totalRecords }}</span> ta yozuv
               </div>
 
-              <UPagination
-                :model-value="currentPage"
-                :total="totalRecords"
-                :items-per-page="filters.limit"
-                show-last
-                show-first
-                @update:page="(p: number) => (currentPage = p)"
-              />
+              <UPagination :model-value="currentPage" :total="totalRecords" :items-per-page="filters.limit" show-last
+                show-first @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>
         </UCard>
@@ -100,62 +71,36 @@
         <template #header>
           <div class="flex items-center justify-between">
             <h3 class="text-lg font-semibold">Qoplangan darsni tahrirlash</h3>
-            <UButton
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-x"
-              square
-              @click="isEditModalOpen = false"
-            />
+            <UButton color="neutral" variant="ghost" icon="i-lucide-x" square @click="isEditModalOpen = false" />
           </div>
         </template>
         <template #body>
           <div v-if="editingRecord" class="space-y-4">
             <div>
               <label class="text-sm font-medium mb-2 block">Holat</label>
-              <USelectMenu
-                v-model="editForm.compensated"
-                :items="[
-                  { value: true, label: 'Qoplangan' },
-                  { value: false, label: 'Qoplanmagan' },
-                ]"
-                value-key="value"
-                option-attribute="label"
-                placeholder="Holatni tanlang"
-              />
+              <USelectMenu v-model="editForm.compensated" :items="[
+                { value: true, label: 'Qoplangan' },
+                { value: false, label: 'Qoplanmagan' },
+              ]" value-key="value" option-attribute="label" placeholder="Holatni tanlang" />
             </div>
 
             <div>
-              <label class="text-sm font-medium mb-2 block"
-                >Amal qilish muddati</label
-              >
+              <label class="text-sm font-medium mb-2 block">Amal qilish muddati</label>
               <UInput v-model="editForm.valid_until" type="date" />
             </div>
 
             <div>
-              <label class="text-sm font-medium mb-2 block"
-                >Kim tomonidan qoplandi</label
-              >
-              <USelectMenu
-                v-model="editForm.compensated_by"
-                :items="[
-                  { value: 'main_teacher', label: 'Asosiy o\'qituvchi' },
-                  { value: 'support_teacher', label: 'Yordamchi o\'qituvchi' },
-                ]"
-                value-key="value"
-                option-attribute="label"
-                placeholder="Tanlang"
-              />
+              <label class="text-sm font-medium mb-2 block">Kim tomonidan qoplandi</label>
+              <USelectMenu v-model="editForm.compensated_by" :items="[
+                { value: 'main_teacher', label: 'Asosiy o\'qituvchi' },
+                { value: 'support_teacher', label: 'Yordamchi o\'qituvchi' },
+              ]" value-key="value" option-attribute="label" placeholder="Tanlang" />
             </div>
           </div>
         </template>
         <template #footer>
           <div class="flex justify-end gap-2">
-            <UButton
-              color="neutral"
-              variant="outline"
-              @click="isEditModalOpen = false"
-            >
+            <UButton color="neutral" variant="outline" @click="isEditModalOpen = false">
               Bekor qilish
             </UButton>
             <UButton color="primary" :loading="isSaving" @click="saveEdit">
@@ -170,6 +115,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, h, resolveComponent } from "vue";
+import type { NavigationMenuItem } from "@nuxt/ui";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 
@@ -179,6 +125,19 @@ const UAvatar = resolveComponent("UAvatar");
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
 const UPopover = resolveComponent("UPopover");
+
+const attendanceNavItems: NavigationMenuItem[] = [
+  {
+    label: 'Davomat',
+    icon: 'i-lucide-clipboard-check',
+    to: '/attendance'
+  },
+  {
+    label: 'Qoplangan darslar',
+    icon: 'i-lucide-calendar-check',
+    to: '/attendance/compensated-lessons'
+  }
+]
 
 // Define types
 interface CompensatedLesson {
@@ -348,12 +307,12 @@ const columns = [
         { class: "flex items-center gap-2" },
         row.original.valid_until
           ? [
-              h(UIcon, {
-                name: "i-heroicons-calendar-days",
-                class: "w-4 h-4 text-gray-400",
-              }),
-              h("span", {}, formatDate(row.original.valid_until)),
-            ]
+            h(UIcon, {
+              name: "i-heroicons-calendar-days",
+              class: "w-4 h-4 text-gray-400",
+            }),
+            h("span", {}, formatDate(row.original.valid_until)),
+          ]
           : "—",
       );
     },

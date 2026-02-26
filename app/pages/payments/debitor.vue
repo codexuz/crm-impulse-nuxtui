@@ -1,9 +1,10 @@
 <template>
   <UDashboardPanel id="debitor-payments">
     <template #header>
-      <UDashboardNavbar title="Qarzdor talabalar" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="paymentNavItems" highlight />
         </template>
 
         <template #description>
@@ -11,12 +12,7 @@
         </template>
 
         <template #right>
-          <UButton
-            icon="i-lucide-refresh-cw"
-            label="Yangilash"
-            variant="outline"
-            @click="refreshData"
-          />
+          <UButton icon="i-lucide-refresh-cw" label="Yangilash" variant="outline" @click="refreshData" />
         </template>
       </UDashboardNavbar>
     </template>
@@ -66,21 +62,11 @@
         <!-- Filters Section -->
         <UDashboardToolbar>
           <template #left>
-            <UInput
-              v-model="searchQuery"
-              icon="i-lucide-search"
-              placeholder="Talaba nomini qidirish..."
-              class="w-64"
-            />
+            <UInput v-model="searchQuery" icon="i-lucide-search" placeholder="Talaba nomini qidirish..." class="w-64" />
           </template>
 
           <template #right>
-            <UButton
-              icon="i-lucide-download"
-              label="CSV yuklash"
-              variant="outline"
-              @click="exportToCSV"
-            />
+            <UButton icon="i-lucide-download" label="CSV yuklash" variant="outline" @click="exportToCSV" />
           </template>
         </UDashboardToolbar>
 
@@ -90,12 +76,8 @@
             <h3 class="text-base font-semibold">Qarzdor talabalar</h3>
           </template>
 
-          <UTable
-            :data="paginatedDebitors"
-            :columns="columns"
-            :loading="loading"
-            :empty="'Qarzdor talabalar topilmadi'"
-          />
+          <UTable :data="paginatedDebitors" :columns="columns" :loading="loading"
+            :empty="'Qarzdor talabalar topilmadi'" />
 
           <template #footer>
             <div class="flex items-center justify-between">
@@ -106,25 +88,16 @@
                 <span class="font-medium">{{ filteredDebitors.length }}</span>
                 qarzdorlar
               </div>
-              <UPagination
-                :model-value="currentPage"
-                :total="filteredDebitors.length"
-                :items-per-page="itemsPerPage"
-                show-first
-                show-last
-                @update:page="(p: number) => (currentPage = p)"
-              />
+              <UPagination :model-value="currentPage" :total="filteredDebitors.length" :items-per-page="itemsPerPage"
+                show-first show-last @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>
         </UCard>
       </div>
 
       <!-- Mark as Paid Modal -->
-      <UModal
-        v-model:open="showPaymentDialog"
-        title="To'lovni qayd qilish"
-        :description="`${selectedDebitor?.student_name} uchun to'lovni qayd qilish`"
-      >
+      <UModal v-model:open="showPaymentDialog" title="To'lovni qayd qilish"
+        :description="`${selectedDebitor?.student_name} uchun to'lovni qayd qilish`">
         <template #body>
           <form @submit.prevent="confirmPayment" class="space-y-4">
             <div class="space-y-2">
@@ -132,14 +105,8 @@
                 Summa
                 <span class="text-red-500">*</span>
               </label>
-              <UInput
-                v-model="paymentDetails.amount"
-                type="number"
-                :placeholder="
-                  selectedDebitor ? String(selectedDebitor.amount) : '0'
-                "
-                required
-              />
+              <UInput v-model="paymentDetails.amount" type="number" :placeholder="selectedDebitor ? String(selectedDebitor.amount) : '0'
+                " required />
             </div>
 
             <div class="space-y-2">
@@ -147,105 +114,62 @@
                 To'lov usuli
                 <span class="text-red-500">*</span>
               </label>
-              <USelectMenu
-                v-model="paymentDetails.method"
-                :items="paymentMethodOptions"
-                value-key="value"
-                placeholder="To'lov usulini tanlang"
-              />
+              <USelectMenu v-model="paymentDetails.method" :items="paymentMethodOptions" value-key="value"
+                placeholder="To'lov usulini tanlang" />
             </div>
 
             <div class="space-y-2">
               <label class="block text-sm font-medium">Izoh</label>
-              <UTextarea
-                v-model="paymentDetails.notes"
-                placeholder="To'lov haqida izoh qo'shing"
-                rows="3"
-                class="w-full"
-              />
+              <UTextarea v-model="paymentDetails.notes" placeholder="To'lov haqida izoh qo'shing" rows="3"
+                class="w-full" />
             </div>
           </form>
         </template>
 
         <template #footer>
           <div class="flex justify-end gap-2">
-            <UButton
-              label="Bekor qilish"
-              variant="outline"
-              @click="showPaymentDialog = false"
-            />
-            <UButton
-              label="To'lovni qayd qilish"
-              :loading="isProcessingPayment"
-              @click="confirmPayment"
-            />
+            <UButton label="Bekor qilish" variant="outline" @click="showPaymentDialog = false" />
+            <UButton label="To'lovni qayd qilish" :loading="isProcessingPayment" @click="confirmPayment" />
           </div>
         </template>
       </UModal>
 
       <!-- Send Reminder Modal -->
-      <UModal
-        v-model:open="showReminderDialog"
-        title="To'lov eslatmasi yuborish"
-        :description="`${selectedDebitor?.student_name} ga to'lov eslatmasi yuborish`"
-      >
+      <UModal v-model:open="showReminderDialog" title="To'lov eslatmasi yuborish"
+        :description="`${selectedDebitor?.student_name} ga to'lov eslatmasi yuborish`">
         <template #body>
           <div class="space-y-4">
             <div class="space-y-2">
               <label class="block text-sm font-medium">Eslatma turi</label>
-              <USelectMenu
-                v-model="reminderDetails.type"
-                :items="reminderTypeOptions"
-                value-key="value"
-                placeholder="Eslatma turini tanlang"
-              />
+              <USelectMenu v-model="reminderDetails.type" :items="reminderTypeOptions" value-key="value"
+                placeholder="Eslatma turini tanlang" />
             </div>
 
             <div class="space-y-2">
               <label class="block text-sm font-medium">Xabar</label>
-              <UTextarea
-                v-model="reminderDetails.message"
-                placeholder="Eslatma xabarini kiriting"
-                rows="5"
-                class="w-full"
-              />
+              <UTextarea v-model="reminderDetails.message" placeholder="Eslatma xabarini kiriting" rows="5"
+                class="w-full" />
             </div>
           </div>
         </template>
 
         <template #footer>
           <div class="flex justify-end gap-2">
-            <UButton
-              label="Bekor qilish"
-              variant="outline"
-              @click="showReminderDialog = false"
-            />
-            <UButton
-              label="Eslatma yuborish"
-              :loading="isSendingReminder"
-              @click="confirmSendReminder"
-            />
+            <UButton label="Bekor qilish" variant="outline" @click="showReminderDialog = false" />
+            <UButton label="Eslatma yuborish" :loading="isSendingReminder" @click="confirmSendReminder" />
           </div>
         </template>
       </UModal>
 
       <!-- Contact Modal -->
-      <UModal
-        v-model:open="contactDialog"
-        :title="
-          isEditMode ? 'Aloqa ma`lumotlarini tahrirlash' : 'Aloqa qo`shish'
-        "
-        :description="
-          isEditMode
-            ? 'Mavjud aloqa ma`lumotlarini tahrirlash'
-            : 'To`lov uchun aloqa ma`lumotlarini kiritish'
-        "
-      >
+      <UModal v-model:open="contactDialog" :title="isEditMode ? 'Aloqa ma`lumotlarini tahrirlash' : 'Aloqa qo`shish'
+        " :description="isEditMode
+          ? 'Mavjud aloqa ma`lumotlarini tahrirlash'
+          : 'To`lov uchun aloqa ma`lumotlarini kiritish'
+          ">
         <template #body>
           <div v-if="selectedDebitor" class="space-y-4">
-            <div
-              class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg"
-            >
+            <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
               <UAvatar :alt="selectedDebitor.student_name" size="md">
                 <template #fallback>
                   {{ getInitials(selectedDebitor.student_name || "") }}
@@ -265,10 +189,7 @@
             </div>
 
             <!-- Show existing action info in edit mode -->
-            <div
-              v-if="isEditMode && selectedAction"
-              class="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg space-y-1"
-            >
+            <div v-if="isEditMode && selectedAction" class="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg space-y-1">
               <h4 class="font-medium mb-2">Mavjud aloqa ma'lumoti:</h4>
               <p class="text-sm text-gray-600 dark:text-gray-400">
                 <span class="font-medium">Manager:</span>
@@ -291,12 +212,8 @@
                   Aloqa turi
                   <span class="text-red-500">*</span>
                 </label>
-                <USelectMenu
-                  v-model="contactForm.action_type"
-                  :items="contactTypeOptions"
-                  value-key="value"
-                  placeholder="Aloqa turini tanlang"
-                />
+                <USelectMenu v-model="contactForm.action_type" :items="contactTypeOptions" value-key="value"
+                  placeholder="Aloqa turini tanlang" />
               </div>
 
               <div class="space-y-2">
@@ -304,12 +221,8 @@
                   Bosqich
                   <span class="text-red-500">*</span>
                 </label>
-                <USelectMenu
-                  v-model="contactForm.stage"
-                  :items="stageOptions"
-                  value-key="value"
-                  placeholder="Bosqichni tanlang"
-                />
+                <USelectMenu v-model="contactForm.stage" :items="stageOptions" value-key="value"
+                  placeholder="Bosqichni tanlang" />
               </div>
 
               <div class="space-y-2">
@@ -317,13 +230,8 @@
                   Xabar
                   <span class="text-red-500">*</span>
                 </label>
-                <UTextarea
-                  v-model="contactForm.message"
-                  placeholder="Aloqa xabarini kiriting..."
-                  rows="4"
-                  required
-                  class="w-full"
-                />
+                <UTextarea v-model="contactForm.message" placeholder="Aloqa xabarini kiriting..." rows="4" required
+                  class="w-full" />
               </div>
 
               <div class="space-y-2">
@@ -331,11 +239,7 @@
                   Keyingi aloqa sanasi
                   <span class="text-red-500">*</span>
                 </label>
-                <UInput
-                  v-model="contactForm.next_action_date"
-                  type="datetime-local"
-                  required
-                />
+                <UInput v-model="contactForm.next_action_date" type="datetime-local" required />
               </div>
             </form>
           </div>
@@ -343,17 +247,10 @@
 
         <template #footer>
           <div class="flex justify-end gap-2">
-            <UButton
-              label="Bekor qilish"
-              variant="outline"
-              :disabled="isSubmittingContact"
-              @click="contactDialog = false"
-            />
-            <UButton
-              :label="isEditMode ? 'Yangilash' : 'Saqlash'"
-              :loading="isSubmittingContact"
-              @click="submitContactAction"
-            />
+            <UButton label="Bekor qilish" variant="outline" :disabled="isSubmittingContact"
+              @click="contactDialog = false" />
+            <UButton :label="isEditMode ? 'Yangilash' : 'Saqlash'" :loading="isSubmittingContact"
+              @click="submitContactAction" />
           </div>
         </template>
       </UModal>
@@ -362,10 +259,29 @@
 </template>
 
 <script setup lang="ts">
+import type { NavigationMenuItem } from "@nuxt/ui";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 import { useSMS } from "~/composables/useSMS";
 import { h, resolveComponent } from "vue";
+
+const paymentNavItems: NavigationMenuItem[] = [
+  {
+    label: 'To\'lovlar',
+    icon: 'i-lucide-credit-card',
+    to: '/payments'
+  },
+  {
+    label: 'Kelayotgan to\'lovlar',
+    icon: 'i-lucide-calendar-clock',
+    to: '/payments/upcoming'
+  },
+  {
+    label: 'Qarzdorlar',
+    icon: 'i-lucide-alert-triangle',
+    to: '/payments/debitor'
+  }
+]
 
 definePageMeta({
   middleware: ["auth"],

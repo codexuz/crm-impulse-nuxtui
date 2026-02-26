@@ -1,9 +1,10 @@
 <template>
   <UDashboardPanel id="salaries">
     <template #header>
-      <UDashboardNavbar title="Oyliklar" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="teacherNavItems" highlight />
         </template>
 
         <template #description>
@@ -55,9 +56,7 @@
                 <p class="text-2xl font-bold mt-1">{{ totalStudents }}</p>
                 <p class="text-xs text-gray-500 mt-1">Barcha guruhlar</p>
               </div>
-              <span
-                class="i-lucide-graduation-cap text-gray-400 text-2xl"
-              ></span>
+              <span class="i-lucide-graduation-cap text-gray-400 text-2xl"></span>
             </div>
           </UCard>
 
@@ -76,22 +75,13 @@
         <!-- Filters Section -->
         <UDashboardToolbar>
           <template #left>
-            <UInput
-              v-model="searchQuery"
-              icon="i-lucide-search"
-              placeholder="O'qituvchi ismi yoki telefon..."
-              class="w-64"
-            />
+            <UInput v-model="searchQuery" icon="i-lucide-search" placeholder="O'qituvchi ismi yoki telefon..."
+              class="w-64" />
           </template>
 
           <template #right>
-            <USelectMenu
-              v-model="paymentTypeFilter"
-              :items="paymentTypeOptions"
-              value-key="value"
-              placeholder="To'lov turi"
-              class="w-40"
-            >
+            <USelectMenu v-model="paymentTypeFilter" :items="paymentTypeOptions" value-key="value"
+              placeholder="To'lov turi" class="w-40">
               <template #label>
                 {{
                   paymentTypeOptions.find((p) => p.value === paymentTypeFilter)
@@ -100,20 +90,9 @@
               </template>
             </USelectMenu>
 
-            <UButton
-              v-if="hasActiveFilters"
-              icon="i-lucide-x"
-              label="Tozalash"
-              variant="ghost"
-              @click="clearFilters"
-            />
+            <UButton v-if="hasActiveFilters" icon="i-lucide-x" label="Tozalash" variant="ghost" @click="clearFilters" />
 
-            <UButton
-              icon="i-lucide-refresh-cw"
-              label="Yangilash"
-              variant="outline"
-              @click="refreshData"
-            />
+            <UButton icon="i-lucide-refresh-cw" label="Yangilash" variant="outline" @click="refreshData" />
           </template>
         </UDashboardToolbar>
 
@@ -123,12 +102,7 @@
             <h3 class="text-base font-semibold">O'qituvchilar ro'yxati</h3>
           </template>
 
-          <UTable
-            :data="paginatedTeachers"
-            :columns="columns"
-            :loading="loading"
-            :empty="'O\'qituvchilar topilmadi'"
-          />
+          <UTable :data="paginatedTeachers" :columns="columns" :loading="loading" :empty="'O\'qituvchilar topilmadi'" />
 
           <template #footer>
             <div class="flex items-center justify-between">
@@ -139,14 +113,8 @@
                 ta o'qituvchi
               </div>
 
-              <UPagination
-                :model-value="currentPage"
-                :total="filteredTeachers.length"
-                :items-per-page="itemsPerPage"
-                show-last
-                show-first
-                @update:page="onPageChange"
-              />
+              <UPagination :model-value="currentPage" :total="filteredTeachers.length" :items-per-page="itemsPerPage"
+                show-last show-first @update:page="onPageChange" />
             </div>
           </template>
         </UCard>
@@ -175,13 +143,10 @@
                 <h4 class="text-sm font-medium text-gray-500 mb-1">
                   To'lov turi
                 </h4>
-                <UBadge
-                  :color="
-                    selectedTeacher.payment_type === 'percentage'
-                      ? 'blue'
-                      : 'green'
-                  "
-                >
+                <UBadge :color="selectedTeacher.payment_type === 'percentage'
+                  ? 'blue'
+                  : 'green'
+                  ">
                   {{
                     selectedTeacher.payment_type === "percentage"
                       ? "Foiz"
@@ -259,12 +224,43 @@
 </template>
 
 <script setup lang="ts">
-import type { TableColumn } from "@nuxt/ui";
+import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
+
+const { apiService, auth } = useAuth();
+
+const hasFinancialAccess = computed(() => {
+  return (
+    auth.value?.user?.id === "d6bd8680-ca59-438c-95ed-ba363a86a065" ||
+    auth.value?.user?.phone === "+998900064400"
+  );
+});
+
+const teacherNavItems = computed<NavigationMenuItem[]>(() => [
+  {
+    label: 'O\'qituvchilar',
+    icon: 'i-lucide-users',
+    to: '/teachers'
+  },
+  ...(hasFinancialAccess.value
+    ? [
+      {
+        label: 'Profillar',
+        icon: 'i-lucide-user-cog',
+        to: '/teachers/profile'
+      },
+      {
+        label: 'Oyliklar',
+        icon: 'i-lucide-wallet',
+        to: '/salaries'
+      }
+    ]
+    : []),
+]);
 
 definePageMeta({
   middleware: ["auth"],
@@ -287,7 +283,6 @@ interface Teacher {
   created_at: string;
 }
 
-const { apiService } = useAuth();
 const toast = useToast();
 const router = useRouter();
 const route = useRoute();

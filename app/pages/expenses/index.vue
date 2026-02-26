@@ -1,9 +1,10 @@
 <template>
   <UDashboardPanel id="expenses">
     <template #header>
-      <UDashboardNavbar title="Xarajatlar" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="expenseNavItems" highlight />
         </template>
 
         <template #description>
@@ -11,11 +12,7 @@
         </template>
 
         <template #right>
-          <UButton
-            icon="i-lucide-plus"
-            label="Yangi xarajat"
-            @click="openCreateDialog"
-          />
+          <UButton icon="i-lucide-plus" label="Yangi xarajat" @click="openCreateDialog" />
         </template>
       </UDashboardNavbar>
     </template>
@@ -78,22 +75,12 @@
         <!-- Filters Section -->
         <UDashboardToolbar>
           <template #left>
-            <UInput
-              v-model="searchQuery"
-              icon="i-lucide-search"
-              placeholder="Qidirish..."
-              class="w-64"
-            />
+            <UInput v-model="searchQuery" icon="i-lucide-search" placeholder="Qidirish..." class="w-64" />
           </template>
 
           <template #right>
-            <USelectMenu
-              v-model="categoryFilter"
-              :items="categoryOptions"
-              value-key="value"
-              placeholder="Kategoriya"
-              class="w-48"
-            >
+            <USelectMenu v-model="categoryFilter" :items="categoryOptions" value-key="value" placeholder="Kategoriya"
+              class="w-48">
               <template #label>
                 {{
                   categoryOptions.find((c) => c.value === categoryFilter)
@@ -103,48 +90,25 @@
             </USelectMenu>
 
             <UPopover :popper="{ placement: 'bottom-end' }">
-              <UButton
-                icon="i-lucide-calendar-range"
-                label="Sana oralig'i"
-                variant="outline"
-                trailing
-              />
+              <UButton icon="i-lucide-calendar-range" label="Sana oralig'i" variant="outline" trailing />
 
               <template #content>
                 <div class="p-4 space-y-3 w-80">
                   <div class="space-y-2">
                     <label class="text-sm font-medium">Boshlanish</label>
-                    <UInput
-                      v-model="startDate"
-                      type="date"
-                      placeholder="Boshlanish sanasi"
-                    />
+                    <UInput v-model="startDate" type="date" placeholder="Boshlanish sanasi" />
                   </div>
                   <div class="space-y-2">
                     <label class="text-sm font-medium">Tugash</label>
-                    <UInput
-                      v-model="endDate"
-                      type="date"
-                      placeholder="Tugash sanasi"
-                    />
+                    <UInput v-model="endDate" type="date" placeholder="Tugash sanasi" />
                   </div>
                 </div>
               </template>
             </UPopover>
 
-            <UButton
-              icon="i-lucide-download"
-              label="Eksport"
-              variant="outline"
-              @click="exportToCSV"
-            />
+            <UButton icon="i-lucide-download" label="Eksport" variant="outline" @click="exportToCSV" />
 
-            <UButton
-              icon="i-lucide-refresh-cw"
-              label="Yangilash"
-              variant="outline"
-              @click="refreshData"
-            />
+            <UButton icon="i-lucide-refresh-cw" label="Yangilash" variant="outline" @click="refreshData" />
           </template>
         </UDashboardToolbar>
 
@@ -154,12 +118,7 @@
             <h3 class="text-base font-semibold">Xarajatlar ro'yxati</h3>
           </template>
 
-          <UTable
-            :data="paginatedExpenses"
-            :columns="columns"
-            :loading="loading"
-            :empty="'Xarajatlar topilmadi'"
-          />
+          <UTable :data="paginatedExpenses" :columns="columns" :loading="loading" :empty="'Xarajatlar topilmadi'" />
 
           <template #footer>
             <div class="flex items-center justify-between">
@@ -170,24 +129,15 @@
                 ta xarajat
               </div>
 
-              <UPagination
-                :model-value="currentPage"
-                :total="filteredExpenses.length"
-                :items-per-page="itemsPerPage"
-                show-last
-                show-first
-                @update:page="onPageChange"
-              />
+              <UPagination :model-value="currentPage" :total="filteredExpenses.length" :items-per-page="itemsPerPage"
+                show-last show-first @update:page="onPageChange" />
             </div>
           </template>
         </UCard>
       </div>
 
       <!-- Create/Edit Modal -->
-      <UModal
-        v-model:open="showExpenseDialog"
-        :title="isEditMode ? 'Xarajatni tahrirlash' : 'Yangi xarajat'"
-      >
+      <UModal v-model:open="showExpenseDialog" :title="isEditMode ? 'Xarajatni tahrirlash' : 'Yangi xarajat'">
         <template #body>
           <form @submit.prevent="saveExpense" class="space-y-4">
             <div class="space-y-2">
@@ -195,12 +145,7 @@
                 Sarlavha
                 <span class="text-red-500">*</span>
               </label>
-              <UInput
-                v-model="expenseForm.title"
-                placeholder="Xarajat sarlavhasi"
-                required
-                class="w-full"
-              />
+              <UInput v-model="expenseForm.title" placeholder="Xarajat sarlavhasi" required class="w-full" />
             </div>
 
             <div class="space-y-2">
@@ -208,13 +153,8 @@
                 Kategoriya
                 <span class="text-red-500">*</span>
               </label>
-              <USelectMenu
-                v-model="expenseForm.category_id"
-                :items="categorySelectOptions"
-                value-key="value"
-                placeholder="Kategoriyani tanlang"
-                class="w-full"
-              />
+              <USelectMenu v-model="expenseForm.category_id" :items="categorySelectOptions" value-key="value"
+                placeholder="Kategoriyani tanlang" class="w-full" />
             </div>
 
             <div class="space-y-2">
@@ -222,24 +162,13 @@
                 Summa
                 <span class="text-red-500">*</span>
               </label>
-              <UInput
-                v-model="expenseForm.amount"
-                type="number"
-                placeholder="0"
-                required
-                class="w-full"
-              />
+              <UInput v-model="expenseForm.amount" type="number" placeholder="0" required class="w-full" />
             </div>
 
             <div class="space-y-2">
               <label class="block text-sm font-medium">O'qituvchi</label>
-              <USelectMenu
-                v-model="expenseForm.teacher_id"
-                :items="teacherOptions"
-                value-key="value"
-                placeholder="O'qituvchini tanlang"
-                class="w-full"
-              />
+              <USelectMenu v-model="expenseForm.teacher_id" :items="teacherOptions" value-key="value"
+                placeholder="O'qituvchini tanlang" class="w-full" />
             </div>
 
             <div class="space-y-2">
@@ -247,39 +176,21 @@
                 Sana
                 <span class="text-red-500">*</span>
               </label>
-              <UInput
-                v-model="expenseForm.expense_date"
-                type="datetime-local"
-                required
-                class="w-full"
-              />
+              <UInput v-model="expenseForm.expense_date" type="datetime-local" required class="w-full" />
             </div>
 
             <div class="space-y-2">
               <label class="block text-sm font-medium">Tavsif</label>
-              <UTextarea
-                v-model="expenseForm.description"
-                placeholder="Xarajat haqida ma'lumot"
-                rows="3"
-                class="w-full"
-              />
+              <UTextarea v-model="expenseForm.description" placeholder="Xarajat haqida ma'lumot" rows="3"
+                class="w-full" />
             </div>
           </form>
         </template>
 
         <template #footer="{ close }">
           <div class="flex justify-end gap-2">
-            <UButton
-              color="neutral"
-              variant="outline"
-              label="Bekor qilish"
-              @click="close"
-            />
-            <UButton
-              :label="isSaving ? 'Saqlanmoqda...' : 'Saqlash'"
-              :loading="isSaving"
-              @click="saveExpense"
-            />
+            <UButton color="neutral" variant="outline" label="Bekor qilish" @click="close" />
+            <UButton :label="isSaving ? 'Saqlanmoqda...' : 'Saqlash'" :loading="isSaving" @click="saveExpense" />
           </div>
         </template>
       </UModal>
@@ -355,13 +266,26 @@
 </template>
 
 <script setup lang="ts">
-import type { TableColumn } from "@nuxt/ui";
+import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
 const UPopover = resolveComponent("UPopover");
+
+const expenseNavItems: NavigationMenuItem[] = [
+  {
+    label: 'Xarajatlar',
+    icon: 'i-lucide-receipt',
+    to: '/expenses'
+  },
+  {
+    label: 'Kategoriyalar',
+    icon: 'i-lucide-tags',
+    to: '/expenses/categories'
+  }
+]
 
 definePageMeta({
   middleware: ["auth"],
