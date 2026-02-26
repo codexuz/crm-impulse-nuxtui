@@ -85,7 +85,7 @@
                             <div class="flex justify-between items-center border-b pb-2">
                                 <div class="flex items-center gap-2">
                                     <UIcon name="i-lucide-trophy" class="size-4 text-amber-500" />
-                                    <span class="text-sm text-muted font-medium">Rank:</span>
+                                    <span class="text-sm text-muted font-medium">Points:</span>
                                 </div>
                                 <span class="text-lg font-bold">{{ student.student_profile?.points || 0 }}</span>
                             </div>
@@ -141,7 +141,7 @@
                                             <div class="flex items-center gap-2">
                                                 <UIcon name="i-lucide-layers" class="size-5 text-primary" />
                                                 <span class="font-semibold">{{ groupItem.group?.name || "Noma'lum guruh"
-                                                    }}</span>
+                                                }}</span>
                                             </div>
                                             <UPopover>
                                                 <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="xs"
@@ -166,7 +166,7 @@
                                             <span class="text-muted">O'qituvchi:</span>
                                             <span class="font-medium">{{ groupItem.group.teacher.first_name }} {{
                                                 groupItem.group.teacher.last_name
-                                                }}</span>
+                                            }}</span>
                                         </div>
 
                                         <div class="flex items-center gap-2">
@@ -298,7 +298,7 @@
                                 icon="i-lucide-user" class="w-full">
                                 <template #label>
                                     <span>{{teacherOptions.find((t) => t.value === selectedTeacherId)?.label ||
-                                        `O'qituvchini tanlang` }}</span>
+                                        `O'qituvchini tanlang`}}</span>
                                 </template>
                             </USelectMenu>
                         </UFormField>
