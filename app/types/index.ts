@@ -97,8 +97,16 @@ export interface Group {
   max_students?: number;
   status?: string;
   schedule?: string;
+  days?: string;
+  lesson_start?: string;
+  lesson_end?: string;
   start_date?: string | Date;
   end_date?: string | Date;
+  teacher?: {
+    first_name: string;
+    last_name: string;
+    user_id?: string;
+  };
 }
 
 export interface GroupStudent {

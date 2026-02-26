@@ -210,8 +210,7 @@ const columns: TableColumn<Student>[] = [
           size: "sm",
           square: true,
           onClick: () => {
-            console.log("View clicked for:", row.original);
-            viewStudent(row.original);
+            navigateTo(`/students/${row.original.user_id}`);
           },
         }),
         h(UButton, {
