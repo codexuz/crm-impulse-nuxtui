@@ -343,8 +343,13 @@
                 <template #body>
                     <div class="space-y-4">
                         <UFormField label="Summa" required>
-                            <UInput v-model="newPayment.amount" type="number" placeholder="Summani kiriting"
-                                icon="i-lucide-banknote" class="w-full" />
+                            <UInput :model-value="newPayment.amount"
+                                @update:model-value="newPayment.amount = formatAmountInput($event)" type="text"
+                                inputmode="numeric" placeholder="0" icon="i-lucide-banknote" class="w-full">
+                                <template #trailing>
+                                    <span class="text-xs text-muted">so'm</span>
+                                </template>
+                            </UInput>
                         </UFormField>
 
                         <UFormField label="To'lov usuli" required>
@@ -376,6 +381,83 @@
                         <UButton :label="isAddingPayment ? 'Qo\'shilmoqda...' : 'Qo\'shish'" :loading="isAddingPayment"
                             :disabled="!newPayment.amount || !newPayment.payment_method || !newPayment.payment_date"
                             @click="addPayment" />
+                    </div>
+                </template>
+            </UModal>
+
+            <!-- Edit Payment Modal -->
+            <UModal v-model:open="editPaymentDialog" :ui="{ width: 'sm:max-w-[425px]' }">
+                <template #header>
+                    <h3 class="text-lg font-semibold">To'lovni tahrirlash</h3>
+                </template>
+
+                <template #body>
+                    <div class="space-y-4">
+                        <UFormField label="Summa" required>
+                            <UInput :model-value="editPaymentForm.amount"
+                                @update:model-value="editPaymentForm.amount = formatAmountInput($event)" type="text"
+                                inputmode="numeric" placeholder="0" icon="i-lucide-banknote" class="w-full">
+                                <template #trailing>
+                                    <span class="text-xs text-muted">so'm</span>
+                                </template>
+                            </UInput>
+                        </UFormField>
+
+                        <UFormField label="To'lov usuli" required>
+                            <USelectMenu v-model="editPaymentForm.payment_method" :items="paymentMethodOptions"
+                                placeholder="To'lov usulini tanlang" icon="i-lucide-wallet" class="w-full" />
+                        </UFormField>
+
+                        <UFormField label="Holat" required>
+                            <USelectMenu v-model="editPaymentForm.status" :items="paymentStatusOptions"
+                                icon="i-lucide-check-circle" class="w-full" />
+                        </UFormField>
+
+                        <UFormField label="To'lov sanasi" required>
+                            <UInput v-model="editPaymentForm.payment_date" type="date" icon="i-lucide-calendar"
+                                class="w-full" />
+                        </UFormField>
+
+                        <UFormField label="Keyingi to'lov sanasi">
+                            <UInput v-model="editPaymentForm.next_payment_date" type="date" icon="i-lucide-calendar"
+                                class="w-full" />
+                        </UFormField>
+
+                        <UFormField label="Izoh">
+                            <UInput v-model="editPaymentForm.notes" placeholder="Izoh..." icon="i-lucide-text"
+                                class="w-full" />
+                        </UFormField>
+                    </div>
+                </template>
+
+                <template #footer>
+                    <div class="flex justify-end gap-3">
+                        <UButton color="neutral" variant="subtle" label="Bekor qilish"
+                            @click="editPaymentDialog = false" />
+                        <UButton :label="isEditingPayment ? 'Saqlanmoqda...' : 'Saqlash'" :loading="isEditingPayment"
+                            :disabled="!editPaymentForm.amount || !editPaymentForm.payment_method || !editPaymentForm.payment_date"
+                            @click="updatePayment" />
+                    </div>
+                </template>
+            </UModal>
+
+            <!-- Delete Payment Confirmation Modal -->
+            <UModal v-model:open="deletePaymentDialog" :ui="{ width: 'sm:max-w-[400px]' }">
+                <template #header>
+                    <h3 class="text-lg font-semibold text-red-500">To'lovni o'chirish</h3>
+                </template>
+
+                <template #body>
+                    <p class="text-sm text-muted">Haqiqatan ham bu to'lovni o'chirmoqchimisiz? Bu amalni qaytarib
+                        bo'lmaydi.</p>
+                </template>
+
+                <template #footer>
+                    <div class="flex justify-end gap-3">
+                        <UButton color="neutral" variant="subtle" label="Bekor qilish"
+                            @click="deletePaymentDialog = false" />
+                        <UButton color="error" :label="isDeletingPayment ? 'O\'chirilmoqda...' : 'O\'chirish'"
+                            :loading="isDeletingPayment" @click="deletePayment" />
                     </div>
                 </template>
             </UModal>
@@ -450,6 +532,12 @@ const addGroupDialog = ref(false);
 const addPaymentDialog = ref(false);
 const isAddingToGroup = ref(false);
 const isAddingPayment = ref(false);
+const isEditingPayment = ref(false);
+const isDeletingPayment = ref(false);
+const editPaymentDialog = ref(false);
+const deletePaymentDialog = ref(false);
+const editingPayment = ref<StudentPayment | null>(null);
+const deletingPaymentId = ref<string | null>(null);
 const isLoadingGroups = ref(false);
 const activeTab = ref("groups");
 
@@ -486,19 +574,44 @@ const groupOptions = computed(() => {
 
 // Payment form
 const newPayment = ref({
-    amount: 0,
+    amount: "",
     payment_method: "",
     payment_date: new Date().toISOString().split("T")[0],
     next_payment_date: "",
     notes: "",
 });
 
+const editPaymentForm = ref({
+    amount: "",
+    payment_method: "",
+    payment_date: "",
+    next_payment_date: "",
+    notes: "",
+    status: "completed" as string,
+});
+
+// Amount formatting helpers
+const formatAmountInput = (value: string | number): string => {
+    const str = String(value).replace(/[^\d]/g, '');
+    if (!str) return '';
+    return str.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+};
+
+const parseAmount = (value: string | number): number => {
+    return Number(String(value).replace(/\s/g, '')) || 0;
+};
+
 const paymentMethodOptions = [
-    { value: "cash", label: "Naqd" },
-    { value: "card", label: "Plastik karta" },
-    { value: "transfer", label: "O'tkazma" },
-    { value: "click", label: "Click" },
-    { value: "payme", label: "Payme" },
+    { value: "Naqd", label: "Naqd" },
+    { value: "Click", label: "Click" },
+    { value: "Karta", label: "Karta" },
+    { value: "Payme", label: "Payme" },
+];
+
+const paymentStatusOptions = [
+    { value: "completed", label: "Bajarildi" },
+    { value: "pending", label: "Kutilmoqda" },
+    { value: "failed", label: "Xato" },
 ];
 
 const newParent = ref({
@@ -547,6 +660,30 @@ const paymentColumns: TableColumn<StudentPayment>[] = [
         accessorKey: "next_payment_date",
         header: "Keyingi to'lov",
         cell: ({ row }) => formatDate(row.original.next_payment_date),
+    },
+    {
+        id: "actions",
+        header: "Amallar",
+        cell: ({ row }) => {
+            return h('div', { class: 'flex items-center gap-1' }, [
+                h(resolveComponent('UButton'), {
+                    icon: 'i-lucide-pencil',
+                    color: 'neutral',
+                    variant: 'ghost',
+                    size: 'xs',
+                    square: true,
+                    onClick: () => openEditPaymentModal(row.original),
+                }),
+                h(resolveComponent('UButton'), {
+                    icon: 'i-lucide-trash-2',
+                    color: 'error',
+                    variant: 'ghost',
+                    size: 'xs',
+                    square: true,
+                    onClick: () => confirmDeletePayment(row.original),
+                }),
+            ]);
+        },
     },
 ];
 
@@ -779,7 +916,7 @@ const addToGroup = async () => {
 // Payment methods
 const openAddPaymentModal = () => {
     newPayment.value = {
-        amount: 0,
+        amount: "",
         payment_method: "",
         payment_date: new Date().toISOString().split("T")[0],
         next_payment_date: "",
@@ -789,7 +926,7 @@ const openAddPaymentModal = () => {
 };
 
 const addPayment = async () => {
-    if (!newPayment.value.amount || !newPayment.value.payment_method || !newPayment.value.payment_date) {
+    if (!parseAmount(newPayment.value.amount) || !newPayment.value.payment_method || !newPayment.value.payment_date) {
         toast.add({
             title: "Xatolik",
             description: "Iltimos, barcha majburiy maydonlarni to'ldiring",
@@ -803,11 +940,13 @@ const addPayment = async () => {
         const paymentMethod = typeof newPayment.value.payment_method === "object" ? (newPayment.value.payment_method as any).value : newPayment.value.payment_method;
         await api.post(apiService.value, "/student-payments", {
             student_id: studentId.value,
-            amount: Number(newPayment.value.amount),
+            amount: parseAmount(newPayment.value.amount),
             payment_method: paymentMethod,
             status: "completed",
-            payment_date: newPayment.value.payment_date,
-            next_payment_date: newPayment.value.next_payment_date || undefined,
+            payment_date: new Date(`${newPayment.value.payment_date}T00:00:00Z`).toISOString(),
+            next_payment_date: newPayment.value.next_payment_date
+                ? new Date(`${newPayment.value.next_payment_date}T00:00:00Z`).toISOString()
+                : undefined,
             notes: newPayment.value.notes || undefined,
         });
         toast.add({
@@ -826,6 +965,95 @@ const addPayment = async () => {
         });
     } finally {
         isAddingPayment.value = false;
+    }
+};
+
+// Edit payment methods
+const openEditPaymentModal = (payment: StudentPayment) => {
+    editingPayment.value = payment;
+    editPaymentForm.value = {
+        amount: formatAmountInput(payment.amount),
+        payment_method: payment.payment_method,
+        payment_date: payment.payment_date ? new Date(payment.payment_date).toISOString().split('T')[0] ?? '' : '',
+        next_payment_date: payment.next_payment_date ? new Date(payment.next_payment_date).toISOString().split('T')[0] ?? '' : '',
+        notes: (payment as any).notes || '',
+        status: payment.status,
+    };
+    editPaymentDialog.value = true;
+};
+
+const updatePayment = async () => {
+    if (!editingPayment.value || !parseAmount(editPaymentForm.value.amount) || !editPaymentForm.value.payment_method || !editPaymentForm.value.payment_date) {
+        toast.add({
+            title: "Xatolik",
+            description: "Iltimos, barcha majburiy maydonlarni to'ldiring",
+            color: "error",
+        });
+        return;
+    }
+
+    isEditingPayment.value = true;
+    try {
+        const paymentMethod = typeof editPaymentForm.value.payment_method === 'object' ? (editPaymentForm.value.payment_method as any).value : editPaymentForm.value.payment_method;
+        await api.patch(apiService.value, `/student-payments/${editingPayment.value.id}`, {
+            amount: parseAmount(editPaymentForm.value.amount),
+            payment_method: paymentMethod,
+            status: editPaymentForm.value.status,
+            payment_date: new Date(`${editPaymentForm.value.payment_date}T00:00:00Z`).toISOString(),
+            next_payment_date: editPaymentForm.value.next_payment_date
+                ? new Date(`${editPaymentForm.value.next_payment_date}T00:00:00Z`).toISOString()
+                : undefined,
+            notes: editPaymentForm.value.notes || undefined,
+        });
+        toast.add({
+            title: "Muvaffaqiyat",
+            description: "To'lov muvaffaqiyatli yangilandi",
+            color: "success",
+        });
+        editPaymentDialog.value = false;
+        editingPayment.value = null;
+        await loadStudentPayments();
+    } catch (error) {
+        console.error('Failed to update payment:', error);
+        toast.add({
+            title: "Xatolik",
+            description: "To'lovni yangilashda xatolik",
+            color: "error",
+        });
+    } finally {
+        isEditingPayment.value = false;
+    }
+};
+
+// Delete payment methods
+const confirmDeletePayment = (payment: StudentPayment) => {
+    deletingPaymentId.value = payment.id;
+    deletePaymentDialog.value = true;
+};
+
+const deletePayment = async () => {
+    if (!deletingPaymentId.value) return;
+
+    isDeletingPayment.value = true;
+    try {
+        await api.delete<void>(apiService.value, `/student-payments/${deletingPaymentId.value}`);
+        toast.add({
+            title: "Muvaffaqiyat",
+            description: "To'lov muvaffaqiyatli o'chirildi",
+            color: "success",
+        });
+        deletePaymentDialog.value = false;
+        deletingPaymentId.value = null;
+        await loadStudentPayments();
+    } catch (error) {
+        console.error('Failed to delete payment:', error);
+        toast.add({
+            title: "Xatolik",
+            description: "To'lovni o'chirishda xatolik",
+            color: "error",
+        });
+    } finally {
+        isDeletingPayment.value = false;
     }
 };
 
