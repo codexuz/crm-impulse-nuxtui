@@ -234,3 +234,15 @@ export interface PaginatedResponse<T> {
   limit: number;
   totalPages: number;
 }
+
+export interface Branch {
+  id: string;
+  owner_id: string;
+  name: string;
+  address?: string;
+  status: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string | null;
+  owner?: any | null;
+}

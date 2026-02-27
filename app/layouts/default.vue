@@ -127,6 +127,20 @@ const links = [
       ]
       : []),
   ],
+  [
+    {
+      type: "label" as const,
+      label: "Sozlamalar",
+    },
+    {
+      label: "Sozlamalar",
+      icon: "i-lucide-settings",
+      to: "/settings",
+      onSelect: () => {
+        open.value = false;
+      },
+    },
+  ],
 ] satisfies NavigationMenuItem[][];
 
 const groups = computed(() => [

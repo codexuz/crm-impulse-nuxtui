@@ -6,6 +6,21 @@ export interface AuthState {
   isAuthenticated: boolean;
 }
 
+export interface OtpLoginResponse {
+  otpRequired: boolean;
+  otpToken: string;
+  message: string;
+}
+
+export interface LoginSuccessResponse {
+  access_token: string;
+  refresh_token: string;
+  user: any;
+  sessionId: string;
+  expiresAt: string;
+  refreshExpiresAt: string;
+}
+
 export const useAuth = () => {
   // Create a cookie to store auth data
   const authCookie = useCookie<{
@@ -38,11 +53,14 @@ export const useAuth = () => {
   const apiService = computed(() =>
     createApiService(
       "https://backend.impulselc.uz/api",
-      state.value.token || undefined
-    )
+      state.value.token || undefined,
+    ),
   );
 
-  const login = async (username: string, password: string) => {
+  const login = async (
+    username: string,
+    password: string,
+  ): Promise<OtpLoginResponse | LoginSuccessResponse> => {
     try {
       console.log("Attempting login with:", { username });
 
@@ -53,7 +71,7 @@ export const useAuth = () => {
 
       if (!password || typeof password !== "string" || password.length < 6) {
         throw new Error(
-          "Password must be longer than or equal to 6 characters and must be a string"
+          "Password must be longer than or equal to 6 characters and must be a string",
         );
       }
 
@@ -62,22 +80,16 @@ export const useAuth = () => {
         const response = await api.post<any>(
           apiService.value,
           "/auth/admin/login",
-          { username, password }
+          { username, password },
         );
 
-        // Update auth state
-        state.value = {
-          token: response.access_token,
-          user: response.user,
-          isAuthenticated: true,
-        };
+        // If OTP is required, return the OTP response without setting auth state
+        if (response.otpRequired) {
+          return response as OtpLoginResponse;
+        }
 
-        // Store in cookie for persistence
-        authCookie.value = {
-          token: response.access_token,
-          user: response.user,
-        };
-
+        // Direct login (no OTP) — set auth state
+        setAuthState(response);
         return response;
       } catch (err) {
         console.log("Admin login attempt failed, trying standard endpoint");
@@ -92,22 +104,11 @@ export const useAuth = () => {
               "user-agent":
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
             },
-          }
+          },
         );
 
-        // Update auth state
-        state.value = {
-          token: response.access_token,
-          user: response.user,
-          isAuthenticated: true,
-        };
-
-        // Store in cookie for persistence
-        authCookie.value = {
-          token: response.access_token,
-          user: response.user,
-        };
-
+        // Set auth state
+        setAuthState(response);
         return response;
       }
     } catch (error) {
@@ -125,6 +126,38 @@ export const useAuth = () => {
 
       throw error;
     }
+  };
+
+  const verifyOtp = async (
+    otpToken: string,
+    code: string,
+  ): Promise<LoginSuccessResponse> => {
+    try {
+      const response = await api.post<LoginSuccessResponse>(
+        apiService.value,
+        "/auth/admin/verify-otp",
+        { otpToken, code },
+      );
+
+      setAuthState(response);
+      return response;
+    } catch (error) {
+      console.error("OTP verification failed:", error);
+      throw error;
+    }
+  };
+
+  const setAuthState = (response: any) => {
+    state.value = {
+      token: response.access_token,
+      user: response.user,
+      isAuthenticated: true,
+    };
+
+    authCookie.value = {
+      token: response.access_token,
+      user: response.user,
+    };
   };
 
   const logout = async () => {
@@ -153,6 +186,7 @@ export const useAuth = () => {
   return {
     auth: readonly(state),
     login,
+    verifyOtp,
     logout,
     apiService,
   };
