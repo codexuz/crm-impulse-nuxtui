@@ -219,9 +219,12 @@ const columns: TableColumn<Role>[] = [
         accessorKey: "name",
         header: "Nomi",
         cell: ({ row }) => {
-            return h("div", { class: "flex items-center gap-2" }, [
+            return h("div", {
+                class: "flex items-center gap-2 cursor-pointer",
+                onClick: () => router.push(`/settings/roles/${row.original.id}?name=${encodeURIComponent(row.original.name)}`),
+            }, [
                 h("span", { class: "i-lucide-shield text-primary h-4 w-4" }),
-                h("span", { class: "font-medium capitalize" }, row.original.name),
+                h("span", { class: "font-medium capitalize text-primary hover:underline" }, row.original.name),
             ]);
         },
     },
@@ -252,6 +255,14 @@ const columns: TableColumn<Role>[] = [
         cell: ({ row }) => {
             const roleId = String(row.original.id);
             return h("div", { class: "flex justify-end gap-1" }, [
+                h(UButton, {
+                    variant: "ghost",
+                    icon: "i-lucide-users",
+                    size: "sm",
+                    square: true,
+                    title: "Foydalanuvchilarni ko'rish",
+                    onClick: () => router.push(`/settings/roles/${roleId}?name=${encodeURIComponent(row.original.name)}`),
+                }),
                 h(UButton, {
                     variant: "ghost",
                     icon: "i-lucide-user-plus",
