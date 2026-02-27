@@ -141,7 +141,7 @@
                                             <div class="flex items-center gap-2">
                                                 <UIcon name="i-lucide-layers" class="size-5 text-primary" />
                                                 <span class="font-semibold">{{ groupItem.group?.name || "Noma'lum guruh"
-                                                }}</span>
+                                                    }}</span>
                                             </div>
                                             <UPopover>
                                                 <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="xs"
@@ -166,7 +166,7 @@
                                             <span class="text-muted">O'qituvchi:</span>
                                             <span class="font-medium">{{ groupItem.group.teacher.first_name }} {{
                                                 groupItem.group.teacher.last_name
-                                            }}</span>
+                                                }}</span>
                                         </div>
 
                                         <div class="flex items-center gap-2">
@@ -667,6 +667,14 @@ const paymentColumns: TableColumn<StudentPayment>[] = [
         cell: ({ row }) => {
             return h('div', { class: 'flex items-center gap-1' }, [
                 h(resolveComponent('UButton'), {
+                    icon: 'i-lucide-receipt',
+                    color: 'neutral',
+                    variant: 'ghost',
+                    size: 'xs',
+                    square: true,
+                    onClick: () => downloadReceipt(row.original),
+                }),
+                h(resolveComponent('UButton'), {
                     icon: 'i-lucide-pencil',
                     color: 'neutral',
                     variant: 'ghost',
@@ -1132,6 +1140,208 @@ const formatDate = (dateString?: string): string => {
 
 const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat("uz-UZ").format(amount);
+};
+
+const translateStatus = (status: string) => {
+    const statusMap: Record<string, string> = {
+        completed: "Bajarildi",
+        pending: "Kutilmoqda",
+        failed: "Muvaffaqiyatsiz",
+    };
+    return statusMap[status] || status;
+};
+
+const downloadReceipt = async (payment: any) => {
+    try {
+        toast.add({
+            title: "Jarayon",
+            description: "Kvitansiya PDF tayyorlanmoqda...",
+        });
+
+        const { jsPDF } = await import("jspdf");
+        const QRCodeModule = await import("qrcode");
+
+        const pdf = new jsPDF({
+            orientation: "portrait",
+            unit: "mm",
+            format: [80, 160],
+        });
+
+        pdf.setProperties({
+            title: `To'lov kvitansiyasi #${payment.id}`,
+            subject: "To'lov kvitansiyasi",
+            author: "IMPULSE LC",
+            creator: "IMPULSE LC CRM",
+        });
+
+        // Add the logo
+        const logoImg = new Image();
+        logoImg.src = "/logo.png";
+        await new Promise((resolve) => {
+            logoImg.onload = resolve;
+        });
+        const logoWidth = 30;
+        const logoHeight = (logoImg.height * logoWidth) / logoImg.width;
+        const logoX = (80 - logoWidth) / 2;
+        pdf.addImage(logoImg, "PNG", logoX, 5, logoWidth, logoHeight);
+
+        // Draw dotted lines
+        // @ts-ignore
+        if (typeof pdf.setLineDash === "function") {
+            // @ts-ignore
+            pdf.setLineDash([1, 1], 0);
+        }
+        pdf.setLineWidth(0.2);
+        pdf.line(5, logoHeight + 10, 75, logoHeight + 10);
+        // @ts-ignore
+        if (typeof pdf.setLineDash === "function") {
+            // @ts-ignore
+            pdf.setLineDash([]);
+        }
+
+        // Company Info
+        pdf.setFontSize(9);
+        pdf.text(`No: #${payment.id}`, 5, logoHeight + 15);
+        pdf.text(
+            "Manzil: Toshkent sh., Sergeli 5-mavzesi, (3-metro)",
+            5,
+            logoHeight + 19,
+        );
+        pdf.text("Tel: +998 95 525 99 66", 5, logoHeight + 23);
+        pdf.text(
+            `Menejer: ${payment.manager?.first_name || ""} ${payment.manager?.last_name || ""}`,
+            5,
+            logoHeight + 27,
+        );
+
+        // Draw dotted line
+        // @ts-ignore
+        if (typeof pdf.setLineDash === "function") {
+            // @ts-ignore
+            pdf.setLineDash([1, 1], 0);
+        }
+        pdf.line(5, logoHeight + 30, 75, logoHeight + 30);
+        // @ts-ignore
+        if (typeof pdf.setLineDash === "function") {
+            // @ts-ignore
+            pdf.setLineDash([]);
+        }
+
+        // Student and Payment Info
+        const studentName = student.value
+            ? `${student.value.first_name || ""} ${student.value.last_name || ""}`
+            : `${payment.student?.first_name || ""} ${payment.student?.last_name || ""}`;
+        pdf.text(`F.I.Sh: ${studentName}`, 5, logoHeight + 35);
+        pdf.text(`To'lov usuli: ${payment.payment_method}`, 5, logoHeight + 39);
+        pdf.text(
+            `To'lov sanasi: ${formatDate(payment.payment_date)}`,
+            5,
+            logoHeight + 43,
+        );
+        pdf.text(`Holat: ${translateStatus(payment.status)}`, 5, logoHeight + 47);
+        pdf.text(
+            `Keyingi to'lov: ${formatDate(payment.next_payment_date)}`,
+            5,
+            logoHeight + 51,
+        );
+
+        // Draw dotted line
+        // @ts-ignore
+        if (typeof pdf.setLineDash === "function") {
+            // @ts-ignore
+            pdf.setLineDash([1, 1], 0);
+        }
+        pdf.line(5, logoHeight + 54, 75, logoHeight + 54);
+        // @ts-ignore
+        if (typeof pdf.setLineDash === "function") {
+            // @ts-ignore
+            pdf.setLineDash([]);
+        }
+
+        // Amount
+        const amount = Number(payment.amount) || 0;
+        pdf.setFont("helvetica", "bold");
+        pdf.text(`To'landi: ${amount.toLocaleString()} so'm`, 5, logoHeight + 59);
+        pdf.setFont("helvetica", "normal");
+
+        // Draw dotted line
+        // @ts-ignore
+        if (typeof pdf.setLineDash === "function") {
+            // @ts-ignore
+            pdf.setLineDash([1, 1], 0);
+        }
+        pdf.line(5, logoHeight + 66, 75, logoHeight + 66);
+        // @ts-ignore
+        if (typeof pdf.setLineDash === "function") {
+            // @ts-ignore
+            pdf.setLineDash([]);
+        }
+
+        // Notes section if available
+        if (payment.notes) {
+            pdf.text(`Izoh: ${payment.notes}`, 5, logoHeight + 71);
+            // @ts-ignore
+            if (typeof pdf.setLineDash === "function") {
+                // @ts-ignore
+                pdf.setLineDash([1, 1], 0);
+            }
+            pdf.line(5, logoHeight + 74, 75, logoHeight + 74);
+            // @ts-ignore
+            if (typeof pdf.setLineDash === "function") {
+                // @ts-ignore
+                pdf.setLineDash([]);
+            }
+        }
+
+        // Thank You in bold
+        pdf.setFontSize(11);
+        pdf.setFont("helvetica", "bold");
+        pdf.text(
+            "THANK YOU",
+            40,
+            payment.notes ? logoHeight + 79 : logoHeight + 71,
+            { align: "center" },
+        );
+        pdf.setFont("helvetica", "normal");
+
+        // Use payment creation date
+        const creationDate = payment.createdAt
+            ? new Date(payment.createdAt).toLocaleDateString()
+            : "N/A";
+        const creationTime = payment.createdAt
+            ? new Date(payment.createdAt).toLocaleTimeString()
+            : "N/A";
+
+        // QR Code
+        const qrData = `To'lov ID: ${payment.id}\nTalaba: ${studentName}\nSumma: ${amount} so'm\nSana: ${creationDate}, ${creationTime}\nQabul qiluvchi: ${payment.manager?.first_name || ""} ${payment.manager?.last_name || ""}`;
+        const qrCodeUrl = await QRCodeModule.toDataURL(qrData, {
+            width: 30,
+            margin: 1,
+        });
+        const qrX = (80 - 30) / 2;
+        const qrY = payment.notes ? logoHeight + 85 : logoHeight + 80;
+        pdf.addImage(qrCodeUrl, "PNG", qrX, qrY, 30, 30);
+
+        pdf.text(`${creationDate}, ${creationTime}`, 40, qrY + 35, {
+            align: "center",
+        });
+
+        // Save the PDF
+        pdf.save(`kvitansiya-${payment.id}.pdf`);
+
+        toast.add({
+            title: "Muvaffaqiyat",
+            description: "Kvitansiya muvaffaqiyatli yuklandi",
+            color: "success",
+        });
+    } catch (error) {
+        console.error("Failed to generate receipt PDF:", error);
+        toast.add({
+            title: "Xatolik",
+            description: "Kvitansiyani yaratishda xatolik. Qaytadan urinib ko'ring.",
+            color: "error",
+        });
+    }
 };
 
 const getBranchName = (): string => {
