@@ -1,22 +1,16 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from "@nuxt/ui";
 import { useAuth } from "~/composables/useAuth";
+import { useFinancialAccess } from "~/composables/useFinancialAccess";
 
 const route = useRoute();
 const toast = useToast();
-const { logout, auth } = useAuth();
+const { logout } = useAuth();
+const { hasFinancialAccess } = useFinancialAccess();
 
 const open = ref(false);
 
-// Check if user has access to financial features
-const hasFinancialAccess = computed(() => {
-  return (
-    auth.value?.user?.id === "d6bd8680-ca59-438c-95ed-ba363a86a065" ||
-    auth.value?.user?.phone === "+998900064400"
-  );
-});
-
-const links = [
+const links = computed(() => [
   [
     {
       label: "Boshqaruv paneli",
@@ -127,27 +121,31 @@ const links = [
       ]
       : []),
   ],
-  [
-    {
-      type: "label" as const,
-      label: "Sozlamalar",
-    },
-    {
-      label: "Sozlamalar",
-      icon: "i-lucide-settings",
-      to: "/settings",
-      onSelect: () => {
-        open.value = false;
-      },
-    },
-  ],
-] satisfies NavigationMenuItem[][];
+  ...(hasFinancialAccess.value
+    ? [
+      [
+        {
+          type: "label" as const,
+          label: "Sozlamalar",
+        },
+        {
+          label: "Sozlamalar",
+          icon: "i-lucide-settings",
+          to: "/settings",
+          onSelect: () => {
+            open.value = false;
+          },
+        },
+      ],
+    ]
+    : []),
+] satisfies NavigationMenuItem[][]);
 
 const groups = computed(() => [
   {
     id: "links",
     label: "Go to",
-    items: links.flat(),
+    items: links.value.flat(), // .value needed in script setup
   },
 ]);
 

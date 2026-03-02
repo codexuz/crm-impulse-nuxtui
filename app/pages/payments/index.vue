@@ -394,6 +394,11 @@ const paymentNavItems: NavigationMenuItem[] = [
     label: 'Qarzdorlar',
     icon: 'i-lucide-alert-triangle',
     to: '/payments/debitor'
+  },
+  {
+    label: 'Hisobot',
+    icon: 'i-lucide-bar-chart-2',
+    to: '/payments/report'
   }
 ]
 

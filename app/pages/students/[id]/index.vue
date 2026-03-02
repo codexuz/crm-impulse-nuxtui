@@ -141,7 +141,7 @@
                                             <div class="flex items-center gap-2">
                                                 <UIcon name="i-lucide-layers" class="size-5 text-primary" />
                                                 <span class="font-semibold">{{ groupItem.group?.name || "Noma'lum guruh"
-                                                    }}</span>
+                                                }}</span>
                                             </div>
                                             <UPopover>
                                                 <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="xs"
@@ -166,7 +166,7 @@
                                             <span class="text-muted">O'qituvchi:</span>
                                             <span class="font-medium">{{ groupItem.group.teacher.first_name }} {{
                                                 groupItem.group.teacher.last_name
-                                                }}</span>
+                                            }}</span>
                                         </div>
 
                                         <div class="flex items-center gap-2">
@@ -630,22 +630,20 @@ const tabItems = [
 // Payment table columns
 const paymentColumns: TableColumn<StudentPayment>[] = [
     {
-        accessorKey: "payment_date",
-        header: "Sana",
-        cell: ({ row }) => formatDate(row.original.payment_date),
-    },
-    {
         accessorKey: "amount",
         header: "Summa",
-        cell: ({ row }) => formatCurrency(row.original.amount),
+        cell: ({ row }) =>
+            h("span", { class: "font-semibold text-green-600" }, formatCurrency(row.original.amount)),
     },
     {
         accessorKey: "payment_method",
         header: "To'lov usuli",
+        cell: ({ row }) =>
+            h("span", { class: "font-medium" }, row.original.payment_method),
     },
     {
         accessorKey: "status",
-        header: "Holat",
+        header: "Holati",
         cell: ({ row }) => {
             const statusMap: Record<string, { label: string; color: string }> = {
                 completed: { label: "Bajarildi", color: "success" },
@@ -657,9 +655,19 @@ const paymentColumns: TableColumn<StudentPayment>[] = [
         },
     },
     {
+        accessorKey: "payment_date",
+        header: "To'lov sanasi",
+        cell: ({ row }) => formatDate(row.original.payment_date),
+    },
+    {
         accessorKey: "next_payment_date",
-        header: "Keyingi to'lov",
+        header: "Keyingi to'lov sanasi",
         cell: ({ row }) => formatDate(row.original.next_payment_date),
+    },
+    {
+        accessorKey: "createdAt",
+        header: "Yaratilgan sana",
+        cell: ({ row }) => formatDate(row.original.createdAt),
     },
     {
         id: "actions",

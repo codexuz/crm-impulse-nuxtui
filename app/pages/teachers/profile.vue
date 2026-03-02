@@ -161,16 +161,11 @@
 <script setup lang="ts">
 import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import { useAuth } from "~/composables/useAuth";
+import { useFinancialAccess } from "~/composables/useFinancialAccess";
 import { api } from "~/lib/api";
 
-const { apiService, auth } = useAuth();
-
-const hasFinancialAccess = computed(() => {
-  return (
-    auth.value?.user?.id === "d6bd8680-ca59-438c-95ed-ba363a86a065" ||
-    auth.value?.user?.phone === "+998900064400"
-  );
-});
+const { apiService } = useAuth();
+const { hasFinancialAccess } = useFinancialAccess();
 
 const teacherNavItems = computed<NavigationMenuItem[]>(() => [
   {

@@ -227,18 +227,13 @@
 import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
+import { useFinancialAccess } from "~/composables/useFinancialAccess";
 
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
 
-const { apiService, auth } = useAuth();
-
-const hasFinancialAccess = computed(() => {
-  return (
-    auth.value?.user?.id === "d6bd8680-ca59-438c-95ed-ba363a86a065" ||
-    auth.value?.user?.phone === "+998900064400"
-  );
-});
+const { apiService } = useAuth();
+const { hasFinancialAccess } = useFinancialAccess();
 
 const teacherNavItems = computed<NavigationMenuItem[]>(() => [
   {

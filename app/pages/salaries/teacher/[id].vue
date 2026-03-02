@@ -3,7 +3,8 @@
     <template #header>
       <UDashboardNavbar title="Maoshni hisoblash" :ui="{ right: 'gap-3' }">
         <template #leading>
-          <UButton variant="ghost" icon="i-lucide-arrow-left" square @click="router.back()" />
+          <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="teacherNavItems" highlight />
         </template>
 
         <template #description> O'qituvchi hamyon va tranzaksiyalar </template>
@@ -360,13 +361,38 @@
 </template>
 
 <script setup lang="ts">
-import type { TableColumn } from "@nuxt/ui";
+import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
+import { useFinancialAccess } from "~/composables/useFinancialAccess";
 
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
 const UAvatar = resolveComponent("UAvatar");
+
+const { hasFinancialAccess } = useFinancialAccess();
+
+const teacherNavItems = computed<NavigationMenuItem[]>(() => [
+  {
+    label: 'O\'qituvchilar',
+    icon: 'i-lucide-users',
+    to: '/teachers'
+  },
+  ...(hasFinancialAccess.value
+    ? [
+      {
+        label: 'Profillar',
+        icon: 'i-lucide-user-cog',
+        to: '/teachers/profile'
+      },
+      {
+        label: 'Oyliklar',
+        icon: 'i-lucide-wallet',
+        to: '/salaries'
+      }
+    ]
+    : []),
+]);
 
 definePageMeta({
   middleware: ["auth"],
@@ -1137,7 +1163,7 @@ const submitPayment = async () => {
       category_id: paymentForm.category_id,
       description: paymentForm.description,
       amount: paymentForm.amount,
-      expense_date: new Date(paymentForm.expense_date).toISOString(),
+      expense_date: paymentForm.expense_date ? new Date(paymentForm.expense_date).toISOString() : new Date().toISOString(),
       teacher_id: teacherId.value,
       reported_by: teacherId.value,
     };
