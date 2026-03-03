@@ -75,42 +75,21 @@ export const useAuth = () => {
         );
       }
 
-      // Try login with admin endpoint first
-      try {
-        const response = await api.post<any>(
-          apiService.value,
-          "/auth/admin/login",
-          { username, password },
-        );
+      // Login with admin endpoint
+      const response = await api.post<any>(
+        apiService.value,
+        "/auth/admin/login",
+        { username, password },
+      );
 
-        // If OTP is required, return the OTP response without setting auth state
-        if (response.otpRequired) {
-          return response as OtpLoginResponse;
-        }
-
-        // Direct login (no OTP) — set auth state
-        setAuthState(response);
-        return response;
-      } catch (err) {
-        console.log("Admin login attempt failed, trying standard endpoint");
-
-        // If admin endpoint fails, try the standard login
-        const response = await api.post<any>(
-          apiService.value,
-          "/auth/teachers/login",
-          { username, password },
-          {
-            headers: {
-              "user-agent":
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            },
-          },
-        );
-
-        // Set auth state
-        setAuthState(response);
-        return response;
+      // If OTP is required, return the OTP response without setting auth state
+      if (response.otpRequired) {
+        return response as OtpLoginResponse;
       }
+
+      // Direct login (no OTP) — set auth state
+      setAuthState(response);
+      return response;
     } catch (error) {
       console.error("All login attempts failed:", error);
 
