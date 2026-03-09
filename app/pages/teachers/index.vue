@@ -83,7 +83,7 @@
 
             <div>
               <UFormField label="Telefon" required>
-                <UInput v-model="newTeacher.phone" placeholder="+998 xx xxx xx xx" />
+                <UInput v-model="newTeacher.phone" v-maska data-maska="+998 ## ### ## ##" placeholder="+998 xx xxx xx xx" />
               </UFormField>
             </div>
 
@@ -145,7 +145,7 @@
                 <div class="space-y-1">
                   <div class="flex">
                     <span class="text-gray-500 w-20">Telefon:</span>
-                    <span>{{ selectedTeacher.phone }}</span>
+                    <span>{{ formatPhone(selectedTeacher.phone) }}</span>
                   </div>
                 </div>
               </div>
@@ -204,7 +204,7 @@
 
             <div>
               <UFormField label="Telefon" required>
-                <UInput v-model="editingTeacher.phone" placeholder="+998 xx xxx xx xx" />
+                <UInput v-model="editingTeacher.phone" v-maska data-maska="+998 ## ### ## ##" placeholder="+998 xx xxx xx xx" />
               </UFormField>
             </div>
           </div>
@@ -230,6 +230,7 @@ import { useFinancialAccess } from "~/composables/useFinancialAccess";
 
 const { apiService } = useAuth();
 const { hasFinancialAccess } = useFinancialAccess();
+const { formatPhone } = usePhoneFormatter();
 
 const teacherNavItems = computed<NavigationMenuItem[]>(() => [
   {
@@ -358,6 +359,7 @@ const columns: TableColumn<Teacher>[] = [
   {
     accessorKey: "phone",
     header: "Telefon",
+    cell: ({ row }) => formatPhone(row.original.phone),
   },
   {
     accessorKey: "is_active",

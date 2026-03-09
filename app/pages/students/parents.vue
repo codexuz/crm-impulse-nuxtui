@@ -95,6 +95,7 @@ const studentNavItems: NavigationMenuItem[] = [
 const { apiService } = useAuth();
 const toast = useToast();
 const table = useTemplateRef("table");
+const { formatPhone } = usePhoneFormatter();
 
 // Parents data
 const parents = ref<StudentParent[]>([]);
@@ -144,11 +145,12 @@ const columns: TableColumn<StudentParent>[] = [
   {
     accessorKey: "phone_number",
     header: "Telefon",
+    cell: ({ row }) => formatPhone(row.original.phone_number),
   },
   {
     accessorKey: "additional_number",
     header: "Qo'shimcha raqam",
-    cell: ({ row }) => row.original.additional_number || "Yo'q",
+    cell: ({ row }) => row.original.additional_number ? formatPhone(row.original.additional_number) : "Yo'q",
   },
   {
     accessorKey: "student",

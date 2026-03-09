@@ -140,6 +140,7 @@ import { useAuth } from "~/composables/useAuth";
 import type { Role } from "~/types";
 
 const UBadge = resolveComponent("UBadge");
+const { formatPhone } = usePhoneFormatter();
 const UButton = resolveComponent("UButton");
 const UPopover = resolveComponent("UPopover");
 
@@ -201,7 +202,7 @@ const assignForm = reactive({
 // Computed
 const userOptions = computed(() =>
     users.value.map((u) => ({
-        label: `${u.first_name} ${u.last_name} (${u.phone})`,
+        label: `${u.first_name} ${u.last_name} (${formatPhone(u.phone)})`,
         value: u.user_id || u.id,
     })),
 );

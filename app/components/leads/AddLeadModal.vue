@@ -186,6 +186,8 @@ onMounted(() => {
           <UFormField label="Telefon raqami" required>
             <UInput
               v-model="newLead.phone"
+              v-maska
+              data-maska="+998 ## ### ## ##"
               placeholder="+998 XX XXX XX XX"
               required
               class="w-full"
@@ -216,6 +218,8 @@ onMounted(() => {
             <UFormField label="Ota-ona telefoni">
               <UInput
                 v-model="newLead.parent_phone_number"
+                v-maska
+                data-maska="+998 ## ### ## ##"
                 placeholder="+998 XX XXX XX XX"
                 class="w-full"
               />
@@ -224,6 +228,8 @@ onMounted(() => {
             <UFormField label="Qo'shimcha raqam">
               <UInput
                 v-model="newLead.additional_number"
+                v-maska
+                data-maska="+998 ## ### ## ##"
                 placeholder="+998 XX XXX XX XX"
                 class="w-full"
               />

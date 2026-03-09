@@ -26,6 +26,8 @@ interface TrialLesson {
   scheduledAt: string;
   status: string;
   notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
   teacherInfo?: {
     user_id: string;
     first_name: string;
@@ -56,6 +58,7 @@ const emit = defineEmits<{
 const { apiService } = useAuth();
 const trialLessons = ref<TrialLesson[]>([]);
 const isLoadingTrials = ref(false);
+const { formatPhone } = usePhoneFormatter();
 
 const getInitials = (firstName: string, lastName: string): string => {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
@@ -202,7 +205,7 @@ watch(open, (isOpen) => {
                 Telefon
               </div>
               <div class="mt-1 text-base text-gray-900 dark:text-white">
-                {{ lead.phone }}
+                {{ formatPhone(lead.phone) }}
               </div>
             </div>
 
@@ -220,7 +223,7 @@ watch(open, (isOpen) => {
                 Ota-ona telefoni
               </div>
               <div class="mt-1 text-base text-gray-900 dark:text-white">
-                {{ lead.parent_phone_number }}
+                {{ formatPhone(lead.parent_phone_number) }}
               </div>
             </div>
 
@@ -229,7 +232,7 @@ watch(open, (isOpen) => {
                 Qo'shimcha raqam
               </div>
               <div class="mt-1 text-base text-gray-900 dark:text-white">
-                {{ lead.additional_number }}
+                {{ formatPhone(lead.additional_number) }}
               </div>
             </div>
 
@@ -258,7 +261,7 @@ watch(open, (isOpen) => {
                 Yaratilgan sana
               </div>
               <div class="mt-1 text-base text-gray-900 dark:text-white">
-                {{ formatDate(lead.createdAt) }}
+                {{ formatDateTime(lead.createdAt) }}
               </div>
             </div>
 
@@ -267,7 +270,7 @@ watch(open, (isOpen) => {
                 Oxirgi yangilanish
               </div>
               <div class="mt-1 text-base text-gray-900 dark:text-white">
-                {{ formatDate(lead.updatedAt) }}
+                {{ formatDateTime(lead.updatedAt) }}
               </div>
             </div>
 
@@ -329,7 +332,13 @@ watch(open, (isOpen) => {
                     </div>
                     <div class="flex items-center gap-1">
                       <UIcon name="i-lucide-clock" class="w-3 h-3" />
-                      <span>{{ formatDateTime(trial.scheduledAt) }}</span>
+                      <span>Belgilangan: {{ formatDateTime(trial.scheduledAt) }}</span>
+                    </div>
+                    <div v-if="trial.createdAt" class="flex items-center gap-1 mt-1 text-xs text-gray-500">
+                      <span>Yaratildi: {{ formatDateTime(trial.createdAt) }}</span>
+                    </div>
+                    <div v-if="trial.updatedAt" class="flex items-center gap-1 mt-1 text-xs text-gray-500">
+                      <span>Yangilandi: {{ formatDateTime(trial.updatedAt) }}</span>
                     </div>
                   </div>
                   <div

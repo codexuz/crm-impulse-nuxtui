@@ -174,6 +174,8 @@ const handleSubmit = () => {
           <UFormField label="Telefon raqami" required>
             <UInput
               v-model="newParent.phone_number"
+              v-maska
+              data-maska="+998 ## ### ## ##"
               placeholder="+998 XX XXX XX XX"
               icon="i-lucide-phone"
               size="lg"
@@ -185,6 +187,8 @@ const handleSubmit = () => {
           <UFormField label="Qo'shimcha raqam">
             <UInput
               v-model="newParent.additional_number"
+              v-maska
+              data-maska="+998 ## ### ## ##"
               placeholder="+998 XX XXX XX XX"
               icon="i-lucide-phone"
               size="lg"

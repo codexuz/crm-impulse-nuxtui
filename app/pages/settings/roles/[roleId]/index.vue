@@ -63,6 +63,7 @@ import { api } from '~/lib/api'
 import { useAuth } from '~/composables/useAuth'
 
 const UButton = resolveComponent('UButton')
+const { formatPhone } = usePhoneFormatter()
 const UBadge = resolveComponent('UBadge')
 const UPopover = resolveComponent('UPopover')
 
@@ -109,7 +110,7 @@ const columns: TableColumn<User>[] = [
     {
         accessorKey: 'phone',
         header: 'Telefon',
-        cell: ({ row }) => row.original.phone || '—',
+        cell: ({ row }) => row.original.phone ? formatPhone(row.original.phone) : '—',
     },
     {
         accessorKey: 'username',

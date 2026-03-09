@@ -56,7 +56,7 @@
                                     <div class="flex items-center gap-3">
                                         <UIcon name="i-lucide-phone" class="size-4 text-muted" />
                                         <span class="text-muted w-32">Telefon raqam:</span>
-                                        <span class="font-medium">{{ student.phone }}</span>
+                                        <span class="font-medium">{{ formatPhone(student.phone) }}</span>
                                         <UButton icon="i-lucide-phone-call" color="success" variant="ghost" size="xs"
                                             square :href="`tel:${student.phone}`" />
                                     </div>
@@ -255,9 +255,9 @@
                                             </UAvatar>
                                             <div>
                                                 <div class="font-medium">{{ parent.full_name }}</div>
-                                                <div class="text-sm text-muted">{{ parent.phone_number }}</div>
+                                                <div class="text-sm text-muted">{{ formatPhone(parent.phone_number) }}</div>
                                                 <div v-if="parent.additional_number" class="text-xs text-muted">
-                                                    Qo'shimcha: {{ parent.additional_number }}
+                                                    Qo'shimcha: {{ formatPhone(parent.additional_number) }}
                                                 </div>
                                             </div>
                                         </div>
@@ -512,6 +512,7 @@ definePageMeta({
 const route = useRoute();
 const toast = useToast();
 const { apiService } = useAuth();
+const { formatPhone } = usePhoneFormatter();
 
 const studentId = computed(() => route.params.id as string);
 

@@ -3,6 +3,8 @@ import type { Student } from "~/types";
 
 const open = defineModel<boolean>("open");
 
+const { formatPhone } = usePhoneFormatter();
+
 const props = defineProps<{
   student: Student | null;
   studentGroups: any[];
@@ -64,7 +66,7 @@ const getStudentCourse = (student: Student | null) => {
             <div class="space-y-2 text-sm">
               <div class="flex justify-between">
                 <span class="text-gray-500">Telefon:</span>
-                <span>{{ student.phone }}</span>
+                <span>{{ formatPhone(student.phone) }}</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-gray-500">Kurs:</span>

@@ -165,6 +165,7 @@ const { apiService } = useAuth();
 const toast = useToast();
 const route = useRoute();
 const router = useRouter();
+const { formatPhone } = usePhoneFormatter();
 
 // State
 const leads = ref<Lead[]>([]);
@@ -248,6 +249,7 @@ const columns: TableColumn<Lead>[] = [
   {
     accessorKey: "phone",
     header: "Telefon",
+    cell: ({ row }) => formatPhone(row.original.phone),
   },
   {
     accessorKey: "status",
@@ -708,7 +710,7 @@ const exportLeadsToExcel = async () => {
     const data = filteredLeads.value.map((lead) => ({
       Ism: lead.first_name,
       Familiya: lead.last_name,
-      Telefon: lead.phone,
+      Telefon: formatPhone(lead.phone),
       Holat: lead.status,
       Manba: lead.source,
       Kurs: getCourseTitle(lead.course_id || ""),

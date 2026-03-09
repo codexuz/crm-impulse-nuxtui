@@ -87,6 +87,8 @@ import { ref, reactive, onMounted, computed, watch, h } from "vue";
 import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import { useSMS } from "~/composables/useSMS";
 
+const { formatPhone } = usePhoneFormatter();
+
 const smsNavItems: NavigationMenuItem[] = [
   {
     label: 'SMS Jo\'natmalar',
@@ -148,7 +150,7 @@ const columns: TableColumn<any>[] = [
     accessorKey: "to",
     header: "Telefon raqami",
     cell: ({ row }) =>
-      h("div", { class: "font-medium" }, `+${row.original.to}`),
+      h("div", { class: "font-medium" }, formatPhone(row.original.to.startsWith('+') ? row.original.to : '+' + row.original.to)),
   },
   {
     accessorKey: "message",

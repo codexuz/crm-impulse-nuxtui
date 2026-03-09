@@ -151,6 +151,7 @@ const { apiService } = useAuth();
 const toast = useToast();
 const route = useRoute();
 const router = useRouter();
+const { formatPhone } = usePhoneFormatter();
 
 // State
 const leads = ref<Lead[]>([]);
@@ -211,6 +212,7 @@ const columns: TableColumn<Lead>[] = [
   {
     accessorKey: "phone",
     header: "Telefon",
+    cell: ({ row }) => formatPhone(row.original.phone),
   },
   {
     accessorKey: "status",

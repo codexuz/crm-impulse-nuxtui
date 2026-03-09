@@ -125,6 +125,7 @@ const UDropdownMenu = resolveComponent("UDropdownMenu");
 const UPopover = resolveComponent("UPopover");
 
 const { apiService } = useAuth();
+const { formatPhone } = usePhoneFormatter();
 const toast = useToast();
 const route = useRoute();
 const router = useRouter();
@@ -190,7 +191,7 @@ const columns: TableColumn<GroupStudent>[] = [
           h(
             "div",
             { class: "text-xs text-gray-500" },
-            student.phone || student.username,
+            student.phone ? formatPhone(student.phone) : student.username,
           ),
         ]),
       ]);

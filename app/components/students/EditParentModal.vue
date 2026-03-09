@@ -225,6 +225,8 @@ watch(open, (isOpen) => {
           <UFormField label="Telefon raqami" required>
             <UInput
               v-model="editingParent.phone_number"
+              v-maska
+              data-maska="+998 ## ### ## ##"
               placeholder="+998 XX XXX XX XX"
               icon="i-lucide-phone"
               size="lg"
@@ -236,6 +238,8 @@ watch(open, (isOpen) => {
           <UFormField label="Qo'shimcha raqam">
             <UInput
               v-model="editingParent.additional_number"
+              v-maska
+              data-maska="+998 ## ### ## ##"
               placeholder="+998 XX XXX XX XX"
               icon="i-lucide-phone"
               size="lg"

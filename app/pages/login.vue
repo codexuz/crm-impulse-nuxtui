@@ -24,8 +24,13 @@
           </UFormField>
 
           <UFormField label="Parol" :error="errors.password" required>
-            <UInput v-model="password" name="password" type="password" autocomplete="current-password"
-              placeholder="Parolni kiriting" icon="i-lucide-lock" size="lg" class="w-full" />
+            <UInput v-model="password" name="password" :type="showPassword ? 'text' : 'password'" autocomplete="current-password"
+              placeholder="Parolni kiriting" icon="i-lucide-lock" size="lg" class="w-full">
+              <template #trailing>
+                <UButton variant="ghost" :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'" size="xs" color="gray"
+                  @click="showPassword = !showPassword" :padded="false" />
+              </template>
+            </UInput>
           </UFormField>
 
           <div class="flex items-center justify-between">
@@ -106,6 +111,7 @@ const toast = useToast();
 
 const username = ref("");
 const password = ref("");
+const showPassword = ref(false);
 const rememberMe = ref(false);
 const errors = ref<Record<string, string>>({});
 const isLoading = ref(false);

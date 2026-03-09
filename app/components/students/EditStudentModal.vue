@@ -223,6 +223,8 @@ onMounted(() => {
             </label>
             <UInput
               v-model="editingStudent.phone"
+              v-maska
+              data-maska="+998 ## ### ## ##"
               placeholder="+998 XX XXX XX XX"
               icon="i-lucide-phone"
               size="lg"

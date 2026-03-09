@@ -49,7 +49,7 @@
               <div class="flex items-center gap-2 text-sm">
                 <UIcon name="i-lucide-phone" class="h-4 w-4 text-gray-400" />
                 <span class="text-gray-600">Telefon:</span>
-                <span class="font-medium">{{ student.phone || "N/A" }}</span>
+                <span class="font-medium">{{ student.phone ? formatPhone(student.phone) : "N/A" }}</span>
               </div>
               <div class="flex items-center gap-2 text-sm">
                 <UIcon name="i-lucide-user" class="h-4 w-4 text-gray-400" />
@@ -117,6 +117,8 @@ defineProps<{
   student: Student | null;
   groupStudent: any | null;
 }>();
+
+const { formatPhone } = usePhoneFormatter();
 
 const emit = defineEmits<{
   "update:open": [value: boolean];

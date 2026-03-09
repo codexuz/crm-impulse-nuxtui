@@ -184,6 +184,7 @@ const searchQuery = ref("");
 const statusFilter = ref("all");
 const teacherFilter = ref("all");
 const { auth, apiService } = useAuth();
+const { formatPhone } = usePhoneFormatter();
 const showDeleteDialog = ref(false);
 const trialToDelete = ref<string | null>(null);
 const showEditDialog = ref(false);
@@ -290,6 +291,42 @@ const columns: TableColumn<TrialLesson>[] = [
     accessorKey: "notes",
     header: "Izohlar",
     cell: ({ row }) => row.original.notes || "Izoh yo'q",
+  },
+  {
+    accessorKey: "createdAt",
+    header: "Yaratilgan",
+    cell: ({ row }) => {
+      return h("div", {}, [
+        h(
+          "div",
+          { class: "font-medium" },
+          row.original.createdAt ? formatDate(row.original.createdAt) : "N/A",
+        ),
+        h(
+          "div",
+          { class: "text-xs text-gray-500" },
+          row.original.createdAt ? formatTime(row.original.createdAt) : "",
+        ),
+      ]);
+    },
+  },
+  {
+    accessorKey: "updatedAt",
+    header: "Yangilangan",
+    cell: ({ row }) => {
+      return h("div", {}, [
+        h(
+          "div",
+          { class: "font-medium" },
+          row.original.updatedAt ? formatDate(row.original.updatedAt) : "N/A",
+        ),
+        h(
+          "div",
+          { class: "text-xs text-gray-500" },
+          row.original.updatedAt ? formatTime(row.original.updatedAt) : "",
+        ),
+      ]);
+    },
   },
   {
     id: "actions",
@@ -501,21 +538,6 @@ const formatTime = (dateString: string) => {
   const hours = date.getUTCHours().toString().padStart(2, "0");
   const minutes = date.getUTCMinutes().toString().padStart(2, "0");
   return `${hours}:${minutes}`;
-};
-
-// Format phone number
-const formatPhone = (phone: string) => {
-  if (!phone) return "";
-
-  if (phone.startsWith("+")) {
-    return phone;
-  }
-
-  if (phone.match(/^\d+$/)) {
-    return `+998${phone}`;
-  }
-
-  return phone;
 };
 
 // Open dialog to edit an existing trial lesson

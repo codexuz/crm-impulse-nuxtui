@@ -3,6 +3,8 @@ import type { StudentParent } from "~/types";
 
 const open = defineModel<boolean>("open");
 
+const { formatPhone } = usePhoneFormatter();
+
 const props = defineProps<{
   parent: StudentParent | null;
 }>();
@@ -38,7 +40,7 @@ const formatDate = (dateString?: string): string => {
             <h3 class="text-lg font-semibold">
               {{ parent.full_name }}
             </h3>
-            <p class="text-gray-500">{{ parent.phone_number }}</p>
+            <p class="text-gray-500">{{ formatPhone(parent.phone_number) }}</p>
           </div>
         </div>
 
@@ -48,11 +50,11 @@ const formatDate = (dateString?: string): string => {
             <div class="space-y-2 text-sm">
               <div class="flex justify-between">
                 <span class="text-gray-500">Telefon:</span>
-                <span>{{ parent.phone_number }}</span>
+                <span>{{ formatPhone(parent.phone_number) }}</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-gray-500">Qo'shimcha raqam:</span>
-                <span>{{ parent.additional_number || "Yo'q" }}</span>
+                <span>{{ parent.additional_number ? formatPhone(parent.additional_number) : "Yo'q" }}</span>
               </div>
             </div>
           </div>

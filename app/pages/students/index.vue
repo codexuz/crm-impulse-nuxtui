@@ -100,6 +100,7 @@ const studentNavItems: NavigationMenuItem[] = [
 const { apiService } = useAuth();
 const toast = useToast();
 const table = useTemplateRef("table");
+const { formatPhone } = usePhoneFormatter();
 
 // Students data
 const students = ref<Student[]>([]);
@@ -184,6 +185,7 @@ const columns: TableColumn<Student>[] = [
   {
     accessorKey: "phone",
     header: "Telefon",
+    cell: ({ row }) => formatPhone(row.original.phone),
   },
   {
     accessorKey: "level.title",

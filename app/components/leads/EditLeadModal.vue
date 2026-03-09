@@ -161,6 +161,8 @@ const handleSubmit = async () => {
           <UFormField label="Telefon raqami" required>
             <UInput
               v-model="editingLead.phone"
+              v-maska
+              data-maska="+998 ## ### ## ##"
               placeholder="+998 XX XXX XX XX"
               required
               class="w-full"
@@ -191,6 +193,8 @@ const handleSubmit = async () => {
             <UFormField label="Ota-ona telefoni">
               <UInput
                 v-model="editingLead.parent_phone_number"
+                v-maska
+                data-maska="+998 ## ### ## ##"
                 placeholder="+998 XX XXX XX XX"
                 class="w-full"
               />
@@ -199,6 +203,8 @@ const handleSubmit = async () => {
             <UFormField label="Qo'shimcha raqam">
               <UInput
                 v-model="editingLead.additional_number"
+                v-maska
+                data-maska="+998 ## ### ## ##"
                 placeholder="+998 XX XXX XX XX"
                 class="w-full"
               />

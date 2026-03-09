@@ -134,7 +134,7 @@
               </div>
               <div>
                 <h4 class="text-sm font-medium text-gray-500 mb-1">Telefon</h4>
-                <p>{{ selectedTeacher.phone }}</p>
+                <p>{{ formatPhone(selectedTeacher.phone) }}</p>
               </div>
             </div>
 
@@ -234,6 +234,7 @@ const UButton = resolveComponent("UButton");
 
 const { apiService } = useAuth();
 const { hasFinancialAccess } = useFinancialAccess();
+const { formatPhone } = usePhoneFormatter();
 
 const teacherNavItems = computed<NavigationMenuItem[]>(() => [
   {
@@ -304,7 +305,7 @@ const columns: TableColumn<Teacher>[] = [
           { class: "font-medium" },
           `${row.original.first_name} ${row.original.last_name}`,
         ),
-        h("div", { class: "text-xs text-gray-500" }, row.original.phone),
+        h("div", { class: "text-xs text-gray-500" }, formatPhone(row.original.phone)),
       ]);
     },
   },

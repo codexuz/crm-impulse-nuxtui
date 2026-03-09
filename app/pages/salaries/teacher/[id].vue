@@ -71,7 +71,7 @@
                       <p class="text-[10px] font-bold text-gray-500 uppercase">
                         Telefon
                       </p>
-                      <p class="text-sm font-bold">{{ teacher?.phone }}</p>
+                      <p class="text-sm font-bold">{{ teacher?.phone ? formatPhone(teacher.phone) : '' }}</p>
                     </div>
                     <div>
                       <p class="text-[10px] font-bold text-gray-500 uppercase">
@@ -503,6 +503,7 @@ const route = useRoute();
 const router = useRouter();
 const { apiService } = useAuth();
 const toast = useToast();
+const { formatPhone } = usePhoneFormatter();
 
 // Helper functions for default dates
 const getDefaultDateFrom = () => {
@@ -630,7 +631,7 @@ const transactionColumns: TableColumn<Transaction>[] = [
             { class: "font-medium" },
             `${student.first_name} ${student.last_name}`,
           ),
-          h("span", { class: "text-xs text-gray-500" }, student.phone),
+          h("span", { class: "text-xs text-gray-500" }, formatPhone(student.phone)),
         ]);
       }
       return h("span", { class: "text-gray-400 text-sm" }, "-");
@@ -767,7 +768,7 @@ const compensatedLessonsColumns: TableColumn<CompensatedLesson>[] = [
             { class: "font-medium" },
             `${student.first_name} ${student.last_name}`,
           ),
-          h("span", { class: "text-xs text-gray-500" }, student.phone),
+          h("span", { class: "text-xs text-gray-500" }, formatPhone(student.phone)),
         ]);
       }
       return h("span", { class: "text-gray-400 text-sm" }, "-");
