@@ -104,6 +104,7 @@ import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import { format } from "date-fns";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
+import { useSMS } from "~/composables/useSMS";
 
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
@@ -189,7 +190,10 @@ const showDeleteDialog = ref(false);
 const trialToDelete = ref<string | null>(null);
 const showEditDialog = ref(false);
 const deletePopoverOpen = ref<Record<string, boolean>>({});
+const smsPopoverOpen = ref<Record<string, boolean>>({});
 const isDeleting = ref(false);
+const isSendingSms = ref<Record<string, boolean>>({});
+const { sendSMS } = useSMS();
 const editingTrial = reactive({
   id: "",
   scheduledAt: "",
@@ -334,6 +338,60 @@ const columns: TableColumn<TrialLesson>[] = [
     cell: ({ row }) => {
       const trialId = row.original.id;
       return h("div", { class: "flex items-center gap-1" }, [
+        h(
+          UPopover,
+          {
+            open: smsPopoverOpen.value[trialId] || false,
+            "onUpdate:open": (value: boolean) => {
+              smsPopoverOpen.value[trialId] = value;
+            },
+          },
+          {
+            default: () =>
+              h(UButton, {
+                variant: "ghost",
+                icon: "i-lucide-message-square",
+                size: "sm",
+                color: "primary",
+                square: true,
+                loading: isSendingSms.value[trialId] || false,
+              }),
+            content: () =>
+              h("div", { class: "p-4 max-w-sm space-y-3" }, [
+                h(
+                  "h4",
+                  { class: "font-semibold text-sm" },
+                  "SMS jo'natish",
+                ),
+                h(
+                  "p",
+                  { class: "text-sm text-gray-600 dark:text-gray-400" },
+                  "O'quvchiga sinov darsi haqida SMS eslatma yubormoqchimisiz?",
+                ),
+                h("div", { class: "flex justify-end gap-2 mt-3" }, [
+                  h(UButton, {
+                    color: "neutral",
+                    variant: "subtle",
+                    label: "Bekor qilish",
+                    size: "sm",
+                    onClick: () => {
+                      smsPopoverOpen.value[trialId] = false;
+                    },
+                  }),
+                  h(UButton, {
+                    color: "primary",
+                    label: "Yuborish",
+                    size: "sm",
+                    loading: isSendingSms.value[trialId] || false,
+                    onClick: async () => {
+                      await sendSmsAlert(row.original);
+                      smsPopoverOpen.value[trialId] = false;
+                    },
+                  }),
+                ]),
+              ]),
+          },
+        ),
         h(UButton, {
           variant: "ghost",
           icon: "i-lucide-pencil",
@@ -629,6 +687,50 @@ const deleteTrial = async (id: string) => {
     isDeleting.value = false;
   }
 };
+
+// Send SMS reminder
+const sendSmsAlert = async (trial: TrialLesson) => {
+  if (!trial.leadInfo?.phone) {
+    toast.add({
+      title: "Xatolik",
+      description: "Telefon raqam mavjud emas",
+      color: "error",
+    });
+    return;
+  }
+
+  // Preserve digits and '+' character (removes spaces, dashes, parentheses)
+  const phone = trial.leadInfo.phone.replace(/[^\d+]/g, "");
+  if (!phone) return;
+
+  const trialTime = formatTime(trial.scheduledAt);
+  const name = `${trial.leadInfo.first_name || ""} ${trial.leadInfo.last_name || ""}`.trim() || "O'quvchi";
+  
+  const messageText = `Assalomu alaykum, ${name}! Bugun soat ${trialTime} da sinov darsiga o'z vaqtida kelishni unutmang. Impulse Study LC`;
+
+  isSendingSms.value[trial.id] = true;
+  try {
+    await sendSMS({
+      mobile_phone: phone,
+      message: messageText,
+    });
+    toast.add({
+      title: "Muvaffaqiyat",
+      description: "SMS xabar jo'natildi",
+      color: "success",
+    });
+  } catch (err: any) {
+    console.error("Error sending SMS:", err);
+    toast.add({
+      title: "Xatolik",
+      description: err?.response?.data?.message || "SMS jo'natishda xatolik",
+      color: "error",
+    });
+  } finally {
+    isSendingSms.value[trial.id] = false;
+  }
+};
+
 
 // Fetch data on component mount
 onMounted(() => {

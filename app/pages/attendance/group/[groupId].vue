@@ -3,7 +3,7 @@
     <template #header>
       <UDashboardNavbar :title="`Guruh davomati - ${group.name || 'Yuklanmoqda...'}`" :ui="{ right: 'gap-3' }">
         <template #leading>
-          <UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost" @click="navigateTo('/groups')" />
+          <UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost" @click="navigateTo({ path: '/groups', query: route.query })" />
         </template>
 
         <template #description>
@@ -18,7 +18,58 @@
     </template>
 
     <template #body>
-      <div>
+      <div class="flex flex-col gap-4">
+        <!-- Attendance Stats -->
+        <div v-if="stats" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <UCard :ui="{ body: { base: 'p-4 sm:p-4' } }">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+                <UIcon name="i-lucide-clipboard-list" class="w-5 h-5 flex-shrink-0" />
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Jami yozuvlar</p>
+                <p class="text-xl font-semibold">{{ stats.total }}</p>
+              </div>
+            </div>
+          </UCard>
+          
+          <UCard :ui="{ body: { base: 'p-4 sm:p-4' } }">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
+                <UIcon name="i-lucide-user-check" class="w-5 h-5 flex-shrink-0" />
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Kelganlar</p>
+                <p class="text-xl font-semibold text-green-600 dark:text-green-400">{{ stats.present }}</p>
+              </div>
+            </div>
+          </UCard>
+
+          <UCard :ui="{ body: { base: 'p-4 sm:p-4' } }">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+                <UIcon name="i-lucide-user-x" class="w-5 h-5 flex-shrink-0" />
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Kelmaganlar</p>
+                <p class="text-xl font-semibold text-red-600 dark:text-red-400">{{ stats.absent }}</p>
+              </div>
+            </div>
+          </UCard>
+
+          <UCard :ui="{ body: { base: 'p-4 sm:p-4' } }">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                <UIcon name="i-lucide-percent" class="w-5 h-5 flex-shrink-0" />
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Davomat darajasi</p>
+                <p class="text-xl font-semibold text-blue-600 dark:text-blue-400">{{ stats.attendanceRate }}%</p>
+              </div>
+            </div>
+          </UCard>
+        </div>
+
         <!-- Attendance Table -->
         <UCard>
           <template #header>
@@ -87,6 +138,7 @@ const selectedDate = ref(new Date());
 const attendanceData = reactive<
   Record<string, { status: string; note: string }>
 >({});
+const stats = ref<{ total: number; present: number; absent: number; late: number; attendanceRate: string } | null>(null);
 
 // Status options
 const statusOptions = [
@@ -243,6 +295,26 @@ const fetchGroupDetails = async () => {
   }
 };
 
+// Fetch group stats
+const fetchGroupStats = async () => {
+  try {
+    const now = new Date();
+    const startOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
+    const endOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0));
+    
+    const startDate = formatDateForApi(startOfMonth);
+    const endDate = formatDateForApi(endOfMonth);
+
+    const response = await api.get<any>(
+      apiService.value,
+      `/attendance/stats/summary?groupId=${groupId.value}&startDate=${startDate}&endDate=${endDate}`,
+    );
+    stats.value = response;
+  } catch (error) {
+    console.error("Failed to fetch group stats:", error);
+  }
+};
+
 // Fetch group students
 const fetchGroupStudents = async () => {
   try {
@@ -360,6 +432,7 @@ const saveAttendance = async () => {
         description: "Davomat muvaffaqiyatli saqlandi!",
         color: "success",
       });
+      fetchGroupStats();
     }
   } catch (error) {
     console.error("Failed to save attendance:", error);
@@ -407,7 +480,7 @@ onMounted(async () => {
   isLoading.value = true;
   selectedDate.value = new Date();
 
-  await Promise.all([fetchGroupDetails(), fetchGroupStudents()]);
+  await Promise.all([fetchGroupDetails(), fetchGroupStudents(), fetchGroupStats()]);
   await fetchAttendanceData();
   isLoading.value = false;
 });

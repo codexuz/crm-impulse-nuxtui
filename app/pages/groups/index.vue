@@ -278,13 +278,13 @@ const columns: TableColumn<Group>[] = [
                 {
                   label: "Talabalarni boshqarish",
                   icon: "i-lucide-users",
-                  onSelect: () => navigateTo(`/groups/${row.original.id}/students`),
+                  onSelect: () => navigateTo({ path: `/groups/${row.original.id}/students`, query: route.query }),
                 },
                 {
                   label: "Davomatni olish",
                   icon: "i-lucide-clipboard-check",
                   onSelect: () =>
-                    navigateTo(`/attendance/group/${row.original.id}`),
+                    navigateTo({ path: `/attendance/group/${row.original.id}`, query: route.query }),
                 },
               ],
             ],

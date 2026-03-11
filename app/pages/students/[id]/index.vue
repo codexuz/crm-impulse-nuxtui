@@ -4,7 +4,7 @@
             <UDashboardNavbar title="O'quvchi ma'lumoti" :ui="{ right: 'gap-3' }">
                 <template #leading>
                     <UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost"
-                        @click="navigateTo('/students')" />
+                        @click="useRouter().back()" />
                 </template>
 
                 <template #right>
@@ -216,6 +216,71 @@
                             </div>
                         </div>
 
+                        <!-- Kurs Foizi Tab -->
+                        <div v-if="item.value === 'course_progress'" class="mt-4 space-y-4">
+                            <UCard>
+                                <template #header>
+                                    <h3 class="text-base font-semibold">Kursni o'zlashtirishi</h3>
+                                </template>
+
+                                <div v-if="isLoadingProgress" class="flex justify-center py-4">
+                                     <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-primary" />
+                                </div>
+                                
+                                <div v-else-if="studentProgress.length === 0" class="text-center py-8 text-muted">
+                                    Kurs o'zlashtirish foizi ma'lumotlari topilmadi
+                                </div>
+
+                                <div v-else class="space-y-6">
+                                    <div v-for="progress in studentProgress" :key="progress.course_id" class="space-y-2">
+                                        <div class="flex items-center justify-between text-sm">
+                                            <span class="font-medium">{{ progress.course_name }}</span>
+                                            <span class="text-muted">{{ progress.completed }} / {{ progress.total }} ta dars</span>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <UProgress v-model="progress.percentage" status class="flex-1" :color="progress.percentage >= 80 ? 'success' : progress.percentage >= 50 ? 'warning' : 'error'" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </UCard>
+
+                            <UCard>
+                                <template #header>
+                                    <h3 class="text-base font-semibold">Modullar va darslar bo'yicha yo'l xaritasi</h3>
+                                </template>
+
+                                <div v-if="isLoadingRoadmap" class="flex justify-center py-4">
+                                     <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-primary" />
+                                </div>
+                                
+                                <div v-else-if="studentRoadmap.length === 0" class="text-center py-8 text-muted">
+                                    Yo'l xaritasi ma'lumotlari topilmadi
+                                </div>
+
+                                <div v-else class="space-y-4">
+                                    <UAccordion :items="roadmapAccordionItems">
+                                         <template #body="{ item }">
+                                             <div class="space-y-4 pb-4 px-1">
+                                                <div class="flex items-center gap-3">
+                                                    <span class="text-sm font-medium">Tugallangan: {{ item.data.completed }} / {{ item.data.total }}</span>
+                                                    <UProgress v-model="item.data.percentage" status class="flex-1" :color="item.data.percentage >= 80 ? 'success' : item.data.percentage >= 50 ? 'warning' : 'error'" />
+                                                </div>
+                                                <div v-if="item.data.lessons && item.data.lessons.length > 0" class="grid gap-2 border-t pt-4 mt-2">
+                                                     <div v-for="lesson in item.data.lessons" :key="lesson.id || lesson.lesson_id || lesson.title" class="flex justify-between items-center text-sm bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-800">
+                                                         <div class="flex items-center gap-3">
+                                                            <UIcon :name="lesson.is_completed || lesson.status === 'completed' ? 'i-lucide-check-circle' : 'i-lucide-circle'" :class="lesson.is_completed || lesson.status === 'completed' ? 'text-success size-5' : 'text-muted size-5'" />
+                                                            <span class="font-medium">{{ lesson.title || lesson.lesson_title }}</span>
+                                                         </div>
+                                                         <span v-if="lesson.average_score !== undefined && lesson.average_score !== null" class="font-semibold text-primary" :class="lesson.average_score >= 80 ? 'text-green-600 dark:text-green-400' : lesson.average_score >= 50 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-500 dark:text-red-400'">{{ Math.round(lesson.average_score) }}%</span>
+                                                     </div>
+                                                 </div>
+                                             </div>
+                                         </template>
+                                    </UAccordion>
+                                </div>
+                            </UCard>
+                        </div>
+                        
                         <!-- To'lovlar Tab -->
                         <div v-if="item.value === 'payments'" class="mt-4">
                             <UCard>
@@ -272,6 +337,47 @@
                             </div>
                         </div>
 
+                        <!-- Davomat Tab -->
+                        <div v-if="item.value === 'attendance'" class="mt-4 space-y-4">
+                            <UCard v-if="studentAttendance">
+                                <template #header>
+                                    <h3 class="text-base font-semibold">{{ formatAttendanceMonth(studentAttendance.month) }} uchun davomat xulosasi</h3>
+                                </template>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div class="flex flex-col gap-1 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                                        <div class="text-sm text-gray-500 flex items-center gap-2">
+                                            <UIcon name="i-lucide-calendar-days" class="w-4 h-4" />
+                                            Jami darslar
+                                        </div>
+                                        <div class="text-xl font-semibold">{{ studentAttendance.total }}</div>
+                                    </div>
+                                    <div class="flex flex-col gap-1 p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
+                                        <div class="text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
+                                            <UIcon name="i-lucide-user-check" class="w-4 h-4" />
+                                            Kelgan
+                                        </div>
+                                        <div class="text-xl font-semibold text-green-700 dark:text-green-300">{{ studentAttendance.present }}</div>
+                                    </div>
+                                    <div class="flex flex-col gap-1 p-3 rounded-lg bg-red-50 dark:bg-red-900/20">
+                                        <div class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+                                            <UIcon name="i-lucide-user-x" class="w-4 h-4" />
+                                            Kelmagan
+                                        </div>
+                                        <div class="text-xl font-semibold text-red-700 dark:text-red-300">{{ studentAttendance.absent }}</div>
+                                    </div>
+                                    <div class="flex flex-col gap-1 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                                        <div class="text-sm text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                                            <UIcon name="i-lucide-percent" class="w-4 h-4" />
+                                            Darajasi
+                                        </div>
+                                        <div class="text-xl font-semibold text-blue-700 dark:text-blue-300">{{ studentAttendance.attendanceRate }}%</div>
+                                    </div>
+                                </div>
+                            </UCard>
+                            <div v-else class="text-center py-8 text-muted">
+                                Davomat ma'lumotlari yuklanmoqda yoki mavjud emas.
+                            </div>
+                        </div>
 
                     </template>
                 </UTabs>
@@ -521,8 +627,13 @@ const student = ref<Student | null>(null);
 const studentGroups = ref<GroupStudent[]>([]);
 const studentPayments = ref<StudentPayment[]>([]);
 const studentParents = ref<StudentParent[]>([]);
+const studentAttendance = ref<{ month: string, total: number, present: number, absent: number, late: number, attendanceRate: string } | null>(null);
+const studentProgress = ref<Array<{ course_id: string, course_name: string, completed: number, total: number, percentage: number }>>([]);
+const studentRoadmap = ref<any[]>([]);
 const isLoading = ref(true);
 const isPaymentsLoading = ref(false);
+const isLoadingProgress = ref(false);
+const isLoadingRoadmap = ref(false);
 const isDeleting = ref(false);
 const isAddingParent = ref(false);
 const deletePopoverOpen = ref(false);
@@ -624,7 +735,9 @@ const newParent = ref({
 // Tab items
 const tabItems = [
     { label: "Guruhlar", value: "groups", icon: "i-lucide-layers" },
+    { label: "Kurs foizi", value: "course_progress", icon: "i-lucide-bar-chart" },
     { label: "To'lovlar", value: "payments", icon: "i-lucide-credit-card" },
+    { label: "Davomat", value: "attendance", icon: "i-lucide-clipboard-check" },
     { label: "Ota ona", value: "parents", icon: "i-lucide-users" },
 ];
 
@@ -725,6 +838,16 @@ const totalBalance = computed(() => {
     return 0;
 });
 
+const roadmapAccordionItems = computed(() => {
+    return studentRoadmap.value.map((unit) => ({
+        label: `${unit.unit_order || ''}. ${unit.unit_title}`.trim(),
+        icon: unit.status === 'unlocked' ? 'i-lucide-unlock' : 'i-lucide-lock',
+        disabled: unit.status === 'locked',
+        defaultOpen: unit.status === 'unlocked' && unit.percentage < 100, // keep current active unit open
+        data: unit,
+    }));
+});
+
 // Functions
 const loadStudentData = async () => {
     isLoading.value = true;
@@ -750,6 +873,9 @@ const loadStudentData = async () => {
             loadStudentGroups(),
             loadStudentPayments(),
             loadStudentParents(),
+            loadStudentAttendance(),
+            loadStudentProgress(),
+            loadStudentRoadmap(),
         ]);
     } catch (error) {
         console.error("Failed to load student data:", error);
@@ -802,6 +928,69 @@ const loadStudentParents = async () => {
     } catch (error) {
         console.error("Failed to load student parents:", error);
         studentParents.value = [];
+    }
+};
+
+const loadStudentAttendance = async () => {
+    try {
+        const response = await api.get<any>(
+            apiService.value,
+            `/attendance/student/${studentId.value}/current-month`,
+        );
+        studentAttendance.value = response;
+    } catch (error) {
+        console.error("Failed to load student attendance:", error);
+        studentAttendance.value = null;
+    }
+};
+
+const loadStudentProgress = async () => {
+    isLoadingProgress.value = true;
+    try {
+        const response = await api.get<any>(
+            apiService.value,
+            `/courses/progress/${studentId.value}`,
+        );
+        if (Array.isArray(response)) {
+            studentProgress.value = response;
+        } else if (response && response.course_id) {
+            studentProgress.value = [response];
+        } else {
+            studentProgress.value = [];
+        }
+    } catch (error) {
+        console.error("Failed to load student progress:", error);
+        studentProgress.value = [];
+    } finally {
+        isLoadingProgress.value = false;
+    }
+};
+
+const loadStudentRoadmap = async () => {
+    isLoadingRoadmap.value = true;
+    try {
+        const response = await api.get<any[]>(
+            apiService.value,
+            `/units/roadmap/${studentId.value}`,
+        );
+        studentRoadmap.value = Array.isArray(response) ? response : [];
+    } catch (error) {
+        // Fallback or retry with different prefix if needed, maybe /roadmap/
+        console.error("Failed to load student roadmap:", error);
+        
+        try {
+            // Attempting alternate route just in case
+            const altResponse = await api.get<any[]>(
+                apiService.value,
+                `/roadmap/${studentId.value}`,
+            );
+            studentRoadmap.value = Array.isArray(altResponse) ? altResponse : [];
+        } catch (altError) {
+             console.error("Failed alternate roadmap route:", altError);
+             studentRoadmap.value = [];
+        }
+    } finally {
+        isLoadingRoadmap.value = false;
     }
 };
 
@@ -1371,6 +1560,31 @@ const getNextPaymentDate = (groupItem: GroupStudent): string | null => {
         (p) => p.next_payment_date,
     );
     return payment ? formatDate(payment.next_payment_date) : null;
+};
+
+const formatAttendanceMonth = (monthStr?: string): string => {
+    if (!monthStr) return "Joriy oy";
+    const [monthName, year] = monthStr.split(" ");
+    
+    if (!monthName) return monthStr;
+
+    const monthsUzMap: Record<string, string> = {
+        "january": "yanvar",
+        "february": "fevral",
+        "march": "mart",
+        "april": "aprel",
+        "may": "may",
+        "june": "iyun",
+        "july": "iyul",
+        "august": "avgust",
+        "september": "sentabr",
+        "october": "oktabr",
+        "november": "noyabr",
+        "december": "dekabr",
+    };
+
+    const uzMonth = monthsUzMap[monthName.toLowerCase()] || monthName;
+    return `${year}-yil ${uzMonth} oyi`;
 };
 
 const copyToClipboard = async (text: string) => {

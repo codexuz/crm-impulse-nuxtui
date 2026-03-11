@@ -10,7 +10,7 @@
             icon="i-lucide-arrow-left"
             color="neutral"
             variant="ghost"
-            @click="navigateTo(`/groups`)"
+            @click="navigateTo({ path: '/groups', query: route.query })"
           />
         </template>
 
@@ -409,20 +409,7 @@ const viewStudentDetails = (groupStudent: GroupStudent) => {
     return;
   }
 
-  // Convert the nested student to full Student type
-  selectedStudent.value = {
-    user_id: groupStudent.student.user_id,
-    username: groupStudent.student.username,
-    first_name: groupStudent.student.first_name,
-    last_name: groupStudent.student.last_name,
-    phone: groupStudent.student.phone || "",
-    roles: [],
-    is_active: true,
-    created_at: new Date().toISOString(),
-  };
-
-  selectedGroupStudent.value = groupStudent;
-  studentDetailsDialog.value = true;
+  navigateTo({ path: `/students/${groupStudent.student.user_id}`, query: route.query });
 };
 
 const removeStudentFromGroup = async (groupStudent: GroupStudent) => {

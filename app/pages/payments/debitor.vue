@@ -738,8 +738,10 @@ const confirmSendReminder = async () => {
         throw new Error("Talabaning telefon raqami mavjud emas");
       }
 
+      const cleanPhone = phoneNumber.replace(/[^\d+]/g, "");
+
       await sendSMS({
-        mobile_phone: phoneNumber,
+        mobile_phone: cleanPhone,
         message: reminderDetails.message || "To'lov eslatmasi",
       });
 
