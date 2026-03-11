@@ -119,15 +119,15 @@ const leadNavItems: NavigationMenuItem[] = [
     to: '/leads'
   },
   {
+    label: 'Sinov darslari',
+    icon: 'i-lucide-calendar',
+    to: '/leads/lead-trials'
+  },
+  {
     label: 'Arxiv Leadlar',
     icon: 'i-lucide-archive',
     to: '/leads/archive'
   },
-  {
-    label: 'Sinov darslari',
-    icon: 'i-lucide-calendar',
-    to: '/leads/lead-trials'
-  }
 ]
 
 definePageMeta({

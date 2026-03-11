@@ -104,7 +104,6 @@ import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import { format } from "date-fns";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
-import { useSMS } from "~/composables/useSMS";
 
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
@@ -117,15 +116,15 @@ const leadNavItems: NavigationMenuItem[] = [
     to: '/leads'
   },
   {
+    label: 'Sinov darslari',
+    icon: 'i-lucide-calendar',
+    to: '/leads/lead-trials'
+  },
+  {
     label: 'Arxiv Leadlar',
     icon: 'i-lucide-archive',
     to: '/leads/archive'
   },
-  {
-    label: 'Sinov darslari',
-    icon: 'i-lucide-calendar',
-    to: '/leads/lead-trials'
-  }
 ]
 
 definePageMeta({
@@ -160,6 +159,7 @@ interface TrialLesson {
   deletedAt: null | string;
   teacherInfo: TeacherInfo;
   leadInfo: LeadInfo | null;
+  isNotified: boolean;
 }
 
 interface ApiResponse {
@@ -193,7 +193,6 @@ const deletePopoverOpen = ref<Record<string, boolean>>({});
 const smsPopoverOpen = ref<Record<string, boolean>>({});
 const isDeleting = ref(false);
 const isSendingSms = ref<Record<string, boolean>>({});
-const { sendSMS } = useSMS();
 const editingTrial = reactive({
   id: "",
   scheduledAt: "",
@@ -338,7 +337,17 @@ const columns: TableColumn<TrialLesson>[] = [
     cell: ({ row }) => {
       const trialId = row.original.id;
       return h("div", { class: "flex items-center gap-1" }, [
-        h(
+        row.original.isNotified
+          ? h(UButton, {
+              variant: "ghost",
+              icon: "i-lucide-check",
+              size: "sm",
+              color: "green",
+              square: true,
+              class: "opacity-100 cursor-default",
+              title: "SMS yuborilgan",
+            })
+          : h(
           UPopover,
           {
             open: smsPopoverOpen.value[trialId] || false,
@@ -699,21 +708,14 @@ const sendSmsAlert = async (trial: TrialLesson) => {
     return;
   }
 
-  // Preserve digits and '+' character (removes spaces, dashes, parentheses)
-  const phone = trial.leadInfo.phone.replace(/[^\d+]/g, "");
-  if (!phone) return;
-
-  const trialTime = formatTime(trial.scheduledAt);
-  const name = `${trial.leadInfo.first_name || ""} ${trial.leadInfo.last_name || ""}`.trim() || "O'quvchi";
-  
-  const messageText = `Assalomu alaykum, ${name}! Bugun soat ${trialTime} da sinov darsiga o'z vaqtida kelishni unutmang. Impulse Study LC`;
-
   isSendingSms.value[trial.id] = true;
   try {
-    await sendSMS({
-      mobile_phone: phone,
-      message: messageText,
-    });
+    await api.post(
+      apiService.value,
+      `/lead-trial-lessons/${trial.id}/notify`,
+      {}
+    );
+    trial.isNotified = true;
     toast.add({
       title: "Muvaffaqiyat",
       description: "SMS xabar jo'natildi",
@@ -723,7 +725,7 @@ const sendSmsAlert = async (trial: TrialLesson) => {
     console.error("Error sending SMS:", err);
     toast.add({
       title: "Xatolik",
-      description: err?.response?.data?.message || "SMS jo'natishda xatolik",
+      description: err?.response?.data?.message || err?.message || "SMS jo'natishda xatolik",
       color: "error",
     });
   } finally {
