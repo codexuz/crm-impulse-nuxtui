@@ -343,30 +343,10 @@ import type { NavigationMenuItem } from "@nuxt/ui";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 import { useSMS } from "~/composables/useSMS";
+import { usePaymentNav } from "~/composables/usePaymentNav";
 import { h } from "vue";
 
-const paymentNavItems: NavigationMenuItem[] = [
-  {
-    label: 'To\'lovlar',
-    icon: 'i-lucide-credit-card',
-    to: '/payments'
-  },
-  {
-    label: 'Kelayotgan to\'lovlar',
-    icon: 'i-lucide-calendar-clock',
-    to: '/payments/upcoming'
-  },
-  {
-    label: 'Qarzdorlar',
-    icon: 'i-lucide-alert-triangle',
-    to: '/payments/debitor'
-  },
-  {
-    label: 'Hisobot',
-    icon: 'i-lucide-bar-chart-2',
-    to: '/payments/report'
-  }
-]
+const { paymentNavItems } = usePaymentNav();
 
 const { apiService, auth } = useAuth();
 const toast = useToast();

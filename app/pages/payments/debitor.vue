@@ -41,7 +41,7 @@
                 <UIcon name="i-lucide-banknote" class="w-4 h-4 text-gray-500" />
               </div>
             </template>
-            <div class="text-2xl font-bold">
+            <div class="text-2xl font-bold" :class="{ 'blur-sm select-none inline-block': !hasFinancialAccess }">
               {{ formatCurrency(totalOverdueAmount) }}
             </div>
             <p class="text-xs text-gray-500 mt-1">To'lanmagan to'lovlar</p>
@@ -263,30 +263,12 @@ import type { NavigationMenuItem } from "@nuxt/ui";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 import { useSMS } from "~/composables/useSMS";
+import { useFinancialAccess } from "~/composables/useFinancialAccess";
+import { usePaymentNav } from "~/composables/usePaymentNav";
 import { h, resolveComponent } from "vue";
 
-const paymentNavItems: NavigationMenuItem[] = [
-  {
-    label: 'To\'lovlar',
-    icon: 'i-lucide-credit-card',
-    to: '/payments'
-  },
-  {
-    label: 'Kelayotgan to\'lovlar',
-    icon: 'i-lucide-calendar-clock',
-    to: '/payments/upcoming'
-  },
-  {
-    label: 'Qarzdorlar',
-    icon: 'i-lucide-alert-triangle',
-    to: '/payments/debitor'
-  },
-  {
-    label: 'Hisobot',
-    icon: 'i-lucide-bar-chart-2',
-    to: '/payments/report'
-  }
-]
+const { paymentNavItems } = usePaymentNav();
+const { hasFinancialAccess } = useFinancialAccess();
 
 definePageMeta({
   middleware: ["auth"],

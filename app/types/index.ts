@@ -214,6 +214,11 @@ export interface StudentPayment {
   next_payment_date: string;
   createdAt: string;
   updatedAt: string;
+  manager?: {
+    first_name: string;
+    last_name: string;
+    user_id?: string;
+  };
 }
 
 export interface StudentParent {

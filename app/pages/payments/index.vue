@@ -344,7 +344,7 @@
                   Yaratilgan
                 </h4>
                 <p class="text-sm">
-                  {{ formatDate(selectedPayment.createdAt) }}
+                  {{ formatDateTime(selectedPayment.createdAt) }}
                 </p>
               </div>
               <div>
@@ -352,9 +352,16 @@
                   Yangilangan
                 </h4>
                 <p class="text-sm">
-                  {{ formatDate(selectedPayment.updatedAt) }}
+                  {{ formatDateTime(selectedPayment.updatedAt) }}
                 </p>
               </div>
+            </div>
+            <div class="pt-4 border-t">
+              <h4 class="text-sm font-medium text-gray-500 mb-1">Menejer</h4>
+              <p class="text-sm">
+                {{ selectedPayment.manager?.first_name }}
+                {{ selectedPayment.manager?.last_name }}
+              </p>
             </div>
           </div>
         </template>
@@ -374,33 +381,13 @@ import { refDebounced } from "@vueuse/core";
 import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
+import { usePaymentNav } from "~/composables/usePaymentNav";
 
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
 const UPopover = resolveComponent("UPopover");
 
-const paymentNavItems: NavigationMenuItem[] = [
-  {
-    label: 'To\'lovlar',
-    icon: 'i-lucide-credit-card',
-    to: '/payments'
-  },
-  {
-    label: 'Kelayotgan to\'lovlar',
-    icon: 'i-lucide-calendar-clock',
-    to: '/payments/upcoming'
-  },
-  {
-    label: 'Qarzdorlar',
-    icon: 'i-lucide-alert-triangle',
-    to: '/payments/debitor'
-  },
-  {
-    label: 'Hisobot',
-    icon: 'i-lucide-bar-chart-2',
-    to: '/payments/report'
-  }
-]
+const { paymentNavItems } = usePaymentNav();
 
 definePageMeta({
   middleware: ["auth"],
@@ -544,6 +531,19 @@ const columns: TableColumn<Payment>[] = [
         },
         () => row.original.status,
       );
+    },
+  },
+  {
+    accessorKey: "manager",
+    header: "Menejer",
+    cell: ({ row }) => {
+      return h("div", {}, [
+        h(
+          "div",
+          { class: "font-medium" },
+          `${row.original.manager?.first_name || ""} ${row.original.manager?.last_name || ""}`,
+        ),
+      ]);
     },
   },
   {
@@ -726,6 +726,22 @@ const formatDate = (dateString?: string) => {
   const month = String(date.getUTCMonth() + 1).padStart(2, "0");
   const year = date.getUTCFullYear();
   return `${day}-${month}-${year}`;
+};
+
+const formatDateTime = (dateString?: string) => {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Tashkent",
+  })
+    .format(date)
+    .replace(",", "");
 };
 
 // API functions

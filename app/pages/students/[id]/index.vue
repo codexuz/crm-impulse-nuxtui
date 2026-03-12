@@ -779,9 +779,22 @@ const paymentColumns: TableColumn<StudentPayment>[] = [
         cell: ({ row }) => formatDate(row.original.next_payment_date),
     },
     {
+        accessorKey: "manager",
+        header: "Menejer",
+        cell: ({ row }) => {
+            return h("div", {}, [
+                h(
+                    "div",
+                    { class: "font-medium" },
+                    `${row.original.manager?.first_name || ""} ${row.original.manager?.last_name || ""}`,
+                ),
+            ]);
+        },
+    },
+    {
         accessorKey: "createdAt",
         header: "Yaratilgan sana",
-        cell: ({ row }) => formatDate(row.original.createdAt),
+        cell: ({ row }) => formatDateTime(row.original.createdAt),
     },
     {
         id: "actions",
@@ -1585,6 +1598,22 @@ const formatAttendanceMonth = (monthStr?: string): string => {
 
     const uzMonth = monthsUzMap[monthName.toLowerCase()] || monthName;
     return `${year}-yil ${uzMonth} oyi`;
+};
+
+const formatDateTime = (dateString?: string) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZone: "Asia/Tashkent",
+    })
+        .format(date)
+        .replace(",", "");
 };
 
 const copyToClipboard = async (text: string) => {

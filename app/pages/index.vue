@@ -56,7 +56,7 @@
           </div>
           <div class="text-2xl font-bold">{{ dashboard.upcomingPaymentsCount }}</div>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {{ formatCurrency(dashboard.upcomingPaymentsAmount) }} kutilmoqda
+            <span :class="{ 'blur-sm select-none': !hasFinancialAccess }">{{ formatCurrency(dashboard.upcomingPaymentsAmount) }}</span> kutilmoqda
           </p>
         </UCard>
 
@@ -69,7 +69,7 @@
           </div>
           <div class="text-2xl font-bold text-red-600">{{ dashboard.overduePaymentsCount }}</div>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {{ formatCurrency(dashboard.overduePaymentsAmount) }} qarzdorlik
+            <span :class="{ 'blur-sm select-none': !hasFinancialAccess }">{{ formatCurrency(dashboard.overduePaymentsAmount) }}</span> qarzdorlik
           </p>
         </UCard>
       </div>
@@ -333,6 +333,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from "vue";
 import { useAuth } from "~/composables/useAuth";
+import { useFinancialAccess } from "~/composables/useFinancialAccess";
 import { api } from "~/lib/api";
 
 definePageMeta({
@@ -340,6 +341,7 @@ definePageMeta({
 });
 
 const { apiService } = useAuth();
+const { hasFinancialAccess } = useFinancialAccess();
 
 // Reactive dashboard data
 const dashboard = reactive({

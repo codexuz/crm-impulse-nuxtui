@@ -114,6 +114,7 @@
 import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
+import { usePaymentNav } from "~/composables/usePaymentNav";
 
 definePageMeta({
     middleware: ["auth"],
@@ -121,29 +122,7 @@ definePageMeta({
 
 const { apiService } = useAuth();
 const toast = useToast();
-
-const paymentNavItems: NavigationMenuItem[] = [
-    {
-        label: "To'lovlar",
-        icon: "i-lucide-credit-card",
-        to: "/payments",
-    },
-    {
-        label: "Kelayotgan to'lovlar",
-        icon: "i-lucide-calendar-clock",
-        to: "/payments/upcoming",
-    },
-    {
-        label: "Qarzdorlar",
-        icon: "i-lucide-alert-triangle",
-        to: "/payments/debitor",
-    },
-    {
-        label: "Hisobot",
-        icon: "i-lucide-bar-chart-2",
-        to: "/payments/report",
-    },
-];
+const { paymentNavItems } = usePaymentNav();
 
 // State
 const isLoading = ref(false);
