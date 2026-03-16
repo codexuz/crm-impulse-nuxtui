@@ -155,6 +155,11 @@ const settingsNavItems: NavigationMenuItem[] = [
         icon: "i-lucide-shield",
         to: "/settings/roles",
     },
+    {
+        label: "Bildirishnomalar",
+        icon: "i-lucide-bell",
+        to: "/settings/notifications",
+    },
 ];
 
 definePageMeta({

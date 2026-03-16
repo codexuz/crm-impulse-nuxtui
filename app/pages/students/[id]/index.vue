@@ -271,7 +271,7 @@
                                                             <UIcon :name="lesson.is_completed || lesson.status === 'completed' ? 'i-lucide-check-circle' : 'i-lucide-circle'" :class="lesson.is_completed || lesson.status === 'completed' ? 'text-success size-5' : 'text-muted size-5'" />
                                                             <span class="font-medium">{{ lesson.title || lesson.lesson_title }}</span>
                                                          </div>
-                                                         <span v-if="lesson.average_score !== undefined && lesson.average_score !== null" class="font-semibold text-primary" :class="lesson.average_score >= 80 ? 'text-green-600 dark:text-green-400' : lesson.average_score >= 50 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-500 dark:text-red-400'">{{ Math.round(lesson.average_score) }}%</span>
+                                                         <span v-if="lesson.task_percentage !== undefined && lesson.task_percentage !== null" class="font-semibold text-primary" :class="lesson.task_percentage >= 80 ? 'text-green-600 dark:text-green-400' : lesson.task_percentage >= 50 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-500 dark:text-red-400'">{{ Math.round(lesson.task_percentage) }}%</span>
                                                      </div>
                                                  </div>
                                              </div>
