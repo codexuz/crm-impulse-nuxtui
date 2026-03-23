@@ -53,7 +53,13 @@ const loadCourses = async () => {
 };
 
 const handleSubmit = () => {
-  emit("submit", { ...newStudent });
+  const submitData = {
+    ...newStudent,
+    phone: newStudent.phone ? newStudent.phone.replace(/\s+/g, "") : "",
+    phone_number: newStudent.phone_number ? newStudent.phone_number.replace(/\s+/g, "") : "",
+    additional_number: newStudent.additional_number ? newStudent.additional_number.replace(/\s+/g, "") : "",
+  };
+  emit("submit", submitData);
   // Reset form
   Object.keys(newStudent).forEach((key) => {
     newStudent[key as keyof typeof newStudent] = "";

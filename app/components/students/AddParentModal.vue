@@ -74,7 +74,12 @@ watch(selectedStudent, (student) => {
 });
 
 const handleSubmit = () => {
-  emit("submit", { ...newParent });
+  const submitData = {
+    ...newParent,
+    phone_number: newParent.phone_number ? newParent.phone_number.replace(/\s+/g, "") : "",
+    additional_number: newParent.additional_number ? newParent.additional_number.replace(/\s+/g, "") : "",
+  };
+  emit("submit", submitData);
   // Reset form
   Object.keys(newParent).forEach((key) => {
     newParent[key as keyof typeof newParent] = "";

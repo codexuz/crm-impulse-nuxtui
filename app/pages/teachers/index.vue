@@ -504,10 +504,12 @@ function openAddDialog() {
 async function addTeacher() {
   try {
     isLoading.value = true;
-    await api.post<Teacher>(apiService.value, "/users/teachers", {
+    const data = {
       ...newTeacher.value,
+      phone: newTeacher.value.phone ? newTeacher.value.phone.replace(/\s+/g, "") : "",
       roles: ["teacher"],
-    });
+    };
+    await api.post<Teacher>(apiService.value, "/users/teachers", data);
 
     await loadTeachers();
 
@@ -546,10 +548,15 @@ async function updateTeacher() {
 
   try {
     isUpdating.value = true;
+    const updateData = {
+      ...editingTeacher.value,
+      phone: editingTeacher.value.phone ? editingTeacher.value.phone.replace(/\s+/g, "") : ""
+    };
+
     await api.patch<Teacher>(
       apiService.value,
       `/users/${editingTeacher.value.user_id}`,
-      editingTeacher.value,
+      updateData,
     );
 
     await loadTeachers();

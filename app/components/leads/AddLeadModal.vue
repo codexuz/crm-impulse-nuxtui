@@ -93,6 +93,9 @@ const createLead = async (close: () => void) => {
   try {
     const leadData = {
       ...newLead,
+      phone: newLead.phone.replace(/\s+/g, ""),
+      parent_phone_number: newLead.parent_phone_number.replace(/\s+/g, ""),
+      additional_number: newLead.additional_number.replace(/\s+/g, ""),
       admin_id: auth.value.user?.user_id || auth.value.user?.id,
     };
 

@@ -68,6 +68,10 @@ const handleSubmit = async () => {
       studentData.level_id = String(studentData.level_id);
     }
 
+    if (studentData.phone) {
+      studentData.phone = studentData.phone.replace(/\s+/g, "");
+    }
+
     await api.patch<Student>(
       apiService.value,
       `/users/${props.student.user_id}`,

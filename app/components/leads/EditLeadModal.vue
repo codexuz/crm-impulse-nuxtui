@@ -86,10 +86,10 @@ const handleSubmit = async () => {
     await api.patch(apiService.value, `/leads/${editingLead.value.id}`, {
       first_name: editingLead.value.first_name,
       last_name: editingLead.value.last_name,
-      phone: editingLead.value.phone,
-      parent_phone_number: editingLead.value.parent_phone_number || null,
+      phone: editingLead.value.phone?.replace(/\s+/g, ""),
+      parent_phone_number: editingLead.value.parent_phone_number ? editingLead.value.parent_phone_number.replace(/\s+/g, "") : null,
       parent_name: editingLead.value.parent_name || null,
-      additional_number: editingLead.value.additional_number || null,
+      additional_number: editingLead.value.additional_number ? editingLead.value.additional_number.replace(/\s+/g, "") : null,
       status: editingLead.value.status,
       source: editingLead.value.source,
       question: editingLead.value.question || null,

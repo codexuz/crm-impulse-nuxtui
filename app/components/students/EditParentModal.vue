@@ -83,10 +83,16 @@ const handleSubmit = async () => {
 
   isUpdating.value = true;
   try {
+    const parentData = {
+      ...editingParent.value,
+      phone_number: editingParent.value.phone_number ? editingParent.value.phone_number.replace(/\s+/g, "") : "",
+      additional_number: editingParent.value.additional_number ? editingParent.value.additional_number.replace(/\s+/g, "") : "",
+    };
+
     await api.patch<StudentParent>(
       apiService.value,
       `/student-parents/${props.parent.id}`,
-      editingParent.value,
+      parentData,
     );
 
     toast.add({
