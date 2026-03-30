@@ -6,7 +6,7 @@ export default defineNuxtConfig({
   telemetry: { enabled: false },
   runtimeConfig: {
     public: {
-      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL ?? "https://backend.impulselc.uz/api",
+      apiBaseUrl: "https://backend.impulselc.uz/api",
     },
   },
   devServer: {
