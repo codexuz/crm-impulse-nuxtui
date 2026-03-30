@@ -5,7 +5,7 @@ export default defineNuxtConfig({
   ssr: false,
   telemetry: { enabled: false },
    devServer: {
-    host: '0',
+    host: '0.0.0.0',
   },
   vite: {
     // Better support for Tauri CLI output

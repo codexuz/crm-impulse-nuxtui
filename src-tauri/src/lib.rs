@@ -15,6 +15,7 @@ pub fn run() {
                 use tauri::{
                     menu::{Menu, MenuItem},
                     tray::TrayIconBuilder,
+                    Manager,
                 };
 
                 let show = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
