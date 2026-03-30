@@ -895,7 +895,7 @@ const downloadReceipt = async (payment: any) => {
 
     // Add the logo
     const logoImg = new Image();
-    logoImg.src = "/logo.png";
+    logoImg.src = "/logo2.png";
     await new Promise((resolve) => {
       logoImg.onload = resolve;
     });
@@ -1053,8 +1053,27 @@ const downloadReceipt = async (payment: any) => {
       align: "center",
     });
 
-    // Save the PDF
-    pdf.save(`kvitansiya-${payment.id}.pdf`);
+    // Save the PDF — use Tauri native save dialog in desktop, browser download otherwise
+    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+    if (isTauri) {
+      const { save } = await import("@tauri-apps/plugin-dialog");
+      const { writeFile } = await import("@tauri-apps/plugin-fs");
+
+      const filePath = await save({
+        filters: [{ name: "PDF", extensions: ["pdf"] }],
+        defaultPath: `kvitansiya-${payment.id}.pdf`,
+      });
+
+      if (filePath) {
+        const pdfBytes = new Uint8Array(pdf.output("arraybuffer") as ArrayBuffer);
+        await writeFile(filePath, pdfBytes);
+      } else {
+        // User cancelled the save dialog
+        return;
+      }
+    } else {
+      pdf.save(`kvitansiya-${payment.id}.pdf`);
+    }
 
     toast.add({
       title: "Muvaffaqiyat",
