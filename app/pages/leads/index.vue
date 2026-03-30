@@ -733,10 +733,27 @@ const exportLeadsToExcel = async () => {
     ];
     worksheet["!cols"] = colWidths;
 
-    XLSX.writeFile(
-      workbook,
-      `leads_${new Date().toISOString().split("T")[0]}.xlsx`,
-    );
+    const fileName = `leads_${new Date().toISOString().split("T")[0]}.xlsx`;
+    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+
+    if (isTauri) {
+      const { save } = await import("@tauri-apps/plugin-dialog");
+      const { writeFile } = await import("@tauri-apps/plugin-fs");
+
+      const filePath = await save({
+        filters: [{ name: "Excel", extensions: ["xlsx"] }],
+        defaultPath: fileName,
+      });
+
+      if (filePath) {
+        const buffer = XLSX.write(workbook, { type: "array", bookType: "xlsx" }) as Uint8Array;
+        await writeFile(filePath, buffer);
+      } else {
+        return;
+      }
+    } else {
+      XLSX.writeFile(workbook, fileName);
+    }
 
     toast.add({
       title: "Muvaffaqiyatli",
