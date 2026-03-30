@@ -22,6 +22,8 @@ export interface LoginSuccessResponse {
 }
 
 export const useAuth = () => {
+  const { public: publicConfig } = useRuntimeConfig();
+
   // Create a cookie to store auth data
   const authCookie = useCookie<{
     token: string | null;
@@ -52,7 +54,7 @@ export const useAuth = () => {
 
   const apiService = computed(() =>
     createApiService(
-      "https://backend.impulselc.uz/api",
+      publicConfig.apiBaseUrl,
       state.value.token || undefined,
     ),
   );

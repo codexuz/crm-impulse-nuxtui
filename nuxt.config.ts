@@ -4,7 +4,12 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   ssr: false,
   telemetry: { enabled: false },
-   devServer: {
+  runtimeConfig: {
+    public: {
+      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL ?? "http://backend.impulselc.uz/api",
+    },
+  },
+  devServer: {
     host: '0.0.0.0',
   },
   vite: {
