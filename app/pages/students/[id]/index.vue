@@ -3,8 +3,7 @@
         <template #header>
             <UDashboardNavbar title="O'quvchi ma'lumoti" :ui="{ right: 'gap-3' }">
                 <template #leading>
-                    <UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost"
-                        @click="useRouter().back()" />
+                    <UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost" @click="useRouter().back()" />
                 </template>
 
                 <template #right>
@@ -141,7 +140,7 @@
                                             <div class="flex items-center gap-2">
                                                 <UIcon name="i-lucide-layers" class="size-5 text-primary" />
                                                 <span class="font-semibold">{{ groupItem.group?.name || "Noma'lum guruh"
-                                                }}</span>
+                                                    }}</span>
                                             </div>
                                             <UPopover>
                                                 <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="xs"
@@ -166,7 +165,7 @@
                                             <span class="text-muted">O'qituvchi:</span>
                                             <span class="font-medium">{{ groupItem.group.teacher.first_name }} {{
                                                 groupItem.group.teacher.last_name
-                                            }}</span>
+                                                }}</span>
                                         </div>
 
                                         <div class="flex items-center gap-2">
@@ -224,21 +223,24 @@
                                 </template>
 
                                 <div v-if="isLoadingProgress" class="flex justify-center py-4">
-                                     <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-primary" />
+                                    <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-primary" />
                                 </div>
-                                
+
                                 <div v-else-if="studentProgress.length === 0" class="text-center py-8 text-muted">
                                     Kurs o'zlashtirish foizi ma'lumotlari topilmadi
                                 </div>
 
                                 <div v-else class="space-y-6">
-                                    <div v-for="progress in studentProgress" :key="progress.course_id" class="space-y-2">
+                                    <div v-for="progress in studentProgress" :key="progress.course_id"
+                                        class="space-y-2">
                                         <div class="flex items-center justify-between text-sm">
                                             <span class="font-medium">{{ progress.course_name }}</span>
-                                            <span class="text-muted">{{ progress.completed }} / {{ progress.total }} ta dars</span>
+                                            <span class="text-muted">{{ progress.completed }} / {{ progress.total }} ta
+                                                dars</span>
                                         </div>
                                         <div class="flex items-center gap-3">
-                                            <UProgress v-model="progress.percentage" status class="flex-1" :color="progress.percentage >= 80 ? 'success' : progress.percentage >= 50 ? 'warning' : 'error'" />
+                                            <UProgress v-model="progress.percentage" status class="flex-1"
+                                                :color="progress.percentage >= 80 ? 'success' : progress.percentage >= 50 ? 'warning' : 'error'" />
                                         </div>
                                     </div>
                                 </div>
@@ -250,37 +252,49 @@
                                 </template>
 
                                 <div v-if="isLoadingRoadmap" class="flex justify-center py-4">
-                                     <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-primary" />
+                                    <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-primary" />
                                 </div>
-                                
+
                                 <div v-else-if="studentRoadmap.length === 0" class="text-center py-8 text-muted">
                                     Yo'l xaritasi ma'lumotlari topilmadi
                                 </div>
 
                                 <div v-else class="space-y-4">
                                     <UAccordion :items="roadmapAccordionItems">
-                                         <template #body="{ item }">
-                                             <div class="space-y-4 pb-4 px-1">
+                                        <template #body="{ item }">
+                                            <div class="space-y-4 pb-4 px-1">
                                                 <div class="flex items-center gap-3">
-                                                    <span class="text-sm font-medium">Tugallangan: {{ item.data.completed }} / {{ item.data.total }}</span>
-                                                    <UProgress v-model="item.data.percentage" status class="flex-1" :color="item.data.percentage >= 80 ? 'success' : item.data.percentage >= 50 ? 'warning' : 'error'" />
+                                                    <span class="text-sm font-medium">Tugallangan: {{
+                                                        item.data.completed }} / {{ item.data.total }}</span>
+                                                    <UProgress v-model="item.data.percentage" status class="flex-1"
+                                                        :color="item.data.percentage >= 80 ? 'success' : item.data.percentage >= 50 ? 'warning' : 'error'" />
                                                 </div>
-                                                <div v-if="item.data.lessons && item.data.lessons.length > 0" class="grid gap-2 border-t pt-4 mt-2">
-                                                     <div v-for="lesson in item.data.lessons" :key="lesson.id || lesson.lesson_id || lesson.title" class="flex justify-between items-center text-sm bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-800">
-                                                         <div class="flex items-center gap-3">
-                                                            <UIcon :name="lesson.is_completed || lesson.status === 'completed' ? 'i-lucide-check-circle' : 'i-lucide-circle'" :class="lesson.is_completed || lesson.status === 'completed' ? 'text-success size-5' : 'text-muted size-5'" />
-                                                            <span class="font-medium">{{ lesson.title || lesson.lesson_title }}</span>
-                                                         </div>
-                                                         <span v-if="lesson.task_percentage !== undefined && lesson.task_percentage !== null" class="font-semibold text-primary" :class="lesson.task_percentage >= 80 ? 'text-green-600 dark:text-green-400' : lesson.task_percentage >= 50 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-500 dark:text-red-400'">{{ Math.round(lesson.task_percentage) }}%</span>
-                                                     </div>
-                                                 </div>
-                                             </div>
-                                         </template>
+                                                <div v-if="item.data.lessons && item.data.lessons.length > 0"
+                                                    class="grid gap-2 border-t pt-4 mt-2">
+                                                    <div v-for="lesson in item.data.lessons"
+                                                        :key="lesson.id || lesson.lesson_id || lesson.title"
+                                                        class="flex justify-between items-center text-sm bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-800">
+                                                        <div class="flex items-center gap-3">
+                                                            <UIcon
+                                                                :name="lesson.is_completed || lesson.status === 'completed' ? 'i-lucide-check-circle' : 'i-lucide-circle'"
+                                                                :class="lesson.is_completed || lesson.status === 'completed' ? 'text-success size-5' : 'text-muted size-5'" />
+                                                            <span class="font-medium">{{ lesson.title ||
+                                                                lesson.lesson_title }}</span>
+                                                        </div>
+                                                        <span
+                                                            v-if="lesson.task_percentage !== undefined && lesson.task_percentage !== null"
+                                                            class="font-semibold text-primary"
+                                                            :class="lesson.task_percentage >= 80 ? 'text-green-600 dark:text-green-400' : lesson.task_percentage >= 50 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-500 dark:text-red-400'">{{
+                                                            Math.round(lesson.task_percentage) }}%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
                                     </UAccordion>
                                 </div>
                             </UCard>
                         </div>
-                        
+
                         <!-- To'lovlar Tab -->
                         <div v-if="item.value === 'payments'" class="mt-4">
                             <UCard>
@@ -320,7 +334,8 @@
                                             </UAvatar>
                                             <div>
                                                 <div class="font-medium">{{ parent.full_name }}</div>
-                                                <div class="text-sm text-muted">{{ formatPhone(parent.phone_number) }}</div>
+                                                <div class="text-sm text-muted">{{ formatPhone(parent.phone_number) }}
+                                                </div>
                                                 <div v-if="parent.additional_number" class="text-xs text-muted">
                                                     Qo'shimcha: {{ formatPhone(parent.additional_number) }}
                                                 </div>
@@ -341,7 +356,8 @@
                         <div v-if="item.value === 'attendance'" class="mt-4 space-y-4">
                             <UCard v-if="studentAttendance">
                                 <template #header>
-                                    <h3 class="text-base font-semibold">{{ formatAttendanceMonth(studentAttendance.month) }} uchun davomat xulosasi</h3>
+                                    <h3 class="text-base font-semibold">{{
+                                        formatAttendanceMonth(studentAttendance.month) }} uchun davomat xulosasi</h3>
                                 </template>
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     <div class="flex flex-col gap-1 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
@@ -356,21 +372,26 @@
                                             <UIcon name="i-lucide-user-check" class="w-4 h-4" />
                                             Kelgan
                                         </div>
-                                        <div class="text-xl font-semibold text-green-700 dark:text-green-300">{{ studentAttendance.present }}</div>
+                                        <div class="text-xl font-semibold text-green-700 dark:text-green-300">{{
+                                            studentAttendance.present
+                                            }}</div>
                                     </div>
                                     <div class="flex flex-col gap-1 p-3 rounded-lg bg-red-50 dark:bg-red-900/20">
                                         <div class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
                                             <UIcon name="i-lucide-user-x" class="w-4 h-4" />
                                             Kelmagan
                                         </div>
-                                        <div class="text-xl font-semibold text-red-700 dark:text-red-300">{{ studentAttendance.absent }}</div>
+                                        <div class="text-xl font-semibold text-red-700 dark:text-red-300">{{
+                                            studentAttendance.absent }}
+                                        </div>
                                     </div>
                                     <div class="flex flex-col gap-1 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
                                         <div class="text-sm text-blue-600 dark:text-blue-400 flex items-center gap-2">
                                             <UIcon name="i-lucide-percent" class="w-4 h-4" />
                                             Darajasi
                                         </div>
-                                        <div class="text-xl font-semibold text-blue-700 dark:text-blue-300">{{ studentAttendance.attendanceRate }}%</div>
+                                        <div class="text-xl font-semibold text-blue-700 dark:text-blue-300">{{
+                                            studentAttendance.attendanceRate }}%</div>
                                     </div>
                                 </div>
                             </UCard>
@@ -990,7 +1011,7 @@ const loadStudentRoadmap = async () => {
     } catch (error) {
         // Fallback or retry with different prefix if needed, maybe /roadmap/
         console.error("Failed to load student roadmap:", error);
-        
+
         try {
             // Attempting alternate route just in case
             const altResponse = await api.get<any[]>(
@@ -999,8 +1020,8 @@ const loadStudentRoadmap = async () => {
             );
             studentRoadmap.value = Array.isArray(altResponse) ? altResponse : [];
         } catch (altError) {
-             console.error("Failed alternate roadmap route:", altError);
-             studentRoadmap.value = [];
+            console.error("Failed alternate roadmap route:", altError);
+            studentRoadmap.value = [];
         }
     } finally {
         isLoadingRoadmap.value = false;
@@ -1537,8 +1558,30 @@ const downloadReceipt = async (payment: any) => {
             align: "center",
         });
 
-        // Save the PDF
-        pdf.save(`kvitansiya-${payment.id}.pdf`);
+        // Save the PDF — use Tauri native save dialog in desktop, browser download otherwise
+        const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+        if (isTauri) {
+            const { save } = await import("@tauri-apps/plugin-dialog");
+            const { writeFile } = await import("@tauri-apps/plugin-fs");
+            const { openPath } = await import("@tauri-apps/plugin-opener");
+
+            const filePath = await save({
+                filters: [{ name: "PDF", extensions: ["pdf"] }],
+                defaultPath: `kvitansiya-${payment.id}.pdf`,
+            });
+
+            if (filePath) {
+                const pdfBytes = new Uint8Array(pdf.output("arraybuffer") as ArrayBuffer);
+                await writeFile(filePath, pdfBytes);
+                // Open the PDF in the default viewer
+                await openPath(filePath);
+            } else {
+                // User cancelled the save dialog
+                return;
+            }
+        } else {
+            pdf.save(`kvitansiya-${payment.id}.pdf`);
+        }
 
         toast.add({
             title: "Muvaffaqiyat",
@@ -1578,7 +1621,7 @@ const getNextPaymentDate = (groupItem: GroupStudent): string | null => {
 const formatAttendanceMonth = (monthStr?: string): string => {
     if (!monthStr) return "Joriy oy";
     const [monthName, year] = monthStr.split(" ");
-    
+
     if (!monthName) return monthStr;
 
     const monthsUzMap: Record<string, string> = {

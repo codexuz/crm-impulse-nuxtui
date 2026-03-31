@@ -1058,6 +1058,7 @@ const downloadReceipt = async (payment: any) => {
     if (isTauri) {
       const { save } = await import("@tauri-apps/plugin-dialog");
       const { writeFile } = await import("@tauri-apps/plugin-fs");
+      const { openPath } = await import("@tauri-apps/plugin-opener");
 
       const filePath = await save({
         filters: [{ name: "PDF", extensions: ["pdf"] }],
@@ -1067,6 +1068,8 @@ const downloadReceipt = async (payment: any) => {
       if (filePath) {
         const pdfBytes = new Uint8Array(pdf.output("arraybuffer") as ArrayBuffer);
         await writeFile(filePath, pdfBytes);
+        // Open the PDF in the default viewer
+        await openPath(filePath);
       } else {
         // User cancelled the save dialog
         return;
