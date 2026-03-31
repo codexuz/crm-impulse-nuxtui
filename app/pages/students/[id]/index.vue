@@ -1408,7 +1408,7 @@ const downloadReceipt = async (payment: any) => {
 
         // Add the logo
         const logoImg = new Image();
-        logoImg.src = "/logo.png";
+        logoImg.src = "/logo2.png";
         await new Promise((resolve) => {
             logoImg.onload = resolve;
         });
