@@ -140,7 +140,7 @@
                                             <div class="flex items-center gap-2">
                                                 <UIcon name="i-lucide-layers" class="size-5 text-primary" />
                                                 <span class="font-semibold">{{ groupItem.group?.name || "Noma'lum guruh"
-                                                    }}</span>
+                                                }}</span>
                                             </div>
                                             <UPopover>
                                                 <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="xs"
@@ -165,7 +165,7 @@
                                             <span class="text-muted">O'qituvchi:</span>
                                             <span class="font-medium">{{ groupItem.group.teacher.first_name }} {{
                                                 groupItem.group.teacher.last_name
-                                                }}</span>
+                                            }}</span>
                                         </div>
 
                                         <div class="flex items-center gap-2">
@@ -285,7 +285,7 @@
                                                             v-if="lesson.task_percentage !== undefined && lesson.task_percentage !== null"
                                                             class="font-semibold text-primary"
                                                             :class="lesson.task_percentage >= 80 ? 'text-green-600 dark:text-green-400' : lesson.task_percentage >= 50 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-500 dark:text-red-400'">{{
-                                                            Math.round(lesson.task_percentage) }}%</span>
+                                                                Math.round(lesson.task_percentage) }}%</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -374,7 +374,7 @@
                                         </div>
                                         <div class="text-xl font-semibold text-green-700 dark:text-green-300">{{
                                             studentAttendance.present
-                                            }}</div>
+                                        }}</div>
                                     </div>
                                     <div class="flex flex-col gap-1 p-3 rounded-lg bg-red-50 dark:bg-red-900/20">
                                         <div class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
@@ -1574,7 +1574,11 @@ const downloadReceipt = async (payment: any) => {
                 const pdfBytes = new Uint8Array(pdf.output("arraybuffer") as ArrayBuffer);
                 await writeFile(filePath, pdfBytes);
                 // Open the PDF in the default viewer
-                await openPath(filePath);
+                try {
+                    await openPath(filePath);
+                } catch (openError) {
+                    console.warn("Failed to open PDF, but file was saved:", openError);
+                }
             } else {
                 // User cancelled the save dialog
                 return;

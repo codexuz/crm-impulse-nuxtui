@@ -1069,7 +1069,11 @@ const downloadReceipt = async (payment: any) => {
         const pdfBytes = new Uint8Array(pdf.output("arraybuffer") as ArrayBuffer);
         await writeFile(filePath, pdfBytes);
         // Open the PDF in the default viewer
-        await openPath(filePath);
+        try {
+          await openPath(filePath);
+        } catch (openError) {
+          console.warn("Failed to open PDF, but file was saved:", openError);
+        }
       } else {
         // User cancelled the save dialog
         return;
