@@ -313,7 +313,6 @@ const reminderDetails = reactive({
 // Contact form state
 const contactDialog = ref(false);
 const isSubmittingContact = ref(false);
-const contactActions = ref<Record<string, any[]>>({});
 const selectedAction = ref<any | null>(null);
 const isEditMode = ref(false);
 const selectedDebitor = ref<any | null>(null);
@@ -416,8 +415,8 @@ const columns = [
     id: "contact",
     header: "Aloqa",
     cell: ({ row }: { row: any }) => {
-      const paymentId = String(row.original.id);
-      const hasContact: boolean = !!(contactStatus.value[paymentId] || false);
+      const actions = row.original.actions || [];
+      const hasContact = actions.length > 0;
       return h(UButton, {
         icon: hasContact ? "i-lucide-check-circle" : "i-lucide-plus-circle",
         color: hasContact ? "green" : "gray",
@@ -442,21 +441,6 @@ const columns = [
 ];
 
 // Computed properties
-const contactStatus = computed(() => {
-  const status: Record<string, boolean> = {};
-  Object.keys(contactActions.value).forEach((paymentId) => {
-    const actions = contactActions.value[paymentId];
-    const hasActions: boolean = !!(
-      actions &&
-      Array.isArray(actions) &&
-      actions.length > 0
-    );
-    status[paymentId] = hasActions;
-    status[String(paymentId)] = hasActions;
-  });
-  return status;
-});
-
 const debitorCount = computed(() => debitors.value.length);
 
 const totalOverdueAmount = computed(() => {
@@ -507,32 +491,12 @@ const paginationEnd = computed(() => {
 });
 
 // Methods
-const loadContactStatuses = async () => {
-  if (!debitors.value.length) return;
-
-  const { checkPaymentContact } = useSMS();
-  const actions: Record<string, any[]> = {};
-
-  try {
-    await Promise.all(
-      debitors.value.map(async (debitor) => {
-        const contacts = await checkPaymentContact(debitor.id);
-        const contactList = contacts || [];
-        actions[String(debitor.id)] = contactList;
-      }),
-    );
-    contactActions.value = actions;
-  } catch (error) {
-    console.error("Failed to load contact statuses:", error);
-  }
-};
-
 const openContactModal = (debitor: any) => {
   selectedDebitor.value = debitor;
 
-  const existingActions = contactActions.value[String(debitor.id)];
+  const existingActions = debitor.actions || [];
 
-  if (existingActions && existingActions.length > 0) {
+  if (existingActions.length > 0) {
     isEditMode.value = true;
     const latestAction = existingActions[0];
     selectedAction.value = latestAction;
@@ -618,7 +582,6 @@ const fetchDebitors = async () => {
 
     debitors.value = response.payments || [];
     totalItems.value = response.count || 0;
-    await loadContactStatuses();
   } catch (error) {
     console.error("Failed to fetch debitor data:", error);
     toast.add({

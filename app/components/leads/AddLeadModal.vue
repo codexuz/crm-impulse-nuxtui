@@ -45,7 +45,7 @@ const newLead = reactive({
   status: "Yangi",
   source: "Instagram",
   question: "",
-  course_id: "",
+  course_ids: [],
   notes: "",
 });
 
@@ -96,6 +96,7 @@ const createLead = async (close: () => void) => {
       phone: newLead.phone.replace(/\s+/g, ""),
       parent_phone_number: newLead.parent_phone_number.replace(/\s+/g, ""),
       additional_number: newLead.additional_number.replace(/\s+/g, ""),
+      course_ids: newLead.course_ids && newLead.course_ids.length > 0 ? newLead.course_ids : [],
       admin_id: auth.value.user?.user_id || auth.value.user?.id,
     };
 
@@ -130,7 +131,7 @@ const resetForm = () => {
   newLead.status = "Yangi";
   newLead.source = "Instagram";
   newLead.question = "";
-  newLead.course_id = "";
+  newLead.course_ids = [];
   newLead.notes = "";
 };
 
@@ -141,25 +142,18 @@ onMounted(() => {
 </script>
 
 <template>
-  <UModal
-    title="Yangi lead qo'shish"
-    description="Tizimga yangi lead ma'lumotlarini kiriting"
-    :close="{
-      color: 'neutral',
-      variant: 'ghost',
-      class: 'rounded-full',
-    }"
-    :ui="{ width: 'sm:max-w-2xl', footer: 'justify-end' }"
-  >
+  <UModal title="Yangi lead qo'shish" description="Tizimga yangi lead ma'lumotlarini kiriting" :close="{
+    color: 'neutral',
+    variant: 'ghost',
+    class: 'rounded-full',
+  }" :ui="{ width: 'sm:max-w-2xl', footer: 'justify-end' }">
     <UButton icon="i-lucide-plus" label="Yangi lead" color="primary" />
 
     <template #body="{ close }">
       <form @submit.prevent="createLead(close)" class="space-y-6">
         <!-- Personal Information Section -->
         <div class="space-y-4">
-          <div
-            class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-800"
-          >
+          <div class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-800">
             <UIcon name="i-lucide-user" class="w-4 h-4 text-primary" />
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
               Shaxsiy ma'lumotlar
@@ -168,41 +162,23 @@ onMounted(() => {
 
           <div class="grid grid-cols-2 gap-4">
             <UFormField label="Ism" required>
-              <UInput
-                v-model="newLead.first_name"
-                placeholder="Ismni kiriting"
-                required
-                class="w-full"
-              />
+              <UInput v-model="newLead.first_name" placeholder="Ismni kiriting" required class="w-full" />
             </UFormField>
 
             <UFormField label="Familiya" required>
-              <UInput
-                v-model="newLead.last_name"
-                placeholder="Familiyani kiriting"
-                required
-                class="w-full"
-              />
+              <UInput v-model="newLead.last_name" placeholder="Familiyani kiriting" required class="w-full" />
             </UFormField>
           </div>
 
           <UFormField label="Telefon raqami" required>
-            <UInput
-              v-model="newLead.phone"
-              v-maska
-              data-maska="+998 ## ### ## ##"
-              placeholder="+998 XX XXX XX XX"
-              required
-              class="w-full"
-            />
+            <UInput v-model="newLead.phone" v-maska data-maska="+998 ## ### ## ##" placeholder="+998 XX XXX XX XX"
+              required class="w-full" />
           </UFormField>
         </div>
 
         <!-- Parent Information Section -->
         <div class="space-y-4">
-          <div
-            class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-800"
-          >
+          <div class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-800">
             <UIcon name="i-lucide-users" class="w-4 h-4 text-primary" />
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
               Ota-ona ma'lumotlari
@@ -210,41 +186,25 @@ onMounted(() => {
           </div>
 
           <UFormField label="Ota-ona ismi">
-            <UInput
-              v-model="newLead.parent_name"
-              placeholder="Ota-ona ismini kiriting"
-              class="w-full"
-            />
+            <UInput v-model="newLead.parent_name" placeholder="Ota-ona ismini kiriting" class="w-full" />
           </UFormField>
 
           <div class="grid grid-cols-2 gap-4">
             <UFormField label="Ota-ona telefoni">
-              <UInput
-                v-model="newLead.parent_phone_number"
-                v-maska
-                data-maska="+998 ## ### ## ##"
-                placeholder="+998 XX XXX XX XX"
-                class="w-full"
-              />
+              <UInput v-model="newLead.parent_phone_number" v-maska data-maska="+998 ## ### ## ##"
+                placeholder="+998 XX XXX XX XX" class="w-full" />
             </UFormField>
 
             <UFormField label="Qo'shimcha raqam">
-              <UInput
-                v-model="newLead.additional_number"
-                v-maska
-                data-maska="+998 ## ### ## ##"
-                placeholder="+998 XX XXX XX XX"
-                class="w-full"
-              />
+              <UInput v-model="newLead.additional_number" v-maska data-maska="+998 ## ### ## ##"
+                placeholder="+998 XX XXX XX XX" class="w-full" />
             </UFormField>
           </div>
         </div>
 
         <!-- Status & Source Section -->
         <div class="space-y-4">
-          <div
-            class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-800"
-          >
+          <div class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-800">
             <UIcon name="i-lucide-info" class="w-4 h-4 text-primary" />
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
               Holat va manba
@@ -253,57 +213,33 @@ onMounted(() => {
 
           <div class="grid grid-cols-2 gap-4">
             <UFormField label="Holat">
-              <USelectMenu
-                v-model="newLead.status"
-                :items="filteredStatusOptions"
-                value-key="value"
-                placeholder="Holatni tanlang"
-                class="w-full"
-              />
+              <USelectMenu v-model="newLead.status" :items="filteredStatusOptions" value-key="value"
+                placeholder="Holatni tanlang" class="w-full" />
             </UFormField>
 
             <UFormField label="Manba">
-              <USelectMenu
-                v-model="newLead.source"
-                :items="filteredSourceOptions"
-                value-key="value"
-                placeholder="Manbani tanlang"
-                class="w-full"
-              />
+              <USelectMenu v-model="newLead.source" :items="filteredSourceOptions" value-key="value"
+                placeholder="Manbani tanlang" class="w-full" />
             </UFormField>
           </div>
         </div>
 
         <!-- Course Section -->
         <div class="space-y-4">
-          <div
-            class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-800"
-          >
+          <div class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-800">
             <UIcon name="i-lucide-book-open" class="w-4 h-4 text-primary" />
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
               Kurs ma'lumotlari
             </h3>
           </div>
 
-          <UFormField label="Qiziqayotgan kurs">
-            <USelectMenu
-              v-model="newLead.course_id"
-              :items="courseOptions"
-              value-key="id"
-              placeholder="Kursni tanlang"
-              :loading="isLoadingCourses"
-              class="w-full"
-            >
+          <UFormField label="Qiziqayotgan kurslar">
+            <USelectMenu v-model="newLead.course_ids" :items="courseOptions" multiple value-key="id"
+              placeholder="Kurslarni tanlang" :loading="isLoadingCourses" class="w-full">
               <template #option="{ option }">
                 <div class="flex items-center justify-between w-full">
                   <span class="truncate">{{ option.title }}</span>
-                  <UBadge
-                    v-if="option.level"
-                    :label="option.level"
-                    color="primary"
-                    variant="subtle"
-                    size="xs"
-                  />
+                  <UBadge v-if="option.level" :label="option.level" color="primary" variant="subtle" size="xs" />
                 </div>
               </template>
             </USelectMenu>
@@ -312,9 +248,7 @@ onMounted(() => {
 
         <!-- Additional Information Section -->
         <div class="space-y-4">
-          <div
-            class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-800"
-          >
+          <div class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-800">
             <UIcon name="i-lucide-file-text" class="w-4 h-4 text-primary" />
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
               Qo'shimcha ma'lumotlar
@@ -322,39 +256,19 @@ onMounted(() => {
           </div>
 
           <UFormField label="Savol">
-            <UTextarea
-              v-model="newLead.question"
-              placeholder="Lead savoli..."
-              :rows="3"
-              class="w-full"
-            />
+            <UTextarea v-model="newLead.question" placeholder="Lead savoli..." :rows="3" class="w-full" />
           </UFormField>
 
           <UFormField label="Izohlar">
-            <UTextarea
-              v-model="newLead.notes"
-              placeholder="Qo'shimcha izohlar..."
-              :rows="3"
-              class="w-full"
-            />
+            <UTextarea v-model="newLead.notes" placeholder="Qo'shimcha izohlar..." :rows="3" class="w-full" />
           </UFormField>
         </div>
 
         <!-- Footer Buttons -->
         <div class="flex justify-end gap-2 pt-4">
-          <UButton
-            type="button"
-            color="neutral"
-            variant="subtle"
-            label="Bekor qilish"
-            @click="close"
-          />
-          <UButton
-            type="submit"
-            color="primary"
-            :label="isCreatingLead ? 'Saqlanmoqda...' : 'Saqlash'"
-            :loading="isCreatingLead"
-          />
+          <UButton type="button" color="neutral" variant="subtle" label="Bekor qilish" @click="close" />
+          <UButton type="submit" color="primary" :label="isCreatingLead ? 'Saqlanmoqda...' : 'Saqlash'"
+            :loading="isCreatingLead" />
         </div>
       </form>
     </template>

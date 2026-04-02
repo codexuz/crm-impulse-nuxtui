@@ -120,6 +120,16 @@ const handleSubmit = async () => {
       additional_number: studentData.additional_number || "",
     });
 
+    // Update lead status to "O'qishga yozildi"
+    try {
+      await api.patch(apiService.value, `/leads/${props.lead.id}`, {
+        status: "O'qishga yozildi",
+      });
+    } catch (statusError: any) {
+      console.error("Failed to update lead status:", statusError);
+      // Don't fail the whole operation if status update fails
+    }
+
     toast.add({
       title: "Muvaffaqiyatli",
       description: "Lead talabaga aylantirildi",
@@ -143,20 +153,14 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <UModal
-    v-model:open="open"
-    title="Leadni talabaga aylantirish"
-    description="Lead ma'lumotlaridan talaba hisobi yaratish"
-    :ui="{ content: 'w-[calc(100vw-2rem)] max-w-2xl' }"
-  >
+  <UModal v-model:open="open" title="Leadni talabaga aylantirish"
+    description="Lead ma'lumotlaridan talaba hisobi yaratish" :ui="{ content: 'w-[calc(100vw-2rem)] max-w-2xl' }">
     <template #body>
       <form @submit.prevent="handleSubmit" class="space-y-6">
         <!-- Lead Information -->
         <div v-if="lead" class="space-y-4">
           <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div
-              class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2"
-            >
+            <div class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
               Lead ma'lumotlari
             </div>
             <div class="grid grid-cols-2 gap-3 text-sm">
@@ -178,9 +182,7 @@ const handleSubmit = async () => {
 
         <!-- Account Information Section -->
         <div class="space-y-4">
-          <div
-            class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700"
-          >
+          <div class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
             <UIcon name="i-lucide-key-round" class="w-4 h-4 text-primary" />
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
               Hisob ma'lumotlari
@@ -189,30 +191,15 @@ const handleSubmit = async () => {
 
           <div class="grid grid-cols-2 gap-4">
             <UFormField label="Login" required>
-              <UInput
-                v-model="studentData.username"
-                placeholder="Loginni kiriting"
-                required
-                class="w-full"
-              />
+              <UInput v-model="studentData.username" placeholder="Loginni kiriting" required class="w-full" />
             </UFormField>
 
             <UFormField label="Parol" required hint="Kamida 6 ta belgi">
-              <UInput
-                v-model="studentData.password"
-                :type="showPassword ? 'text' : 'password'"
-                placeholder="Parolni kiriting"
-                required
-                class="w-full"
-              >
+              <UInput v-model="studentData.password" :type="showPassword ? 'text' : 'password'"
+                placeholder="Parolni kiriting" required class="w-full">
                 <template #trailing>
-                  <UButton
-                    color="neutral"
-                    variant="ghost"
-                    size="xs"
-                    :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                    @click="showPassword = !showPassword"
-                  />
+                  <UButton color="neutral" variant="ghost" size="xs"
+                    :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'" @click="showPassword = !showPassword" />
                 </template>
               </UInput>
             </UFormField>
@@ -221,35 +208,22 @@ const handleSubmit = async () => {
 
         <!-- Education Information Section -->
         <div class="space-y-4">
-          <div
-            class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700"
-          >
-            <UIcon
-              name="i-lucide-graduation-cap"
-              class="w-4 h-4 text-primary"
-            />
+          <div class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
+            <UIcon name="i-lucide-graduation-cap" class="w-4 h-4 text-primary" />
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
               Ta'lim ma'lumotlari
             </h3>
           </div>
 
           <UFormField label="Daraja">
-            <USelectMenu
-              v-model="studentData.level_id"
-              :items="courseOptions"
-              value-key="value"
-              :loading="isLoadingCourses"
-              placeholder="Darajani tanlang"
-              class="w-full"
-            />
+            <USelectMenu v-model="studentData.level_id" :items="courseOptions" value-key="value"
+              :loading="isLoadingCourses" placeholder="Darajani tanlang" class="w-full" />
           </UFormField>
         </div>
 
         <!-- Parent Information Section -->
         <div class="space-y-4">
-          <div
-            class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700"
-          >
+          <div class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
             <UIcon name="i-lucide-users" class="w-4 h-4 text-primary" />
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
               Ota-ona ma'lumotlari
@@ -257,28 +231,16 @@ const handleSubmit = async () => {
           </div>
 
           <UFormField label="Ota-ona ismi">
-            <UInput
-              v-model="studentData.full_name"
-              placeholder="Ota-ona ismini kiriting"
-              class="w-full"
-            />
+            <UInput v-model="studentData.full_name" placeholder="Ota-ona ismini kiriting" class="w-full" />
           </UFormField>
 
           <div class="grid grid-cols-2 gap-4">
             <UFormField label="Ota-ona telefoni">
-              <UInput
-                v-model="studentData.phone_number"
-                placeholder="+998 XX XXX XX XX"
-                class="w-full"
-              />
+              <UInput v-model="studentData.phone_number" placeholder="+998 XX XXX XX XX" class="w-full" />
             </UFormField>
 
             <UFormField label="Qo'shimcha raqam">
-              <UInput
-                v-model="studentData.additional_number"
-                placeholder="+998 XX XXX XX XX"
-                class="w-full"
-              />
+              <UInput v-model="studentData.additional_number" placeholder="+998 XX XXX XX XX" class="w-full" />
             </UFormField>
           </div>
         </div>
@@ -287,21 +249,10 @@ const handleSubmit = async () => {
 
     <template #footer="{ close }">
       <div class="flex justify-end gap-2">
-        <UButton
-          type="button"
-          color="neutral"
-          variant="outline"
-          label="Bekor qilish"
-          @click="close"
-          :disabled="isSubmitting"
-        />
-        <UButton
-          type="button"
-          label="Talabaga aylantirish"
-          icon="i-lucide-user-check"
-          :loading="isSubmitting"
-          @click="handleSubmit"
-        />
+        <UButton type="button" color="neutral" variant="outline" label="Bekor qilish" @click="close"
+          :disabled="isSubmitting" />
+        <UButton type="button" label="Talabaga aylantirish" icon="i-lucide-user-check" :loading="isSubmitting"
+          @click="handleSubmit" />
       </div>
     </template>
   </UModal>

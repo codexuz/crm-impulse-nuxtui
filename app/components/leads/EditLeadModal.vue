@@ -13,7 +13,7 @@ interface Lead {
   status: string;
   source: string;
   question?: string;
-  course_id?: string;
+  course_ids?: string[];
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -49,8 +49,10 @@ const sourceOptionsFiltered = computed(() =>
 
 const courseOptions = computed(() =>
   props.courses.map((course) => ({
-    value: course.id,
-    label: course.title,
+    id: course.id,
+    label: `${course.title} ${course.level ? `(${course.level})` : ""}`,
+    title: course.title,
+    level: course.level,
   })),
 );
 
@@ -70,7 +72,7 @@ watch(
         status: newLead.status,
         source: newLead.source,
         question: newLead.question || "",
-        course_id: newLead.course_id || "",
+        course_ids: newLead.course_ids || [],
         notes: newLead.notes || "",
       };
     }
@@ -93,7 +95,7 @@ const handleSubmit = async () => {
       status: editingLead.value.status,
       source: editingLead.value.source,
       question: editingLead.value.question || null,
-      course_id: editingLead.value.course_id || null,
+      course_ids: editingLead.value.course_ids && editingLead.value.course_ids.length > 0 ? editingLead.value.course_ids : [],
       notes: editingLead.value.notes || null,
     });
 
@@ -119,19 +121,13 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <UModal
-    v-model:open="open"
-    title="Lead tahrirlash"
-    description="Lead ma'lumotlarini yangilash"
-    :ui="{ content: 'w-[calc(100vw-2rem)] max-w-2xl' }"
-  >
+  <UModal v-model:open="open" title="Lead tahrirlash" description="Lead ma'lumotlarini yangilash"
+    :ui="{ content: 'w-[calc(100vw-2rem)] max-w-2xl' }">
     <template #body>
       <form @submit.prevent="handleSubmit" class="space-y-6">
         <!-- Personal Information -->
         <div class="space-y-4">
-          <div
-            class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700"
-          >
+          <div class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
             <UIcon name="i-lucide-user" class="w-4 h-4 text-primary" />
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
               Shaxsiy ma'lumotlar
@@ -140,41 +136,23 @@ const handleSubmit = async () => {
 
           <div class="grid grid-cols-2 gap-4">
             <UFormField label="Ism" required>
-              <UInput
-                v-model="editingLead.first_name"
-                placeholder="Ismni kiriting"
-                required
-                class="w-full"
-              />
+              <UInput v-model="editingLead.first_name" placeholder="Ismni kiriting" required class="w-full" />
             </UFormField>
 
             <UFormField label="Familiya" required>
-              <UInput
-                v-model="editingLead.last_name"
-                placeholder="Familiyani kiriting"
-                required
-                class="w-full"
-              />
+              <UInput v-model="editingLead.last_name" placeholder="Familiyani kiriting" required class="w-full" />
             </UFormField>
           </div>
 
           <UFormField label="Telefon raqami" required>
-            <UInput
-              v-model="editingLead.phone"
-              v-maska
-              data-maska="+998 ## ### ## ##"
-              placeholder="+998 XX XXX XX XX"
-              required
-              class="w-full"
-            />
+            <UInput v-model="editingLead.phone" v-maska data-maska="+998 ## ### ## ##" placeholder="+998 XX XXX XX XX"
+              required class="w-full" />
           </UFormField>
         </div>
 
         <!-- Parent Information -->
         <div class="space-y-4">
-          <div
-            class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700"
-          >
+          <div class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
             <UIcon name="i-lucide-users" class="w-4 h-4 text-primary" />
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
               Ota-ona ma'lumotlari
@@ -182,41 +160,25 @@ const handleSubmit = async () => {
           </div>
 
           <UFormField label="Ota-ona ismi">
-            <UInput
-              v-model="editingLead.parent_name"
-              placeholder="Ota-ona ismini kiriting"
-              class="w-full"
-            />
+            <UInput v-model="editingLead.parent_name" placeholder="Ota-ona ismini kiriting" class="w-full" />
           </UFormField>
 
           <div class="grid grid-cols-2 gap-4">
             <UFormField label="Ota-ona telefoni">
-              <UInput
-                v-model="editingLead.parent_phone_number"
-                v-maska
-                data-maska="+998 ## ### ## ##"
-                placeholder="+998 XX XXX XX XX"
-                class="w-full"
-              />
+              <UInput v-model="editingLead.parent_phone_number" v-maska data-maska="+998 ## ### ## ##"
+                placeholder="+998 XX XXX XX XX" class="w-full" />
             </UFormField>
 
             <UFormField label="Qo'shimcha raqam">
-              <UInput
-                v-model="editingLead.additional_number"
-                v-maska
-                data-maska="+998 ## ### ## ##"
-                placeholder="+998 XX XXX XX XX"
-                class="w-full"
-              />
+              <UInput v-model="editingLead.additional_number" v-maska data-maska="+998 ## ### ## ##"
+                placeholder="+998 XX XXX XX XX" class="w-full" />
             </UFormField>
           </div>
         </div>
 
         <!-- Lead Information -->
         <div class="space-y-4">
-          <div
-            class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700"
-          >
+          <div class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
             <UIcon name="i-lucide-info" class="w-4 h-4 text-primary" />
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
               Holat va manba
@@ -225,64 +187,44 @@ const handleSubmit = async () => {
 
           <div class="grid grid-cols-2 gap-4">
             <UFormField label="Holat">
-              <USelectMenu
-                v-model="editingLead.status"
-                :items="statusOptionsFiltered"
-                value-key="value"
-                placeholder="Holatni tanlang"
-                class="w-full"
-              />
+              <USelectMenu v-model="editingLead.status" :items="statusOptionsFiltered" value-key="value"
+                placeholder="Holatni tanlang" class="w-full" />
             </UFormField>
 
             <UFormField label="Manba">
-              <USelectMenu
-                v-model="editingLead.source"
-                :items="sourceOptionsFiltered"
-                value-key="value"
-                placeholder="Manbani tanlang"
-                class="w-full"
-              />
+              <USelectMenu v-model="editingLead.source" :items="sourceOptionsFiltered" value-key="value"
+                placeholder="Manbani tanlang" class="w-full" />
             </UFormField>
           </div>
         </div>
 
         <!-- Course Section -->
         <div class="space-y-4">
-          <div
-            class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700"
-          >
+          <div class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
             <UIcon name="i-lucide-book-open" class="w-4 h-4 text-primary" />
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
               Kurs ma'lumotlari
             </h3>
           </div>
 
-          <UFormField label="Qiziqayotgan kurs">
-            <USelectMenu
-              v-model="editingLead.course_id"
-              :items="courseOptions"
-              value-key="value"
-              placeholder="Kursni tanlang"
-              class="w-full"
-            />
+          <UFormField label="Qiziqayotgan kurslar">
+            <USelectMenu v-model="editingLead.course_ids" :items="courseOptions" multiple value-key="id"
+              placeholder="Kurslarni tanlang" class="w-full">
+              <template #option="{ option }">
+                <div class="flex items-center justify-between w-full">
+                  <span class="truncate">{{ option.title }}</span>
+                  <UBadge v-if="option.level" :label="option.level" color="primary" variant="subtle" size="xs" />
+                </div>
+              </template>
+            </USelectMenu>
           </UFormField>
 
           <UFormField label="Savol">
-            <UTextarea
-              v-model="editingLead.question"
-              placeholder="Lead savoli..."
-              :rows="3"
-              class="w-full"
-            />
+            <UTextarea v-model="editingLead.question" placeholder="Lead savoli..." :rows="3" class="w-full" />
           </UFormField>
 
           <UFormField label="Eslatmalar">
-            <UTextarea
-              v-model="editingLead.notes"
-              placeholder="Qo'shimcha eslatmalar..."
-              :rows="3"
-              class="w-full"
-            />
+            <UTextarea v-model="editingLead.notes" placeholder="Qo'shimcha eslatmalar..." :rows="3" class="w-full" />
           </UFormField>
         </div>
       </form>
@@ -290,21 +232,9 @@ const handleSubmit = async () => {
 
     <template #footer="{ close }">
       <div class="flex justify-end gap-2">
-        <UButton
-          type="button"
-          color="neutral"
-          variant="outline"
-          label="Bekor qilish"
-          @click="close"
-          :disabled="isSubmitting"
-        />
-        <UButton
-          type="button"
-          label="Saqlash"
-          icon="i-lucide-save"
-          :loading="isSubmitting"
-          @click="handleSubmit"
-        />
+        <UButton type="button" color="neutral" variant="outline" label="Bekor qilish" @click="close"
+          :disabled="isSubmitting" />
+        <UButton type="button" label="Saqlash" icon="i-lucide-save" :loading="isSubmitting" @click="handleSubmit" />
       </div>
     </template>
   </UModal>

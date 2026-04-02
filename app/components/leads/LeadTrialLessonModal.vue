@@ -94,9 +94,14 @@ const handleSubmit = async () => {
     });
 
     // Update lead status to "Sinovda"
-    await api.patch(apiService.value, `/leads/${props.lead.id}`, {
-      status: "Sinovda",
-    });
+    try {
+      await api.patch(apiService.value, `/leads/${props.lead.id}`, {
+        status: "Sinovda",
+      });
+    } catch (statusError: any) {
+      console.error("Failed to update lead status:", statusError);
+      // Don't fail the whole operation if status update fails
+    }
 
     toast.add({
       title: "Muvaffaqiyatli",
@@ -121,82 +126,49 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <UModal
-    v-model:open="open"
-    title="Sinov darsini rejalashtirish"
-    description="Lead uchun sinov darsini belgilang"
-    :ui="{ content: 'w-[calc(100vw-2rem)] max-w-2xl' }"
-  >
+  <UModal v-model:open="open" title="Sinov darsini rejalashtirish" description="Lead uchun sinov darsini belgilang"
+    :ui="{ content: 'w-[calc(100vw-2rem)] max-w-2xl' }">
     <template #body>
       <form @submit.prevent="handleSubmit" class="space-y-6">
         <div v-if="lead" class="space-y-4">
           <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <div class="text-sm text-gray-500 dark:text-gray-400">Lead</div>
-            <div
-              class="text-base font-medium text-gray-900 dark:text-white mt-1"
-            >
+            <div class="text-base font-medium text-gray-900 dark:text-white mt-1">
               {{ lead.first_name }} {{ lead.last_name }}
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div class="space-y-2">
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 O'qituvchi
                 <span class="text-red-500">*</span>
               </label>
-              <USelectMenu
-                v-model="trialLesson.teacher_id"
-                :items="teacherOptions"
-                value-key="value"
-                :loading="isLoadingTeachers"
-                placeholder="O'qituvchini tanlang"
-              />
+              <USelectMenu v-model="trialLesson.teacher_id" :items="teacherOptions" value-key="value"
+                :loading="isLoadingTeachers" placeholder="O'qituvchini tanlang" />
             </div>
 
             <div class="space-y-2">
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Sana va vaqt
                 <span class="text-red-500">*</span>
               </label>
-              <UInput
-                v-model="trialLesson.scheduledAt"
-                type="datetime-local"
-                required
-              />
+              <UInput v-model="trialLesson.scheduledAt" type="datetime-local" required />
             </div>
           </div>
 
           <div class="space-y-2">
-            <label
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Holat
             </label>
-            <USelectMenu
-              v-model="trialLesson.status"
-              :items="statusOptions"
-              value-key="value"
-              class="w-full"
-            />
+            <USelectMenu v-model="trialLesson.status" :items="statusOptions" value-key="value" class="w-full" />
           </div>
 
           <div class="space-y-2">
-            <label
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Eslatmalar
             </label>
-            <UTextarea
-              v-model="trialLesson.notes"
-              placeholder="Qo'shimcha eslatmalar..."
-              :rows="3"
-              class="w-full"
-            />
+            <UTextarea v-model="trialLesson.notes" placeholder="Qo'shimcha eslatmalar..." :rows="3" class="w-full" />
           </div>
         </div>
       </form>
@@ -204,21 +176,10 @@ const handleSubmit = async () => {
 
     <template #footer="{ close }">
       <div class="flex justify-end gap-2">
-        <UButton
-          type="button"
-          color="neutral"
-          variant="outline"
-          label="Bekor qilish"
-          @click="close"
-          :disabled="isSubmitting"
-        />
-        <UButton
-          type="button"
-          label="Rejalashtirish"
-          icon="i-lucide-calendar-plus"
-          :loading="isSubmitting"
-          @click="handleSubmit"
-        />
+        <UButton type="button" color="neutral" variant="outline" label="Bekor qilish" @click="close"
+          :disabled="isSubmitting" />
+        <UButton type="button" label="Rejalashtirish" icon="i-lucide-calendar-plus" :loading="isSubmitting"
+          @click="handleSubmit" />
       </div>
     </template>
   </UModal>

@@ -13,7 +13,7 @@ interface Lead {
   status: string;
   source: string;
   question?: string;
-  course_id?: string;
+  course_ids?: string[];
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -83,10 +83,15 @@ const formatDateTime = (dateTimeString: string): string => {
   return `${day}-${month}-${year} ${hours}:${minutes}`;
 };
 
-const getCourseTitle = (courseId?: string): string => {
-  if (!courseId) return "Belgilanmagan";
-  const course = props.courses.find((c) => c.id === courseId);
-  return course ? course.title : "Belgilanmagan";
+const getCoursesTitles = (courseIds?: string[]): string => {
+  if (!courseIds || courseIds.length === 0) return "Belgilanmagan";
+  const titles = courseIds
+    .map((id) => {
+      const course = props.courses.find((c) => c.id === id);
+      return course ? course.title : null;
+    })
+    .filter((t) => t !== null);
+  return titles.length > 0 ? titles.join(", ") : "Belgilanmagan";
 };
 
 const getStatusColor = (status: string) => {
@@ -168,12 +173,8 @@ watch(open, (isOpen) => {
 </script>
 
 <template>
-  <UModal
-    v-model:open="open"
-    title="Lead ma'lumotlari"
-    description="Lead haqida batafsil ma'lumot"
-    :ui="{ content: 'w-[calc(100vw-2rem)] max-w-2xl', footer: 'justify-end' }"
-  >
+  <UModal v-model:open="open" title="Lead ma'lumotlari" description="Lead haqida batafsil ma'lumot"
+    :ui="{ content: 'w-[calc(100vw-2rem)] max-w-2xl', footer: 'justify-end' }">
     <template #body>
       <div v-if="lead" class="space-y-6">
         <!-- Lead Header -->
@@ -247,10 +248,10 @@ watch(open, (isOpen) => {
 
             <div>
               <div class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                Qiziqayotgan kurs
+                Qiziqayotgan kurslar
               </div>
               <div class="mt-1 text-base text-gray-900 dark:text-white">
-                {{ getCourseTitle(lead.course_id) }}
+                {{ getCoursesTitles(lead.course_ids) }}
               </div>
             </div>
           </div>
@@ -286,16 +287,11 @@ watch(open, (isOpen) => {
         </div>
 
         <!-- Notes -->
-        <div
-          v-if="lead.notes"
-          class="pt-4 border-t border-gray-200 dark:border-gray-700"
-        >
+        <div v-if="lead.notes" class="pt-4 border-t border-gray-200 dark:border-gray-700">
           <div class="text-sm font-medium text-gray-500 dark:text-gray-400">
             Eslatmalar
           </div>
-          <div
-            class="mt-2 text-base text-gray-900 dark:text-white whitespace-pre-wrap"
-          >
+          <div class="mt-2 text-base text-gray-900 dark:text-white whitespace-pre-wrap">
             {{ lead.notes }}
           </div>
         </div>
@@ -310,18 +306,11 @@ watch(open, (isOpen) => {
           </div>
 
           <div v-if="trialLessons.length > 0" class="space-y-3">
-            <div
-              v-for="trial in trialLessons"
-              :key="trial.id"
-              class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-            >
+            <div v-for="trial in trialLessons" :key="trial.id" class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <div class="flex items-start justify-between">
                 <div class="flex-1">
                   <div class="flex items-center gap-2 mb-2">
-                    <UBadge
-                      :color="getTrialStatusColor(trial.status)"
-                      size="sm"
-                    >
+                    <UBadge :color="getTrialStatusColor(trial.status)" size="sm">
                       {{ getTrialStatusLabel(trial.status) }}
                     </UBadge>
                   </div>
@@ -341,20 +330,14 @@ watch(open, (isOpen) => {
                       <span>Yangilandi: {{ formatDateTime(trial.updatedAt) }}</span>
                     </div>
                   </div>
-                  <div
-                    v-if="trial.notes"
-                    class="mt-2 text-xs text-gray-600 dark:text-gray-400"
-                  >
+                  <div v-if="trial.notes" class="mt-2 text-xs text-gray-600 dark:text-gray-400">
                     {{ trial.notes }}
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <div
-            v-else
-            class="text-sm text-gray-500 dark:text-gray-400 text-center py-4"
-          >
+          <div v-else class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
             Sinov darslari yo'q
           </div>
         </div>
@@ -363,12 +346,7 @@ watch(open, (isOpen) => {
 
     <template #footer="{ close }">
       <div class="flex gap-2">
-        <UButton
-          variant="outline"
-          label="Tahrirlash"
-          icon="i-lucide-pencil"
-          @click="lead && emit('edit', lead)"
-        />
+        <UButton variant="outline" label="Tahrirlash" icon="i-lucide-pencil" @click="lead && emit('edit', lead)" />
         <UButton variant="outline" label="Yopish" @click="close" />
       </div>
     </template>

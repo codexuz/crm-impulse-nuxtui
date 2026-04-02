@@ -143,7 +143,7 @@ interface Lead {
   status: string;
   source: string;
   question?: string;
-  course_id?: string;
+  course_ids?: string[];
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -270,9 +270,9 @@ const columns: TableColumn<Lead>[] = [
     cell: ({ row }) => getSourceDisplay(row.original.source),
   },
   {
-    accessorKey: "course",
-    header: "Qiziqayotgan kurs",
-    cell: ({ row }) => getCourseTitle(row.original.course_id),
+    accessorKey: "course_ids",
+    header: "Qiziqayotgan kurslar",
+    cell: ({ row }) => getCourseTitle(row.original.course_ids),
   },
   {
     accessorKey: "createdAt",
@@ -455,10 +455,15 @@ const getStatusColor = (status: string) => {
 const getStatusDisplay = (status: string) => status;
 const getSourceDisplay = (source: string) => source;
 
-const getCourseTitle = (courseId?: string) => {
-  if (!courseId) return "N/A";
-  const course = courses.value.find((c) => c.id === courseId);
-  return course ? course.title : "N/A";
+const getCourseTitle = (courseIds?: string[]) => {
+  if (!courseIds || courseIds.length === 0) return "N/A";
+  const titles = courseIds
+    .map((id) => {
+      const course = courses.value.find((c) => c.id === id);
+      return course ? course.title : null;
+    })
+    .filter((t) => t !== null);
+  return titles.length > 0 ? titles.join(", ") : "N/A";
 };
 
 const formatDate = (dateString: string) => {
@@ -713,7 +718,7 @@ const exportLeadsToExcel = async () => {
       Telefon: formatPhone(lead.phone),
       Holat: lead.status,
       Manba: lead.source,
-      Kurs: getCourseTitle(lead.course_id || ""),
+      Kurs: getCourseTitle(lead.course_ids),
       Yaratilgan: formatDate(lead.createdAt),
     }));
 

@@ -357,7 +357,7 @@ const route = useRoute();
 const UAvatar = resolveComponent("UAvatar");
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
-const UDropdown = resolveComponent("UDropdown");
+const UDropdownMenu = resolveComponent("UDropdownMenu");
 
 // State
 const upcomingPayments = ref<any[]>([]);
@@ -390,7 +390,6 @@ const extensionReason = ref("");
 const reminderMessage = ref("");
 
 // Contact form state
-const contactActions = ref<Record<string, any[]>>({});
 const selectedAction = ref<any | null>(null);
 const isEditMode = ref(false);
 const contactForm = reactive({
@@ -502,8 +501,8 @@ const columns = [
     id: "contact",
     header: "Aloqa",
     cell: ({ row }: { row: any }) => {
-      const paymentId = String(row.original.id);
-      const hasContact = contactStatus.value[paymentId] || false;
+      const actions = row.original.actions || [];
+      const hasContact = actions.length > 0;
       return h(UButton, {
         icon: hasContact ? "i-lucide-check-circle" : "i-lucide-plus-circle",
         color: hasContact ? "green" : "gray",
@@ -525,7 +524,7 @@ const columns = [
           onClick: () => sendReminder(row.original),
         }),
         h(
-          UDropdown,
+          UDropdownMenu,
           {
             items: getActionItems(row.original),
           },
@@ -544,22 +543,6 @@ const columns = [
 ];
 
 // Computed
-const contactStatus = computed(() => {
-  const status: Record<string, boolean> = {};
-  Object.keys(contactActions.value).forEach((paymentId) => {
-    const actions = contactActions.value[paymentId];
-    const hasActions: boolean = !!(
-      actions &&
-      Array.isArray(actions) &&
-      actions.length > 0
-    );
-    // Store with both string and number keys for safety
-    status[paymentId] = hasActions;
-    status[String(paymentId)] = hasActions;
-  });
-  return status;
-});
-
 const filteredPayments = computed(() => {
   if (!upcomingPayments.value) return [];
 
@@ -587,32 +570,6 @@ const filteredPayments = computed(() => {
 });
 
 // Methods
-const loadContactStatuses = async () => {
-  if (!upcomingPayments.value.length) return;
-
-  const { checkPaymentContact } = useSMS();
-  const actions: Record<string, any[]> = {};
-
-  try {
-    await Promise.all(
-      upcomingPayments.value.map(async (payment) => {
-        const contacts = await checkPaymentContact(payment.id);
-        const contactList = contacts || [];
-        // Store with string key for consistent lookup
-        actions[String(payment.id)] = contactList;
-        console.log(
-          `Payment ${payment.id} has ${contactList.length} contacts:`,
-          contactList,
-        );
-      }),
-    );
-    contactActions.value = actions;
-    console.log("Contact actions loaded:", contactActions.value);
-  } catch (error) {
-    console.error("Failed to load contact statuses:", error);
-  }
-};
-
 const loadUpcomingPayments = async () => {
   isLoading.value = true;
   try {
@@ -623,7 +580,6 @@ const loadUpcomingPayments = async () => {
 
     if (Array.isArray(response)) {
       upcomingPayments.value = response;
-      await loadContactStatuses();
     } else {
       upcomingPayments.value = [];
       toast.add({
@@ -652,16 +608,12 @@ const refreshData = () => {
 const openContactModal = (payment: any) => {
   selectedPayment.value = payment;
 
-  const existingActions = contactActions.value[String(payment.id)];
-  console.log(
-    `Opening contact modal for payment ${payment.id}, existing actions:`,
-    existingActions,
-  );
+  const existingActions = payment.actions || [];
 
-  if (existingActions && existingActions.length > 0) {
+  if (existingActions.length > 0) {
     // Edit mode - load existing action data
     isEditMode.value = true;
-    const latestAction = existingActions[0];
+    const latestAction = existingActions[existingActions.length - 1];
     selectedAction.value = latestAction;
 
     // Pre-fill form with existing data
