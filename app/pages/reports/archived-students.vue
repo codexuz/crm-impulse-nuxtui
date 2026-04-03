@@ -216,9 +216,9 @@ const maxMonthlyCount = computed(() => {
 
 // Table data
 const reasonColumns = [
-    { key: 'reason', label: 'Sabab' },
-    { key: 'count', label: 'Soni' },
-    { key: 'percentage', label: 'Ulushi' },
+    { accessorKey: 'reason', header: 'Sabab' },
+    { accessorKey: 'count', header: 'Soni' },
+    { accessorKey: 'percentage', header: 'Ulushi' },
 ];
 
 const reasonTableData = computed(() =>
@@ -232,9 +232,9 @@ const reasonTableData = computed(() =>
 );
 
 const teacherColumns = [
-    { key: 'index', label: '#' },
-    { key: 'name', label: "O'qituvchi" },
-    { key: 'count', label: 'Soni' },
+    { accessorKey: 'index', header: '#' },
+    { accessorKey: 'name', header: "O'qituvchi" },
+    { accessorKey: 'count', header: 'Soni' },
 ];
 
 const teacherTableData = computed(() =>
@@ -246,9 +246,9 @@ const teacherTableData = computed(() =>
 );
 
 const groupColumns = [
-    { key: 'index', label: '#' },
-    { key: 'name', label: 'Guruh' },
-    { key: 'count', label: 'Soni' },
+    { accessorKey: 'index', header: '#' },
+    { accessorKey: 'name', header: 'Guruh' },
+    { accessorKey: 'count', header: 'Soni' },
 ];
 
 const groupTableData = computed(() =>
