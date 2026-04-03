@@ -107,7 +107,7 @@
 
                         <div class="flex items-end gap-2 h-48">
                             <div v-for="m in stats.monthlyTrend" :key="m.month"
-                                class="flex-1 flex flex-col items-center justify-end">
+                                class="flex-1 flex flex-col items-center justify-end h-full">
                                 <span class="text-xs mb-1 text-gray-600 dark:text-gray-400">{{ m.count }}</span>
                                 <div class="w-full bg-primary rounded-t transition-all"
                                     :style="{ height: `${Math.max((m.count / maxMonthlyCount) * 100, 4)}%` }" />
@@ -116,26 +116,31 @@
                         </div>
                     </UCard>
 
-                    <!-- Teacher & Group Tables -->
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <!-- Top Teachers -->
-                        <UCard>
-                            <template #header>
-                                <h3 class="text-lg font-semibold">O'qituvchilar bo'yicha (top 10)</h3>
+                    <!-- Teacher → Group → Students -->
+                    <UCard>
+                        <template #header>
+                            <h3 class="text-lg font-semibold">O'qituvchi → Guruh → O'quvchilar</h3>
+                        </template>
+
+                        <UAccordion :items="teacherAccordionItems" type="multiple">
+                            <template #body="{ item }">
+                                <div class="space-y-4 pl-2">
+                                    <div v-for="g in getTeacherGroups(item.value)" :key="g.group.id ?? 'unknown'"
+                                        class="border border-gray-200 dark:border-gray-700 rounded-lg">
+                                        <div
+                                            class="flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-gray-800 rounded-t-lg">
+                                            <div class="flex items-center gap-2">
+                                                <UIcon name="i-lucide-users" class="size-4 text-gray-400" />
+                                                <span class="text-sm font-medium">{{ g.group.name }}</span>
+                                            </div>
+                                            <UBadge variant="subtle" size="sm">{{ g.students.length }}</UBadge>
+                                        </div>
+                                        <UTable :data="formatGroupStudents(g.students)" :columns="studentColumns" />
+                                    </div>
+                                </div>
                             </template>
-
-                            <UTable :data="teacherTableData" :columns="teacherColumns" />
-                        </UCard>
-
-                        <!-- Top Groups -->
-                        <UCard>
-                            <template #header>
-                                <h3 class="text-lg font-semibold">Guruhlar bo'yicha (top 10)</h3>
-                            </template>
-
-                            <UTable :data="groupTableData" :columns="groupColumns" />
-                        </UCard>
-                    </div>
+                        </UAccordion>
+                    </UCard>
                 </template>
 
                 <!-- Empty state -->
@@ -231,33 +236,41 @@ const reasonTableData = computed(() =>
     }))
 );
 
-const teacherColumns = [
-    { accessorKey: 'index', header: '#' },
-    { accessorKey: 'name', header: "O'qituvchi" },
-    { accessorKey: 'count', header: 'Soni' },
+const studentColumns = [
+    { accessorKey: 'name', header: "O'quvchi" },
+    { accessorKey: 'phone', header: 'Telefon' },
+    { accessorKey: 'reason', header: 'Sabab' },
+    { accessorKey: 'notes', header: 'Izoh' },
+    { accessorKey: 'date', header: 'Sana' },
 ];
 
-const teacherTableData = computed(() =>
-    (stats.value?.byTeacher ?? []).map((t, i) => ({
-        index: i + 1,
-        name: `${t.teacher.first_name} ${t.teacher.last_name}`,
-        count: t.count,
-    }))
+const teacherAccordionItems = computed(() =>
+    (stats.value?.byTeacherGroupStudent ?? []).map((t) => {
+        const totalStudents = t.groups.reduce((sum, g) => sum + g.students.length, 0);
+        const teacherName = `${t.teacher.first_name} ${t.teacher.last_name}`.trim();
+        return {
+            label: `${teacherName} (${totalStudents})`,
+            value: t.teacher.user_id ?? 'unknown',
+        };
+    })
 );
 
-const groupColumns = [
-    { accessorKey: 'index', header: '#' },
-    { accessorKey: 'name', header: 'Guruh' },
-    { accessorKey: 'count', header: 'Soni' },
-];
+function getTeacherGroups(teacherId: string) {
+    const entry = stats.value?.byTeacherGroupStudent?.find(
+        t => (t.teacher.user_id ?? 'unknown') === teacherId
+    );
+    return entry?.groups ?? [];
+}
 
-const groupTableData = computed(() =>
-    (stats.value?.byGroup ?? []).map((g, i) => ({
-        index: i + 1,
-        name: g.group.name,
-        count: g.count,
-    }))
-);
+function formatGroupStudents(students: ArchivedStudentStatistics['byTeacherGroupStudent'][0]['groups'][0]['students']) {
+    return students.map(s => ({
+        name: `${s.student.first_name} ${s.student.last_name}`,
+        phone: s.student.phone ?? '—',
+        reason: REASON_LABELS[s.reason] ?? s.reason,
+        notes: s.notes ?? '—',
+        date: new Date(s.created_at).toLocaleDateString('uz-UZ'),
+    }));
+}
 
 const loadStats = async () => {
     isLoading.value = true;

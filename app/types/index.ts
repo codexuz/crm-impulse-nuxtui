@@ -275,16 +275,19 @@ export interface MonthlyTrendItem {
   count: number
 }
 
-export interface TeacherArchiveCount {
-  teacher_id: string
-  count: number
-  teacher: { user_id: string; first_name: string; last_name: string }
+export interface ArchivedStudentEntry {
+  student: { user_id: string; first_name: string; last_name: string; phone: string | null }
+  reason: string
+  notes: string | null
+  created_at: string
 }
 
-export interface GroupArchiveCount {
-  group_id: string
-  count: number
-  group: { id: string; name: string }
+export interface TeacherGroupStudents {
+  teacher: { user_id: string | null; first_name: string; last_name: string }
+  groups: {
+    group: { id: string | null; name: string }
+    students: ArchivedStudentEntry[]
+  }[]
 }
 
 export interface PeriodStats {
@@ -300,8 +303,7 @@ export interface ArchivedStudentStatistics {
   periodStats: PeriodStats
   byReason: ReasonCount[]
   monthlyTrend: MonthlyTrendItem[]
-  byTeacher: TeacherArchiveCount[]
-  byGroup: GroupArchiveCount[]
+  byTeacherGroupStudent: TeacherGroupStudents[]
 }
 
 export interface ArchivedStudentStatisticsQuery {
