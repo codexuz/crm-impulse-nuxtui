@@ -126,6 +126,28 @@ const links = computed(() => [
       [
         {
           type: "label" as const,
+          label: "Hisobotlar",
+        },
+        {
+          label: "Arxivlangan o'quvchilar",
+          icon: "i-lucide-archive",
+          to: "/reports/archived-students",
+          onSelect: () => {
+            open.value = false;
+          },
+        },
+        {
+          label: "Lidlar (o'qituvchi bo'yicha)",
+          icon: "i-lucide-user-check",
+          to: "/reports/leads-by-teacher",
+          onSelect: () => {
+            open.value = false;
+          },
+        },
+      ],
+      [
+        {
+          type: "label" as const,
           label: "Sozlamalar",
         },
         {

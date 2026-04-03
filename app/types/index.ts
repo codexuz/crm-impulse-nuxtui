@@ -251,3 +251,106 @@ export interface Branch {
   deleted_at?: string | null;
   owner?: any | null;
 }
+
+// ── Archived Student Statistics ─────────────────────────────────────────
+
+export type ArchivedStudentReason =
+  | 'Narxning qimmatligi'
+  | "Dars o'tilish usuli yoqmaganligi"
+  | "Guruhdagi muhit (guruh o'quvchilari)"
+  | "Guruh darajasi to'g'ri kelmaganligi"
+  | "Ustozning tashqi ko'rishni va munosabati"
+  | 'Markazning joylashuvi noqulayligi'
+  | "O'quvchining shaxsiy muammolari tufayli (sog'ligi yoki boshqa)"
+  | 'Kursni muvaffaqiyatli tugatdi'
+  | 'Boshqa'
+
+export interface ReasonCount {
+  reason: ArchivedStudentReason
+  count: number
+}
+
+export interface MonthlyTrendItem {
+  month: string
+  count: number
+}
+
+export interface TeacherArchiveCount {
+  teacher_id: string
+  count: number
+  teacher: { user_id: string; first_name: string; last_name: string }
+}
+
+export interface GroupArchiveCount {
+  group_id: string
+  count: number
+  group: { id: string; name: string }
+}
+
+export interface PeriodStats {
+  today: number
+  thisWeek: number
+  thisMonth: number
+  lastMonth: number
+  monthOverMonthChange: number
+}
+
+export interface ArchivedStudentStatistics {
+  totalArchived: number
+  periodStats: PeriodStats
+  byReason: ReasonCount[]
+  monthlyTrend: MonthlyTrendItem[]
+  byTeacher: TeacherArchiveCount[]
+  byGroup: GroupArchiveCount[]
+}
+
+export interface ArchivedStudentStatisticsQuery {
+  startDate?: string
+  endDate?: string
+  teacher_id?: string
+  group_id?: string
+}
+
+// ── Leads Statistics by Teacher ─────────────────────────────────────────
+
+export interface LeadDetail {
+  lead_id: string
+  leadName: string
+  trialStatus: 'belgilangan' | 'keldi' | 'kelmadi'
+  leadStatus: string
+}
+
+export interface TeacherLeadStats {
+  teacher_id: string
+  teacherName: string
+  totalAssigned: number
+  attended: number
+  notAttended: number
+  pending: number
+  becameStudent: number
+  lost: number
+  inProgress: number
+  conversionRate: number
+  leads: LeadDetail[]
+}
+
+export interface LeadsStatisticsSummary {
+  totalAssigned: number
+  totalAttended: number
+  totalNotAttended: number
+  totalBecameStudent: number
+  totalLost: number
+  totalInProgress: number
+  overallConversionRate: number
+}
+
+export interface LeadsStatisticsResponse {
+  summary: LeadsStatisticsSummary
+  teachers: TeacherLeadStats[]
+}
+
+export interface LeadsStatisticsQuery {
+  startDate?: string
+  endDate?: string
+  teacher_id?: string
+}
