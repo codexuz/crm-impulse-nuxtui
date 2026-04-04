@@ -356,3 +356,20 @@ export interface LeadsStatisticsQuery {
   endDate?: string
   teacher_id?: string
 }
+// ── Forms ───────────────────────────────────────────────────────────────
+
+export interface Form {
+  id: string
+  title: string
+  schema: Record<string, any>
+  createdAt: string
+  updatedAt: string
+}
+
+export interface FormResponse {
+  id: string
+  form_id: string
+  answers: Record<string, any>
+  createdAt: string
+  updatedAt: string
+}

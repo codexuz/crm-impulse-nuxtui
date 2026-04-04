@@ -26,7 +26,7 @@ export default defineNuxtConfig({
   },
   // Avoids error [unhandledRejection] EMFILE: too many open files, watch
   ignore: ['**/src-tauri/**'],
-  modules: ["@nuxt/ui", "nuxt-echarts"],
+  modules: ["@nuxt/ui", "nuxt-echarts", '@vueform/builder/nuxt'],
   css: ["~/assets/css/tailwind.css"],
   echarts: {
     charts: ["LineChart", "BarChart", "PieChart"],

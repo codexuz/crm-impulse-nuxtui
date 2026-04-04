@@ -98,6 +98,20 @@ const links = computed(() => [
   [
     {
       type: "label" as const,
+      label: "Formalar",
+    },
+    {
+      label: "Formalar",
+      icon: "i-lucide-file-text",
+      to: "/forms",
+      onSelect: () => {
+        open.value = false;
+      },
+    },
+  ],
+  [
+    {
+      type: "label" as const,
       label: "Moliya",
     },
     {
