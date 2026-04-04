@@ -24,9 +24,12 @@ export default defineNuxtConfig({
       strictPort: true,
     },
   },
+  build: {
+    transpile: ['@vueform/builder'],
+  },
   // Avoids error [unhandledRejection] EMFILE: too many open files, watch
   ignore: ['**/src-tauri/**'],
-  modules: ["@nuxt/ui", "nuxt-echarts", '@vueform/builder/nuxt'],
+  modules: ["@nuxt/ui", "nuxt-echarts", '@vueform/nuxt'],
   css: ["~/assets/css/tailwind.css"],
   echarts: {
     charts: ["LineChart", "BarChart", "PieChart"],
