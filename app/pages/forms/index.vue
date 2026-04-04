@@ -35,44 +35,7 @@
                 </UCard>
             </div>
 
-            <!-- View Form Modal -->
-            <UModal v-model:open="viewDialog" :ui="{ width: 'sm:max-w-[500px]' }">
-                <template #header>
-                    <h3 class="text-lg font-semibold">Forma ma'lumotlari</h3>
-                </template>
 
-                <template #body>
-                    <div v-if="selectedForm" class="space-y-4 py-4">
-                        <div>
-                            <span class="text-sm text-gray-500">Nomi:</span>
-                            <p class="font-medium">{{ selectedForm.title }}</p>
-                        </div>
-                        <div>
-                            <span class="text-sm text-gray-500">Havola:</span>
-                            <div class="flex items-center gap-2 mt-1">
-                                <code
-                                    class="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded select-all flex-1 truncate">
-                  {{ publicUrl(selectedForm.id) }}
-                </code>
-                                <UButton variant="ghost" icon="i-lucide-copy" size="xs"
-                                    @click="copyLink(selectedForm.id)" />
-                            </div>
-                        </div>
-                        <div>
-                            <span class="text-sm text-gray-500">Yaratilgan:</span>
-                            <p>{{ formatDate(selectedForm.createdAt) }}</p>
-                        </div>
-                    </div>
-                </template>
-
-                <template #footer>
-                    <div class="flex justify-end gap-3">
-                        <UButton color="neutral" variant="subtle" label="Yopish" @click="viewDialog = false" />
-                        <UButton label="Javoblarni ko'rish"
-                            @click="viewDialog = false; navigateTo(`/forms/${selectedForm?.id}/responses`)" />
-                    </div>
-                </template>
-            </UModal>
         </template>
     </UDashboardPanel>
 </template>
@@ -105,8 +68,6 @@ const forms = ref<Form[]>([]);
 const search = ref("");
 const isLoading = ref(false);
 const isDeleting = ref(false);
-const viewDialog = ref(false);
-const selectedForm = ref<Form | null>(null);
 const deletePopoverOpen = ref<Record<string, boolean>>({});
 
 const PUBLIC_URL = "https://forms.impulselc.uz";
@@ -130,7 +91,7 @@ function copyLink(id: string) {
 }
 
 function formatDate(dateStr: string) {
-    return new Date(dateStr).toLocaleDateString("uz-UZ", {
+    return new Date(dateStr).toLocaleDateString("us-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -176,16 +137,6 @@ const columns: TableColumn<Form>[] = [
         cell: ({ row }) => {
             const formId = row.original.id;
             return h("div", { class: "flex items-center gap-1" }, [
-                h(UButton, {
-                    variant: "ghost",
-                    icon: "i-lucide-eye",
-                    size: "sm",
-                    square: true,
-                    onClick: () => {
-                        selectedForm.value = row.original;
-                        viewDialog.value = true;
-                    },
-                }),
                 h(UButton, {
                     variant: "ghost",
                     icon: "i-lucide-bar-chart-3",

@@ -35,26 +35,28 @@
 
             <!-- Builder Tab -->
             <div v-show="activeTab === 'builder'" class="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-950">
-                <div class="max-w-2xl mx-auto min-h-100 rounded-xl border-2 border-dashed transition-colors" :class="fields.length === 0
+                <div class="max-w-2xl mx-auto rounded-xl border-2 border-dashed transition-colors" :class="fields.length === 0
                     ? 'border-gray-300 dark:border-gray-600'
                     : 'border-transparent'">
-                    <!-- Empty State (shown behind draggable when no fields) -->
-                    <div v-if="fields.length === 0"
-                        class="flex flex-col items-center justify-center py-24 text-gray-400">
-                        <div
-                            class="size-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
-                            <UIcon name="i-lucide-mouse-pointer-click" class="size-6" />
-                        </div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Maydonlarni shu yerga tashlang
-                        </p>
-                        <p class="text-xs mt-1 text-gray-400 dark:text-gray-500">Chap paneldan maydonlarni tortib olib
-                            tashlang</p>
-                    </div>
 
                     <!-- Fields List (vuedraggable) -->
                     <draggable v-model="fields" :group="{ name: 'fields', put: true }" item-key="id"
-                        handle=".drag-handle" ghost-class="opacity-30" animation="200" class="space-y-2 p-4 min-h-20"
-                        @change="onCanvasChange">
+                        handle=".drag-handle" ghost-class="opacity-30" animation="200" :empty-insert-threshold="500"
+                        class="space-y-2 p-4 min-h-100" @change="onCanvasChange">
+                        <template #header>
+                            <div v-if="fields.length === 0" :key="'empty'"
+                                class="flex flex-col items-center justify-center py-20 text-gray-400 pointer-events-none select-none"
+                                data-sortable-ignore="true">
+                                <div
+                                    class="size-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+                                    <UIcon name="i-lucide-mouse-pointer-click" class="size-6" />
+                                </div>
+                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Maydonlarni shu yerga
+                                    tashlang</p>
+                                <p class="text-xs mt-1 text-gray-400 dark:text-gray-500">Chap paneldan maydonlarni
+                                    tortib olib tashlang</p>
+                            </div>
+                        </template>
                         <template #item="{ element: field, index: idx }">
                             <div class="group relative rounded-lg border bg-white dark:bg-gray-900 transition-all cursor-pointer"
                                 :class="selectedFieldId === field.id

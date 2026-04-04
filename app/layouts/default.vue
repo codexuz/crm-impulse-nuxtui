@@ -42,6 +42,14 @@ const links = computed(() => [
         open.value = false;
       },
     },
+     {
+      label: "Formalar",
+      icon: "i-lucide-file-text",
+      to: "/forms",
+      onSelect: () => {
+        open.value = false;
+      },
+    },
   ],
   [
     {
@@ -98,20 +106,6 @@ const links = computed(() => [
   [
     {
       type: "label" as const,
-      label: "Formalar",
-    },
-    {
-      label: "Formalar",
-      icon: "i-lucide-file-text",
-      to: "/forms",
-      onSelect: () => {
-        open.value = false;
-      },
-    },
-  ],
-  [
-    {
-      type: "label" as const,
       label: "Moliya",
     },
     {
@@ -143,20 +137,12 @@ const links = computed(() => [
           label: "Hisobotlar",
         },
         {
-          label: "Arxivlangan o'quvchilar",
+          label: "Hisobotlari",
           icon: "i-lucide-archive",
           to: "/reports/archived-students",
           onSelect: () => {
             open.value = false;
-          },
-        },
-        {
-          label: "Lidlar (o'qituvchi bo'yicha)",
-          icon: "i-lucide-user-check",
-          to: "/reports/leads-by-teacher",
-          onSelect: () => {
-            open.value = false;
-          },
+          },      
         },
       ],
       [
