@@ -368,6 +368,7 @@ export type FormFieldType =
   | 'checkbox'
   | 'radio'
   | 'date'
+  | 'time'
 
 export interface FormFieldOption {
   label: string

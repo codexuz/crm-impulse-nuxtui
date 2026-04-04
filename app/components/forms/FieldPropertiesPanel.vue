@@ -1,54 +1,89 @@
 <template>
-    <div
-        class="w-80 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-y-auto p-4 space-y-4">
-        <div v-if="!field" class="text-center text-sm text-gray-400 py-8">
-            Maydonni tanlang
+    <div class="w-72 shrink-0 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-y-auto">
+        <!-- Empty state -->
+        <div v-if="!field"
+            class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 px-4">
+            <div class="size-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3">
+                <UIcon name="i-lucide-settings-2" class="size-5" />
+            </div>
+            <p class="text-sm">Maydonni tanlang</p>
         </div>
 
         <template v-else>
-            <div class="flex items-center justify-between">
-                <h3 class="text-sm font-semibold">Maydon sozlamalari</h3>
-                <UButton variant="ghost" icon="i-lucide-x" size="xs" @click="emit('close')" />
+            <!-- Header -->
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                <h3 class="text-[13px] font-semibold text-gray-700 dark:text-gray-300">Maydon sozlamalari</h3>
+                <button
+                    class="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    @click="emit('close')">
+                    <UIcon name="i-lucide-x" class="size-4" />
+                </button>
             </div>
 
-            <UFormField label="Turi">
-                <USelect v-model="local.type" :items="fieldTypeOptions" class="w-full"
-                    @update:model-value="emitUpdate" />
-            </UFormField>
+            <div class="p-4 space-y-4">
+                <!-- Type -->
+                <div class="space-y-1.5">
+                    <label
+                        class="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Turi</label>
+                    <USelect v-model="local.type" :items="fieldTypeOptions" class="w-full"
+                        @update:model-value="emitUpdate" />
+                </div>
 
-            <UFormField label="Sarlavha">
-                <UInput v-model="local.label" placeholder="Maydon nomi" @update:model-value="emitUpdate" />
-            </UFormField>
+                <!-- Label -->
+                <div class="space-y-1.5">
+                    <label
+                        class="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sarlavha</label>
+                    <UInput v-model="local.label" placeholder="Maydon nomi" @update:model-value="emitUpdate" />
+                </div>
 
-            <UFormField v-if="hasPlaceholder" label="Placeholder">
-                <UInput v-model="local.placeholder" placeholder="Placeholder matni" @update:model-value="emitUpdate" />
-            </UFormField>
+                <!-- Placeholder -->
+                <div v-if="hasPlaceholder" class="space-y-1.5">
+                    <label
+                        class="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Placeholder</label>
+                    <UInput v-model="local.placeholder" placeholder="Placeholder matni"
+                        @update:model-value="emitUpdate" />
+                </div>
 
-            <UFormField>
-                <div class="flex items-center gap-2">
+                <!-- Required Toggle -->
+                <div class="flex items-center justify-between py-1">
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Majburiy</span>
                     <USwitch v-model="local.required" @update:model-value="emitUpdate" />
-                    <span class="text-sm">Majburiy</span>
-                </div>
-            </UFormField>
-
-            <!-- Options for select/radio/checkbox -->
-            <div v-if="hasOptions" class="space-y-2">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm font-medium">Variantlar</span>
-                    <UButton variant="ghost" icon="i-lucide-plus" size="xs" @click="addOption" />
                 </div>
 
-                <div v-for="(opt, idx) in local.options" :key="idx" class="flex items-center gap-2">
-                    <UInput v-model="opt.label" placeholder="Variant nomi" size="sm" class="flex-1"
-                        @update:model-value="syncOptionValue(idx); emitUpdate()" />
-                    <UButton variant="ghost" icon="i-lucide-trash-2" size="xs" color="error"
-                        :disabled="(local.options?.length ?? 0) <= 1" @click="removeOption(idx)" />
+                <!-- Options Section -->
+                <div v-if="hasOptions" class="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                    <div class="flex items-center justify-between">
+                        <span
+                            class="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Variantlar</span>
+                        <button
+                            class="p-1 rounded text-gray-400 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors"
+                            @click="addOption">
+                            <UIcon name="i-lucide-plus" class="size-4" />
+                        </button>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <div v-for="(opt, idx) in local.options" :key="idx" class="flex items-center gap-1.5">
+                            <UInput v-model="opt.label" placeholder="Variant" size="sm" class="flex-1"
+                                @update:model-value="syncOptionValue(idx); emitUpdate()" />
+                            <button class="p-1 rounded text-gray-300 dark:text-gray-600 transition-colors shrink-0"
+                                :class="(local.options?.length ?? 0) > 1 ? 'hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20' : 'opacity-30 cursor-not-allowed'"
+                                :disabled="(local.options?.length ?? 0) <= 1" @click="removeOption(idx)">
+                                <UIcon name="i-lucide-trash-2" class="size-3.5" />
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-                <UButton color="error" variant="soft" icon="i-lucide-trash-2" label="Maydonni o'chirish" block
-                    @click="emit('delete')" />
+            <!-- Delete Action -->
+            <div class="px-4 pb-4 mt-auto">
+                <button
+                    class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm text-red-500 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors"
+                    @click="emit('delete')">
+                    <UIcon name="i-lucide-trash-2" class="size-4" />
+                    Maydonni o'chirish
+                </button>
             </div>
         </template>
     </div>

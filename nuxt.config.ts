@@ -9,21 +9,21 @@ export default defineNuxtConfig({
       apiBaseUrl: "https://backend.impulselc.uz/api",
     },
   },
-  devServer: {
-    host: '0.0.0.0',
-  },
-  vite: {
-    // Better support for Tauri CLI output
-    clearScreen: false,
-    // Enable environment variables
-    // Additional environment variables can be found at
-    // https://v2.tauri.app/reference/environment-variables/
-    envPrefix: ['VITE_', 'TAURI_'],
-    server: {
-      // Tauri requires a consistent port
-      strictPort: true,
-    },
-  },
+  // devServer: {
+  //   host: '0.0.0.0',
+  // },
+  // vite: {
+  //   // Better support for Tauri CLI output
+  //   clearScreen: false,
+  //   // Enable environment variables
+  //   // Additional environment variables can be found at
+  //   // https://v2.tauri.app/reference/environment-variables/
+  //   envPrefix: ['VITE_', 'TAURI_'],
+  //   server: {
+  //     // Tauri requires a consistent port
+  //     strictPort: true,
+  //   },
+  // },
 
   // Avoids error [unhandledRejection] EMFILE: too many open files, watch
   ignore: ['**/src-tauri/**'],
