@@ -358,10 +358,39 @@ export interface LeadsStatisticsQuery {
 }
 // ── Forms ───────────────────────────────────────────────────────────────
 
+export type FormFieldType =
+  | 'text'
+  | 'textarea'
+  | 'number'
+  | 'email'
+  | 'phone'
+  | 'select'
+  | 'checkbox'
+  | 'radio'
+  | 'date'
+
+export interface FormFieldOption {
+  label: string
+  value: string
+}
+
+export interface FormField {
+  id: string
+  type: FormFieldType
+  label: string
+  placeholder?: string
+  required?: boolean
+  options?: FormFieldOption[]
+}
+
+export interface FormSchema {
+  fields: FormField[]
+}
+
 export interface Form {
   id: string
   title: string
-  schema: Record<string, any>
+  schema: FormSchema
   createdAt: string
   updatedAt: string
 }

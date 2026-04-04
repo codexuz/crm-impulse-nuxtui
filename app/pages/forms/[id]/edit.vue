@@ -32,9 +32,8 @@
             </div>
 
             <div v-else class="h-full">
-                <ClientOnly>
-                    <VueformBuilder ref="builder$" @save="onBuilderSave" />
-                </ClientOnly>
+                <FormsFormBuilder ref="builder$" :initial-schema="form.schema" :preview-title="title"
+                    @update:schema="onSchemaUpdate" />
             </div>
         </template>
     </UDashboardPanel>
@@ -42,7 +41,7 @@
 
 <script setup lang="ts">
 import type { NavigationMenuItem } from "@nuxt/ui";
-import type { Form } from "~/types";
+import type { Form, FormSchema } from "~/types";
 
 definePageMeta({
     layout: "default",
@@ -73,10 +72,10 @@ const title = ref("");
 const saving = ref(false);
 const isLoading = ref(false);
 const builder$ = ref<any>(null);
-const latestBuilderObject = ref<any>(null);
+const currentSchema = ref<FormSchema | null>(null);
 
-function onBuilderSave(builderObject: any) {
-    latestBuilderObject.value = builderObject;
+function onSchemaUpdate(schema: FormSchema) {
+    currentSchema.value = schema;
 }
 
 async function loadForm() {
@@ -84,16 +83,6 @@ async function loadForm() {
         isLoading.value = true;
         form.value = await getForm(formId);
         title.value = form.value.title;
-
-        await nextTick();
-
-        setTimeout(() => {
-            if (builder$.value && form.value?.schema) {
-                builder$.value.load({
-                    schema: form.value.schema,
-                });
-            }
-        }, 500);
     } catch (error: any) {
         console.error("Failed to load form:", error);
         toast.add({
@@ -109,9 +98,9 @@ async function loadForm() {
 async function save() {
     if (!title.value.trim()) return;
 
-    const builderObject = latestBuilderObject.value || builder$?.value?.builder;
+    const schema = currentSchema.value || builder$?.value?.getSchema();
 
-    if (!builderObject || !builderObject.schema || Object.keys(builderObject.schema).length === 0) {
+    if (!schema || !schema.fields || schema.fields.length === 0) {
         toast.add({
             title: "Xatolik",
             description: "Forma maydonlarini qo'shing",
@@ -124,7 +113,7 @@ async function save() {
         saving.value = true;
         await updateForm(formId, {
             title: title.value,
-            schema: builderObject.schema,
+            schema,
         });
         toast.add({
             title: "Yangilandi",

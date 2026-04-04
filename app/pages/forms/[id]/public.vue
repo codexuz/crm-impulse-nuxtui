@@ -33,9 +33,11 @@
                 <div>
                     <p v-if="errorMsg" class="text-sm text-red-500 mb-4">{{ errorMsg }}</p>
 
-                    <ClientOnly>
-                        <Vueform :schema="form.schema" :endpoint="false" :loading="submitting" @submit="onSubmit" />
-                    </ClientOnly>
+                    <FormsFormRenderer v-if="form.schema?.fields?.length" :fields="form.schema.fields"
+                        :loading="submitting" @submit="onSubmit" />
+                    <div v-else class="text-center py-8 text-gray-400">
+                        <p>Bu formada maydonlar yo'q</p>
+                    </div>
                 </div>
             </UCard>
         </div>
@@ -74,12 +76,12 @@ async function loadForm() {
     }
 }
 
-async function onSubmit(form$: any) {
+async function onSubmit(answers: Record<string, any>) {
     submitting.value = true;
     errorMsg.value = "";
 
     try {
-        await submitResponse(formId, form$.requestData);
+        await submitResponse(formId, answers);
         submitted.value = true;
     } catch (e: any) {
         errorMsg.value = e?.message || "Yuborishda xatolik yuz berdi. Qayta urinib ko'ring.";

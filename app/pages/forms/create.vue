@@ -24,9 +24,7 @@
 
         <template #body>
             <div class="h-full">
-                <ClientOnly>
-                    <VueformBuilder ref="builder$" @save="onBuilderSave" />
-                </ClientOnly>
+                <FormsFormBuilder ref="builder$" :preview-title="title" @update:schema="onSchemaUpdate" />
             </div>
         </template>
     </UDashboardPanel>
@@ -34,6 +32,7 @@
 
 <script setup lang="ts">
 import type { NavigationMenuItem } from "@nuxt/ui";
+import type { FormSchema } from "~/types";
 
 definePageMeta({
     layout: "default",
@@ -59,18 +58,18 @@ const { createForm } = useFormsApi();
 const title = ref("");
 const saving = ref(false);
 const builder$ = ref<any>(null);
-const latestBuilderObject = ref<any>(null);
+const currentSchema = ref<FormSchema | null>(null);
 
-function onBuilderSave(builderObject: any) {
-    latestBuilderObject.value = builderObject;
+function onSchemaUpdate(schema: FormSchema) {
+    currentSchema.value = schema;
 }
 
 async function save() {
     if (!title.value.trim()) return;
 
-    const builderObject = latestBuilderObject.value || builder$?.value?.builder;
+    const schema = currentSchema.value || builder$?.value?.getSchema();
 
-    if (!builderObject || !builderObject.schema || Object.keys(builderObject.schema).length === 0) {
+    if (!schema || !schema.fields || schema.fields.length === 0) {
         toast.add({
             title: "Xatolik",
             description: "Forma maydonlarini qo'shing",
@@ -81,7 +80,7 @@ async function save() {
 
     try {
         saving.value = true;
-        const form = await createForm(title.value, builderObject.schema);
+        const form = await createForm(title.value, schema);
         toast.add({
             title: "Yaratildi",
             description: "Forma muvaffaqiyatli yaratildi",
