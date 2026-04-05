@@ -91,7 +91,7 @@ function copyLink(id: string) {
 }
 
 function formatDate(dateStr: string) {
-    return new Date(dateStr).toLocaleDateString("us-US", {
+    return new Date(dateStr).toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
