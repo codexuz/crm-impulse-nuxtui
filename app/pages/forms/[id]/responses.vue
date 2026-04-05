@@ -14,8 +14,8 @@
                 <template #right>
                     <UButton color="neutral" variant="subtle" icon="i-lucide-copy" label="Havola nusxalash"
                         @click="copyLink" />
-                    <UButton icon="i-lucide-download" label="CSV yuklash" :disabled="!filteredResponses.length"
-                        @click="exportCsv" />
+                    <UButton icon="i-lucide-download" label="Excel yuklash" :disabled="!filteredResponses.length"
+                        @click="exportExcel" />
                 </template>
             </UDashboardNavbar>
 
@@ -151,12 +151,11 @@ const columns = computed<TableColumn<FormResponse>[]>(() => [
             cell: ({ row }) => {
                 const val = row.original.answers?.[key];
                 if (val === undefined || val === null) return "—";
+                if (Array.isArray(val)) {
+                    return val.join(", ");
+                }
                 if (typeof val === "object") {
-                    return h(
-                        "pre",
-                        { class: "text-xs bg-gray-50 dark:bg-gray-800 rounded p-1 max-w-xs overflow-auto" },
-                        JSON.stringify(val, null, 2),
-                    );
+                    return JSON.stringify(val);
                 }
                 return String(val);
             },
@@ -239,27 +238,24 @@ function copyLink() {
     });
 }
 
-function exportCsv() {
+function exportExcel() {
     if (!filteredResponses.value.length) return;
-    const header = ["#", "Yuborilgan", ...answerKeys.value];
-    const rows = filteredResponses.value.map((r, i) => [
-        i + 1,
-        new Date(r.createdAt).toLocaleString(),
-        ...answerKeys.value.map((col) => {
-            const val = r.answers?.[col];
-            return typeof val === "object" ? JSON.stringify(val) : String(val ?? "");
-        }),
-    ]);
-    const csv = [header, ...rows]
-        .map((row) =>
-            row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
-        )
-        .join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `${form.value?.title ?? "forma"}-javoblar.csv`;
-    link.click();
+    import('xlsx').then((XLSX) => {
+        const header = ["#", "Yuborilgan", ...answerKeys.value];
+        const rows = filteredResponses.value.map((r, i) => [
+            i + 1,
+            new Date(r.createdAt).toLocaleString(),
+            ...answerKeys.value.map((col) => {
+                const val = r.answers?.[col];
+                if (Array.isArray(val)) return val.join(", ");
+                return typeof val === "object" ? JSON.stringify(val) : String(val ?? "");
+            }),
+        ]);
+        const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Javoblar");
+        XLSX.writeFile(wb, `${form.value?.title ?? "forma"}-javoblar.xlsx`);
+    });
 }
 
 async function loadData() {
