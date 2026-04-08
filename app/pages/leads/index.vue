@@ -147,6 +147,13 @@ interface Lead {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  admin?: {
+    user_id: string;
+    first_name: string;
+    last_name: string;
+    username: string;
+    avatar_url: string | null;
+  };
 }
 
 interface TrialLesson {
@@ -273,6 +280,15 @@ const columns: TableColumn<Lead>[] = [
     accessorKey: "course_ids",
     header: "Qiziqayotgan kurslar",
     cell: ({ row }) => getCourseTitle(row.original.course_ids),
+  },
+  {
+    id: "admin",
+    header: "Admin",
+    cell: ({ row }) => {
+      const admin = row.original.admin;
+      if (!admin) return '-';
+      return `${admin.first_name} ${admin.last_name}`;
+    },
   },
   {
     accessorKey: "createdAt",
