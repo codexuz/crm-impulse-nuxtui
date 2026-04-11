@@ -42,7 +42,7 @@ const links = computed(() => [
         open.value = false;
       },
     },
-     {
+    {
       label: "Formalar",
       icon: "i-lucide-file-text",
       to: "/forms",
@@ -102,6 +102,14 @@ const links = computed(() => [
         open.value = false;
       },
     },
+    {
+      label: "Imtihonlar",
+      icon: "i-lucide-file-check",
+      to: "/exams",
+      onSelect: () => {
+        open.value = false;
+      },
+    },
   ],
   [
     {
@@ -142,7 +150,7 @@ const links = computed(() => [
           to: "/reports/archived-students",
           onSelect: () => {
             open.value = false;
-          },      
+          },
         },
       ],
       [

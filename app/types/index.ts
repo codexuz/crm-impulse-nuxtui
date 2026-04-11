@@ -165,12 +165,14 @@ export interface Exam {
   id: string;
   title: string;
   group_id: string;
+  branch_id?: string | null;
   scheduled_at: string;
   status: "scheduled" | "completed" | "cancelled";
   is_online: boolean;
   level: "beginner" | "elementary" | "pre-intermediate" | "intermediate";
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string | null;
 }
 
 export interface ExamResult {
@@ -179,12 +181,19 @@ export interface ExamResult {
   student_id: string;
   score: number;
   max_score: number;
-  percentage: number;
+  percentage: string;
   result: "passed" | "failed";
   section_scores?: Record<string, number>;
   feedback?: string;
-  createdAt: string;
-  updatedAt: string;
+  is_completed: boolean;
+  created_at: string;
+  updated_at: string;
+  exam?: Exam;
+  student?: {
+    user_id: string;
+    first_name: string;
+    last_name: string;
+  };
 }
 
 export interface Lead {
