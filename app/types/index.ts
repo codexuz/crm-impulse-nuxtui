@@ -236,9 +236,10 @@ export interface StudentParent {
   full_name: string;
   phone_number: string;
   additional_number?: string;
-  created_at?: string;
-  updated_at?: string;
+  createdAt?: string;
+  updatedAt?: string;
   student?: Student;
+  telegram_chat_id?: string | null;
 }
 
 export interface PaginatedResponse<T> {

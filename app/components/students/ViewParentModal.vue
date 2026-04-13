@@ -71,11 +71,11 @@ const formatDate = (dateString?: string): string => {
               </div>
               <div class="flex justify-between">
                 <span class="text-gray-500">Yaratilgan:</span>
-                <span>{{ formatDate(parent.created_at) }}</span>
+                <span>{{ formatDate(parent.createdAt) }}</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-gray-500">Yangilangan:</span>
-                <span>{{ formatDate(parent.updated_at) }}</span>
+                <span>{{ formatDate(parent.updatedAt) }}</span>
               </div>
             </div>
           </div>

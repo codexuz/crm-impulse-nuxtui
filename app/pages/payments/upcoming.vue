@@ -268,22 +268,22 @@
               </div>
             </div>
 
-            <!-- Show existing action info in edit mode -->
-            <div v-if="isEditMode && selectedAction" class="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg space-y-1">
-              <h4 class="font-medium mb-2">Mavjud aloqa ma'lumoti:</h4>
-              <p class="text-sm text-gray-600 dark:text-gray-400">
-                <span class="font-medium">Manager:</span>
-                {{ selectedAction.manager?.first_name }}
-                {{ selectedAction.manager?.last_name }}
-              </p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">
-                <span class="font-medium">Yaratilgan:</span>
-                {{ formatDate(selectedAction.createdAt) }}
-              </p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">
-                <span class="font-medium">Oxirgi yangilanish:</span>
-                {{ formatDate(selectedAction.updatedAt) }}
-              </p>
+            <!-- Show all existing actions -->
+            <div v-if="selectedPayment?.actions?.length" class="space-y-2">
+              <h4 class="font-medium">Aloqa tarixi ({{ selectedPayment.actions.length }}):</h4>
+              <div class="max-h-60 overflow-y-auto space-y-2">
+                <div v-for="action in selectedPayment.actions" :key="action.id"
+                  class="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg space-y-1 border-l-4 border-blue-400">
+                  <p class="text-sm whitespace-pre-line">{{ action.message }}</p>
+                  <div class="flex items-center gap-2 text-xs text-gray-500">
+                    <span>{{ action.action_type }}</span>
+                    <span>·</span>
+                    <span>{{ action.stage }}</span>
+                    <span>·</span>
+                    <span>{{ formatDate(action.createdAt) }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <form @submit.prevent="submitContactAction" class="space-y-4">
@@ -503,13 +503,18 @@ const columns = [
     cell: ({ row }: { row: any }) => {
       const actions = row.original.actions || [];
       const hasContact = actions.length > 0;
-      return h(UButton, {
-        icon: hasContact ? "i-lucide-check-circle" : "i-lucide-plus-circle",
-        color: hasContact ? "green" : "gray",
-        variant: "ghost",
-        size: "sm",
-        onClick: () => openContactModal(row.original),
-      });
+      return h("div", { class: "flex items-center gap-1" }, [
+        h(UButton, {
+          icon: hasContact ? "i-lucide-check-circle" : "i-lucide-plus-circle",
+          color: hasContact ? "green" : "gray",
+          variant: "ghost",
+          size: "sm",
+          onClick: () => openContactModal(row.original),
+        }),
+        hasContact
+          ? h(UBadge, { color: "green", variant: "subtle" }, () => `${actions.length}`)
+          : null,
+      ]);
     },
   },
   {
@@ -611,16 +616,17 @@ const openContactModal = (payment: any) => {
   const existingActions = payment.actions || [];
 
   if (existingActions.length > 0) {
-    // Edit mode - load existing action data
+    // Show history, but always reset form for new action
     isEditMode.value = true;
-    const latestAction = existingActions[existingActions.length - 1];
-    selectedAction.value = latestAction;
+    selectedAction.value = null;
 
-    // Pre-fill form with existing data
-    contactForm.action_type = latestAction.action_type;
-    contactForm.stage = latestAction.stage;
-    contactForm.message = latestAction.message;
-    contactForm.next_action_date = latestAction.next_action_date;
+    contactForm.action_type = "sms";
+    contactForm.stage = "upcoming";
+    contactForm.message = "";
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    contactForm.next_action_date = tomorrow.toISOString().slice(0, 16);
   } else {
     // Create mode - reset form
     isEditMode.value = false;

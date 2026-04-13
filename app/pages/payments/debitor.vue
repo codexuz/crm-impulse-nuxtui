@@ -188,22 +188,22 @@
               </div>
             </div>
 
-            <!-- Show existing action info in edit mode -->
-            <div v-if="isEditMode && selectedAction" class="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg space-y-1">
-              <h4 class="font-medium mb-2">Mavjud aloqa ma'lumoti:</h4>
-              <p class="text-sm text-gray-600 dark:text-gray-400">
-                <span class="font-medium">Manager:</span>
-                {{ selectedAction.manager?.first_name }}
-                {{ selectedAction.manager?.last_name }}
-              </p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">
-                <span class="font-medium">Yaratilgan:</span>
-                {{ formatDate(selectedAction.createdAt) }}
-              </p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">
-                <span class="font-medium">Oxirgi yangilanish:</span>
-                {{ formatDate(selectedAction.updatedAt) }}
-              </p>
+            <!-- Show all existing actions -->
+            <div v-if="selectedDebitor?.actions?.length" class="space-y-2">
+              <h4 class="font-medium">Aloqa tarixi ({{ selectedDebitor.actions.length }}):</h4>
+              <div class="max-h-60 overflow-y-auto space-y-2">
+                <div v-for="action in selectedDebitor.actions" :key="action.id"
+                  class="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg space-y-1 border-l-4 border-blue-400">
+                  <p class="text-sm whitespace-pre-line">{{ action.message }}</p>
+                  <div class="flex items-center gap-2 text-xs text-gray-500">
+                    <span>{{ action.action_type }}</span>
+                    <span>·</span>
+                    <span>{{ action.stage }}</span>
+                    <span>·</span>
+                    <span>{{ formatDate(action.createdAt) }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <form @submit.prevent="submitContactAction" class="space-y-4">
@@ -417,13 +417,18 @@ const columns = [
     cell: ({ row }: { row: any }) => {
       const actions = row.original.actions || [];
       const hasContact = actions.length > 0;
-      return h(UButton, {
-        icon: hasContact ? "i-lucide-check-circle" : "i-lucide-plus-circle",
-        color: hasContact ? "green" : "gray",
-        variant: "ghost",
-        size: "sm",
-        onClick: () => openContactModal(row.original),
-      });
+      return h("div", { class: "flex items-center gap-1" }, [
+        h(UButton, {
+          icon: hasContact ? "i-lucide-check-circle" : "i-lucide-plus-circle",
+          color: hasContact ? "green" : "gray",
+          variant: "ghost",
+          size: "sm",
+          onClick: () => openContactModal(row.original),
+        }),
+        hasContact
+          ? h(UBadge, { color: "green", variant: "subtle" }, () => `${actions.length}`)
+          : null,
+      ]);
     },
   },
   {
@@ -496,27 +501,17 @@ const openContactModal = (debitor: any) => {
 
   const existingActions = debitor.actions || [];
 
-  if (existingActions.length > 0) {
-    isEditMode.value = true;
-    const latestAction = existingActions[0];
-    selectedAction.value = latestAction;
+  // Always reset form for new action
+  isEditMode.value = existingActions.length > 0;
+  selectedAction.value = null;
 
-    contactForm.action_type = latestAction.action_type;
-    contactForm.stage = latestAction.stage;
-    contactForm.message = latestAction.message;
-    contactForm.next_action_date = latestAction.next_action_date;
-  } else {
-    isEditMode.value = false;
-    selectedAction.value = null;
+  contactForm.action_type = "sms";
+  contactForm.stage = "debitor";
+  contactForm.message = "";
 
-    contactForm.action_type = "sms";
-    contactForm.stage = "debitor";
-    contactForm.message = "";
-
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    contactForm.next_action_date = tomorrow.toISOString().slice(0, 16);
-  }
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  contactForm.next_action_date = tomorrow.toISOString().slice(0, 16);
 
   contactDialog.value = true;
 };

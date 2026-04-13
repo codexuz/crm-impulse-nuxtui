@@ -73,6 +73,7 @@ import { useAuth } from "~/composables/useAuth";
 const UAvatar = resolveComponent("UAvatar");
 const UButton = resolveComponent("UButton");
 const UPopover = resolveComponent("UPopover");
+const UIcon = resolveComponent("UIcon");
 
 const studentNavItems: NavigationMenuItem[] = [
   {
@@ -160,6 +161,17 @@ const columns: TableColumn<StudentParent>[] = [
         return `${row.original.student.first_name} ${row.original.student.last_name}`;
       }
       return h("span", { class: "text-gray-400 text-sm" }, "Yo'q");
+    },
+  },
+  {
+    accessorKey: "telegram_chat_id",
+    header: "Telegram",
+    cell: ({ row }) => {
+      const hasTelegram = !!row.original.telegram_chat_id;
+      return h(UIcon, {
+        name: hasTelegram ? "i-lucide-message-circle" : "i-lucide-unlink",
+        class: hasTelegram ? "w-5 h-5 text-blue-500" : "w-5 h-5 text-gray-400",
+      });
     },
   },
   {

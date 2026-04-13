@@ -140,7 +140,7 @@
                                             <div class="flex items-center gap-2">
                                                 <UIcon name="i-lucide-layers" class="size-5 text-primary" />
                                                 <span class="font-semibold">{{ groupItem.group?.name || "Noma'lum guruh"
-                                                }}</span>
+                                                    }}</span>
                                             </div>
                                             <UPopover>
                                                 <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="xs"
@@ -165,7 +165,7 @@
                                             <span class="text-muted">O'qituvchi:</span>
                                             <span class="font-medium">{{ groupItem.group.teacher.first_name }} {{
                                                 groupItem.group.teacher.last_name
-                                            }}</span>
+                                                }}</span>
                                         </div>
 
                                         <div class="flex items-center gap-2">
@@ -333,7 +333,12 @@
                                                 </template>
                                             </UAvatar>
                                             <div>
-                                                <div class="font-medium">{{ parent.full_name }}</div>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="font-medium">{{ parent.full_name }}</span>
+                                                    <UIcon v-if="parent.telegram_chat_id" name="i-lucide-message-circle"
+                                                        class="size-4 text-blue-500" />
+                                                    <UIcon v-else name="i-lucide-unlink" class="size-4 text-gray-400" />
+                                                </div>
                                                 <div class="text-sm text-muted">{{ formatPhone(parent.phone_number) }}
                                                 </div>
                                                 <div v-if="parent.additional_number" class="text-xs text-muted">
@@ -350,6 +355,34 @@
                                     </div>
                                 </UCard>
                             </div>
+                        </div>
+
+                        <!-- Baholar Tab -->
+                        <div v-if="item.value === 'grades'" class="mt-4 space-y-4">
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                <div class="flex items-center gap-2">
+                                    <h3 class="text-base font-semibold">Baholar</h3>
+                                    <UBadge variant="subtle" size="sm">{{ gradesTotalItems }}</UBadge>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <UInput v-model="gradesStartDate" type="date" size="sm" placeholder="Boshlanish" />
+                                    <UInput v-model="gradesEndDate" type="date" size="sm" placeholder="Tugash" />
+                                </div>
+                            </div>
+
+                            <div v-if="isLoadingGrades" class="flex items-center justify-center py-8">
+                                <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-primary" />
+                            </div>
+                            <div v-else-if="studentGrades.length === 0" class="text-center py-8 text-muted">
+                                Baholar topilmadi
+                            </div>
+                            <template v-else>
+                                <UTable :data="studentGrades" :columns="gradeColumns" />
+                                <div v-if="gradesTotalItems > gradesLimit" class="flex justify-center mt-4">
+                                    <UPagination v-model="gradesPage" :total="gradesTotalItems"
+                                        :items-per-page="gradesLimit" />
+                                </div>
+                            </template>
                         </div>
 
                         <!-- Davomat Tab -->
@@ -374,7 +407,7 @@
                                         </div>
                                         <div class="text-xl font-semibold text-green-700 dark:text-green-300">{{
                                             studentAttendance.present
-                                        }}</div>
+                                            }}</div>
                                     </div>
                                     <div class="flex flex-col gap-1 p-3 rounded-lg bg-red-50 dark:bg-red-900/20">
                                         <div class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
@@ -674,6 +707,15 @@ const deletingPaymentId = ref<string | null>(null);
 const isLoadingGroups = ref(false);
 const activeTab = ref("groups");
 
+// Grades state
+const studentGrades = ref<any[]>([]);
+const isLoadingGrades = ref(false);
+const gradesPage = ref(1);
+const gradesLimit = ref(10);
+const gradesTotalItems = ref(0);
+const gradesStartDate = ref("");
+const gradesEndDate = ref("");
+
 // Group enrollment form
 const teachers = ref<Teacher[]>([]);
 const allGroups = ref<Group[]>([]);
@@ -760,6 +802,58 @@ const tabItems = [
     { label: "To'lovlar", value: "payments", icon: "i-lucide-credit-card" },
     { label: "Davomat", value: "attendance", icon: "i-lucide-clipboard-check" },
     { label: "Ota ona", value: "parents", icon: "i-lucide-users" },
+    { label: "Baholar", value: "grades", icon: "i-lucide-file-check" },
+];
+
+// Grades table columns
+const gradeColumns: TableColumn<any>[] = [
+    {
+        accessorKey: "group",
+        header: "Guruh",
+        cell: ({ row }) => h("span", { class: "font-medium" }, row.original.group?.name || "—"),
+    },
+    {
+        accessorKey: "lesson_name",
+        header: "Dars nomi",
+        cell: ({ row }) => row.original.lesson_name || "—",
+    },
+    {
+        accessorKey: "grade",
+        header: "Baho",
+        cell: ({ row }) => {
+            const grade = row.original.grade;
+            const color = grade >= 8 ? "success" : grade >= 6 ? "warning" : "error";
+            return h(resolveComponent("UBadge"), { color: color as any, variant: "subtle" }, () => grade);
+        },
+    },
+    {
+        accessorKey: "percent",
+        header: "Foiz",
+        cell: ({ row }) => {
+            const percent = row.original.percent;
+            const color = percent >= 80 ? "success" : percent >= 60 ? "warning" : "error";
+            return h(resolveComponent("UBadge"), { color: color as any, variant: "subtle" }, () => `${percent}%`);
+        },
+    },
+    {
+        accessorKey: "teacher",
+        header: "O'qituvchi",
+        cell: ({ row }) => {
+            const teacher = row.original.teacher;
+            if (teacher) return `${teacher.first_name || ""} ${teacher.last_name || ""}`;
+            return "—";
+        },
+    },
+    {
+        accessorKey: "note",
+        header: "Izoh",
+        cell: ({ row }) => row.original.note || "—",
+    },
+    {
+        accessorKey: "createdAt",
+        header: "Sana",
+        cell: ({ row }) => formatDate(row.original.createdAt),
+    },
 ];
 
 // Payment table columns
@@ -910,6 +1004,7 @@ const loadStudentData = async () => {
             loadStudentAttendance(),
             loadStudentProgress(),
             loadStudentRoadmap(),
+            loadStudentGrades(),
         ]);
     } catch (error) {
         console.error("Failed to load student data:", error);
@@ -1025,6 +1120,37 @@ const loadStudentRoadmap = async () => {
         }
     } finally {
         isLoadingRoadmap.value = false;
+    }
+};
+
+const loadStudentGrades = async () => {
+    isLoadingGrades.value = true;
+    try {
+        const params = new URLSearchParams();
+        params.set("page", String(gradesPage.value));
+        params.set("limit", String(gradesLimit.value));
+        if (gradesStartDate.value) params.set("startDate", gradesStartDate.value);
+        if (gradesEndDate.value) params.set("endDate", gradesEndDate.value);
+        const response = await api.get<any>(
+            apiService.value,
+            `/gradings/student/${studentId.value}?${params.toString()}`,
+        );
+        if (Array.isArray(response)) {
+            studentGrades.value = response;
+            gradesTotalItems.value = response.length;
+        } else if (response && response.data) {
+            studentGrades.value = response.data;
+            gradesTotalItems.value = response.total || response.data.length;
+        } else {
+            studentGrades.value = [];
+            gradesTotalItems.value = 0;
+        }
+    } catch (error) {
+        console.error("Failed to load student grades:", error);
+        studentGrades.value = [];
+        gradesTotalItems.value = 0;
+    } finally {
+        isLoadingGrades.value = false;
     }
 };
 
@@ -1675,6 +1801,11 @@ const copyToClipboard = async (text: string) => {
         // fallback
     }
 };
+
+// Grades watchers
+watch([gradesPage, gradesStartDate, gradesEndDate], () => {
+    loadStudentGrades();
+});
 
 // Initialize
 onMounted(() => {
