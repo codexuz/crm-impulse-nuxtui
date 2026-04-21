@@ -139,12 +139,18 @@ interface TeacherInfo {
   phone: string;
 }
 
+interface CourseInfo {
+  id: string;
+  title: string;
+}
+
 interface LeadInfo {
   id: string;
   first_name: string;
   last_name: string;
   phone: string;
   status: string;
+  courseNames?: CourseInfo[];
 }
 
 interface TrialLesson {
@@ -339,68 +345,76 @@ const columns: TableColumn<TrialLesson>[] = [
       return h("div", { class: "flex items-center gap-1" }, [
         row.original.isNotified
           ? h(UButton, {
-              variant: "ghost",
-              icon: "i-lucide-check",
-              size: "sm",
-              color: "green",
-              square: true,
-              class: "opacity-100 cursor-default",
-              title: "SMS yuborilgan",
-            })
+            variant: "ghost",
+            icon: "i-lucide-check",
+            size: "sm",
+            color: "green",
+            square: true,
+            class: "opacity-100 cursor-default",
+            title: "SMS yuborilgan",
+          })
           : h(
-          UPopover,
-          {
-            open: smsPopoverOpen.value[trialId] || false,
-            "onUpdate:open": (value: boolean) => {
-              smsPopoverOpen.value[trialId] = value;
+            UPopover,
+            {
+              open: smsPopoverOpen.value[trialId] || false,
+              "onUpdate:open": (value: boolean) => {
+                smsPopoverOpen.value[trialId] = value;
+              },
             },
-          },
-          {
-            default: () =>
-              h(UButton, {
-                variant: "ghost",
-                icon: "i-lucide-message-square",
-                size: "sm",
-                color: "primary",
-                square: true,
-                loading: isSendingSms.value[trialId] || false,
-              }),
-            content: () =>
-              h("div", { class: "p-4 max-w-sm space-y-3" }, [
-                h(
-                  "h4",
-                  { class: "font-semibold text-sm" },
-                  "SMS jo'natish",
-                ),
-                h(
-                  "p",
-                  { class: "text-sm text-gray-600 dark:text-gray-400" },
-                  "O'quvchiga sinov darsi haqida SMS eslatma yubormoqchimisiz?",
-                ),
-                h("div", { class: "flex justify-end gap-2 mt-3" }, [
-                  h(UButton, {
-                    color: "neutral",
-                    variant: "subtle",
-                    label: "Bekor qilish",
-                    size: "sm",
-                    onClick: () => {
-                      smsPopoverOpen.value[trialId] = false;
-                    },
-                  }),
-                  h(UButton, {
-                    color: "primary",
-                    label: "Yuborish",
-                    size: "sm",
-                    loading: isSendingSms.value[trialId] || false,
-                    onClick: async () => {
-                      await sendSmsAlert(row.original);
-                      smsPopoverOpen.value[trialId] = false;
-                    },
-                  }),
+            {
+              default: () =>
+                h(UButton, {
+                  variant: "ghost",
+                  icon: "i-lucide-message-square",
+                  size: "sm",
+                  color: "primary",
+                  square: true,
+                  loading: isSendingSms.value[trialId] || false,
+                }),
+              content: () =>
+                h("div", { class: "p-4 max-w-sm space-y-3" }, [
+                  h(
+                    "h4",
+                    { class: "font-semibold text-sm" },
+                    "SMS jo'natish",
+                  ),
+                  h(
+                    "p",
+                    { class: "text-sm text-gray-600 dark:text-gray-400" },
+                    "O'quvchiga sinov darsi haqida SMS eslatma yubormoqchimisiz?",
+                  ),
+                  h("div", { class: "flex justify-end gap-2 mt-3" }, [
+                    h(UButton, {
+                      color: "neutral",
+                      variant: "subtle",
+                      label: "Bekor qilish",
+                      size: "sm",
+                      onClick: () => {
+                        smsPopoverOpen.value[trialId] = false;
+                      },
+                    }),
+                    h(UButton, {
+                      color: "primary",
+                      label: "Yuborish",
+                      size: "sm",
+                      loading: isSendingSms.value[trialId] || false,
+                      onClick: async () => {
+                        await sendSmsAlert(row.original);
+                        smsPopoverOpen.value[trialId] = false;
+                      },
+                    }),
+                  ]),
                 ]),
-              ]),
-          },
-        ),
+            },
+          ),
+        h(UButton, {
+          variant: "ghost",
+          icon: "i-lucide-receipt",
+          size: "sm",
+          square: true,
+          title: "Kvitansiya chiqarish",
+          onClick: () => downloadReceipt(row.original),
+        }),
         h(UButton, {
           variant: "ghost",
           icon: "i-lucide-pencil",
@@ -596,7 +610,7 @@ const formatDate = (dateString: string) => {
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, "0");
   const day = String(date.getUTCDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return `${day}.${month}.${year}`;
 };
 
 // Format time
@@ -694,6 +708,142 @@ const deleteTrial = async (id: string) => {
     });
   } finally {
     isDeleting.value = false;
+  }
+};
+
+// Download receipt PDF for a trial lesson
+const downloadReceipt = async (trial: TrialLesson) => {
+  try {
+    toast.add({
+      title: "Jarayon",
+      description: "Kvitansiya PDF tayyorlanmoqda...",
+    });
+
+    const { jsPDF } = await import("jspdf");
+    const QRCodeModule = await import("qrcode");
+
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: [80, 160],
+    });
+
+    pdf.setProperties({
+      title: `Sinov darsi kvitansiyasi #${trial.id}`,
+      subject: "Sinov darsi kvitansiyasi",
+      author: "IMPULSE LC",
+      creator: "IMPULSE LC CRM",
+    });
+
+    // Logo
+    const logoImg = new Image();
+    logoImg.src = "/logo2.png";
+    await new Promise((resolve) => { logoImg.onload = resolve; });
+    const logoWidth = 30;
+    const logoHeight = (logoImg.height * logoWidth) / logoImg.width;
+    const logoX = (80 - logoWidth) / 2;
+    pdf.addImage(logoImg, "PNG", logoX, 5, logoWidth, logoHeight);
+
+    const drawDottedLine = (y: number) => {
+      // @ts-ignore
+      if (typeof pdf.setLineDash === "function") { // @ts-ignore
+        pdf.setLineDash([1, 1], 0);
+      }
+      pdf.setLineWidth(0.2);
+      pdf.line(5, y, 75, y);
+      // @ts-ignore
+      if (typeof pdf.setLineDash === "function") { // @ts-ignore
+        pdf.setLineDash([]);
+      }
+    };
+
+    drawDottedLine(logoHeight + 10);
+
+    // Company info
+    pdf.setFontSize(9);
+    pdf.text("Manzil: Toshkent sh., Sergeli 5-mavzesi, (3-metro)", 5, logoHeight + 15);
+    pdf.text("Tel: +998 95 525 99 66", 5, logoHeight + 19);
+    const managerName = `${(trial.leadInfo as any)?.admin?.first_name || ""} ${(trial.leadInfo as any)?.admin?.last_name || ""}`.trim() || "Noma'lum";
+    pdf.text(`Menejer: ${managerName}`, 5, logoHeight + 23);
+
+    drawDottedLine(logoHeight + 27);
+
+    // Lead and trial info
+    const leadName = trial.leadInfo
+      ? `${trial.leadInfo.first_name} ${trial.leadInfo.last_name}`
+      : "Noma'lum";
+    const courseNames = trial.leadInfo?.courseNames?.map((c) => c.title).join(", ") || "Noma'lum";
+    const teacherName = `${trial.teacherInfo.first_name} ${trial.teacherInfo.last_name}`;
+    const sDate = new Date(trial.scheduledAt);
+    const scheduledDate = `${String(sDate.getUTCDate()).padStart(2, "0")}.${String(sDate.getUTCMonth() + 1).padStart(2, "0")}.${sDate.getUTCFullYear()} ${String(sDate.getUTCHours()).padStart(2, "0")}:${String(sDate.getUTCMinutes()).padStart(2, "0")}`;
+
+    pdf.text(`Talaba: ${leadName}`, 5, logoHeight + 32);
+
+    // Course names (may be long, wrap if needed)
+    const courseLines = pdf.splitTextToSize(`Kurs nomi: ${courseNames}`, 70) as string[];
+    let yPos = logoHeight + 36;
+    courseLines.forEach((line: string) => {
+      pdf.text(line, 5, yPos);
+      yPos += 4;
+    });
+
+    pdf.text(`O'qituvchi: ${teacherName}`, 5, yPos);
+    yPos += 4;
+    pdf.text(`Sinov dars sanasi: ${scheduledDate}`, 5, yPos);
+    yPos += 4;
+
+    drawDottedLine(yPos + 2);
+    yPos += 7;
+
+    // Thank you
+    pdf.setFontSize(11);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("THANK YOU", 40, yPos, { align: "center" });
+    pdf.setFont("helvetica", "normal");
+    yPos += 8;
+
+    // QR Code
+    const qrData = `Sinov darsi ID: ${trial.id}\nLead: ${leadName}\nKurs: ${courseNames}\nO'qituvchi: ${teacherName}\nSana: ${scheduledDate}`;
+    const qrCodeUrl = await QRCodeModule.toDataURL(qrData, { width: 30, margin: 1 });
+    const qrX = (80 - 30) / 2;
+    pdf.addImage(qrCodeUrl, "PNG", qrX, yPos, 30, 30);
+
+    pdf.setFontSize(8);
+    pdf.text(scheduledDate, 40, yPos + 34, { align: "center" });
+
+    // Save
+    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+    if (isTauri) {
+      const { save } = await import("@tauri-apps/plugin-dialog");
+      const { writeFile } = await import("@tauri-apps/plugin-fs");
+      const { openPath } = await import("@tauri-apps/plugin-opener");
+
+      const filePath = await save({
+        filters: [{ name: "PDF", extensions: ["pdf"] }],
+        defaultPath: `sinov-kvitansiya-${trial.id.substring(0, 8)}.pdf`,
+      });
+
+      if (filePath) {
+        const pdfBytes = new Uint8Array(pdf.output("arraybuffer") as ArrayBuffer);
+        await writeFile(filePath, pdfBytes);
+        try { await openPath(filePath); } catch { }
+      }
+    } else {
+      pdf.save(`sinov-kvitansiya-${trial.id.substring(0, 8)}.pdf`);
+    }
+
+    toast.add({
+      title: "Muvaffaqiyat",
+      description: "Kvitansiya muvaffaqiyatli yuklandi",
+      color: "success",
+    });
+  } catch (error) {
+    console.error("Failed to generate receipt PDF:", error);
+    toast.add({
+      title: "Xatolik",
+      description: "Kvitansiyani yaratishda xatolik. Qaytadan urinib ko'ring.",
+      color: "error",
+    });
   }
 };
 
