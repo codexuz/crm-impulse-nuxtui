@@ -9,9 +9,9 @@ export default defineNuxtConfig({
       apiBaseUrl: "https://backend.impulselc.uz/api",
     },
   },
-  // devServer: {
-  //   host: '0.0.0.0',
-  // },
+  devServer: {
+    host: '0.0.0.0',
+  },
   vite: {
     // Better support for Tauri CLI output
     clearScreen: false,
