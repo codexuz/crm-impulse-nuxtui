@@ -2,11 +2,16 @@
 import type { NavigationMenuItem } from "@nuxt/ui";
 import { useAuth } from "~/composables/useAuth";
 import { useFinancialAccess } from "~/composables/useFinancialAccess";
+import { useTelegramChat } from "~/composables/useTelegramChat";
 
 const route = useRoute();
 const toast = useToast();
 const { logout } = useAuth();
 const { hasFinancialAccess } = useFinancialAccess();
+const { connectSSE, disconnectSSE } = useTelegramChat();
+
+onMounted(() => connectSSE())
+onUnmounted(() => disconnectSSE())
 
 const open = ref(false);
 
@@ -38,6 +43,14 @@ const links = computed(() => [
       label: "SMS Xabarnoma",
       icon: "i-lucide-message-square",
       to: "/sms/send-sms",
+      onSelect: () => {
+        open.value = false;
+      },
+    },
+    {
+      label: "Telegram Chat",
+      icon: "i-lucide-send",
+      to: "/telegram",
       onSelect: () => {
         open.value = false;
       },
