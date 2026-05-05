@@ -243,7 +243,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, watch, onMounted } from 'vue'
+import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
 import { useIntersectionObserver } from '@vueuse/core'
 import { useTelegramChat } from '~/composables/useTelegramChat'
 import { useParentsWithTelegram } from '~/composables/useParentsWithTelegram'
@@ -429,5 +429,10 @@ function formatRelativeTime(iso: string): string {
 
 onMounted(() => {
     fetchConversations()
+})
+
+onUnmounted(() => {
+    // Reset shared activeParentId so the layout's SSE toast fires on other pages
+    closeConversation()
 })
 </script>
