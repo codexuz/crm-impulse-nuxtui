@@ -218,19 +218,47 @@
           </div>
         </template>
       </UModal>
+      <!-- QR Code Modal -->
+      <UModal v-model:open="qrDialog" :ui="{ width: 'sm:max-w-[400px]' }">
+        <template #header>
+          <h3 class="text-lg font-semibold">O'qituvchi QR kodi</h3>
+        </template>
+
+        <template #body>
+          <div class="flex flex-col items-center justify-center p-4 gap-4">
+            <div v-if="qrLoading" class="flex items-center justify-center h-64">
+              <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin" />
+            </div>
+            <canvas ref="qrCanvas" v-show="!qrLoading" class="max-w-full h-auto border rounded-lg shadow-sm"></canvas>
+            <p v-if="!qrLoading" class="text-sm text-gray-500 text-center">
+              Ushbu QR kod o'qituvchi davomadi uchun. Uni Telegram bot orqali skanerlash mumkin.
+            </p>
+          </div>
+        </template>
+
+        <template #footer>
+          <div class="flex justify-end gap-3">
+            <UButton color="neutral" variant="subtle" label="Yopish" @click="qrDialog = false" />
+            <UButton icon="i-lucide-download" label="Yuklab olish" :disabled="qrLoading" @click="downloadQr" />
+          </div>
+        </template>
+      </UModal>
     </template>
   </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
 import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
+import QRCode from 'qrcode'
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 import { useFinancialAccess } from "~/composables/useFinancialAccess";
+import { useStaffAttendance } from "~/composables/useStaffAttendance";
 
 const { apiService } = useAuth();
 const { hasFinancialAccess } = useFinancialAccess();
 const { formatPhone } = usePhoneFormatter();
+const { getTeacherStaticQr } = useStaffAttendance();
 
 const teacherNavItems = computed<NavigationMenuItem[]>(() => [
   {
@@ -308,6 +336,10 @@ const showPassword = ref(false);
 const viewDialog = ref(false);
 const editDialog = ref(false);
 const addDialog = ref(false);
+const qrDialog = ref(false);
+const qrLoading = ref(false);
+const qrCanvas = ref<HTMLCanvasElement | null>(null);
+const selectedTeacherForQr = ref<Teacher | null>(null);
 
 // Pagination state
 const page = ref(1);
@@ -381,6 +413,13 @@ const columns: TableColumn<Teacher>[] = [
     cell: ({ row }) => {
       const teacherId = row.original.user_id;
       return h("div", { class: "flex items-center gap-1" }, [
+        h(UButton, {
+          variant: "ghost",
+          icon: "i-lucide-qr-code",
+          size: "sm",
+          square: true,
+          onClick: () => showTeacherQr(row.original),
+        }),
         h(UButton, {
           variant: "ghost",
           icon: "i-lucide-eye",
@@ -631,6 +670,95 @@ async function toggleTeacherStatus(teacher: Teacher) {
 
 function viewTeacherGroups(teacher: Teacher) {
   navigateTo(`/teachers/${teacher.user_id}/groups`);
+}
+
+async function showTeacherQr(teacher: Teacher) {
+  selectedTeacherForQr.value = teacher;
+  qrDialog.value = true;
+  qrLoading.value = true;
+
+  try {
+    const data = await getTeacherStaticQr(teacher.user_id);
+    if (data && data.qr_code) {
+      await nextTick();
+      if (qrCanvas.value) {
+        await QRCode.toCanvas(qrCanvas.value, data.qr_code, {
+          width: 300,
+          margin: 2,
+          color: {
+            dark: "#000000",
+            light: "#ffffff",
+          },
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Failed to generate QR:", error);
+    toast.add({
+      title: "Xatolik",
+      description: "QR kodni yaratishda xatolik yuz berdi",
+      color: "error",
+    });
+    qrDialog.value = false;
+  } finally {
+    qrLoading.value = false;
+  }
+}
+
+async function downloadQr() {
+  if (!qrCanvas.value || !selectedTeacherForQr.value) return;
+
+  const fileName = `teacher-qr-${selectedTeacherForQr.value.username}.png`;
+  const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+
+  if (isTauri) {
+    try {
+      const { save } = await import("@tauri-apps/plugin-dialog");
+      const { writeFile } = await import("@tauri-apps/plugin-fs");
+
+      const filePath = await save({
+        filters: [{ name: "Image", extensions: ["png"] }],
+        defaultPath: fileName,
+      });
+
+      if (filePath) {
+        // Get base64 data and convert to Uint8Array
+        const dataUrl = qrCanvas.value.toDataURL("image/png");
+        const parts = dataUrl.split(",");
+        const base64 = parts[1];
+
+        if (!base64) {
+          throw new Error("Base64 ma'lumotlari topilmadi");
+        }
+
+        const binaryString = window.atob(base64);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        await writeFile(filePath, bytes);
+        toast.add({
+          title: "Muvaffaqiyat",
+          description: "QR kod muvaffaqiyatli saqlandi",
+          color: "success",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to save QR in Tauri:", error);
+      toast.add({
+        title: "Xatolik",
+        description: "QR kodni saqlashda xatolik yuz berdi",
+        color: "error",
+      });
+    }
+  } else {
+    const link = document.createElement("a");
+    link.download = fileName;
+    link.href = qrCanvas.value.toDataURL("image/png");
+    link.click();
+  }
 }
 
 function getInitials(firstName: string, lastName: string): string {
