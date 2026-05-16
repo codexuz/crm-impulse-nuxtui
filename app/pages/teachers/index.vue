@@ -229,7 +229,7 @@
             <div v-if="qrLoading" class="flex items-center justify-center h-64">
               <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin" />
             </div>
-            <canvas ref="qrCanvas" v-show="!qrLoading" class="max-w-full h-auto border rounded-lg shadow-sm"></canvas>
+            <img v-if="!qrLoading && qrDataUrl" :src="qrDataUrl" alt="QR kod" class="max-w-full h-auto border rounded-lg shadow-sm" />
             <p v-if="!qrLoading" class="text-sm text-gray-500 text-center">
               Ushbu QR kod o'qituvchi davomadi uchun. Uni Telegram bot orqali skanerlash mumkin.
             </p>
@@ -249,7 +249,7 @@
 
 <script setup lang="ts">
 import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
-import QRCode from 'qrcode'
+// QRCode is imported dynamically in showTeacherQr to avoid SSR/canvas timing issues
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 import { useFinancialAccess } from "~/composables/useFinancialAccess";
@@ -338,7 +338,7 @@ const editDialog = ref(false);
 const addDialog = ref(false);
 const qrDialog = ref(false);
 const qrLoading = ref(false);
-const qrCanvas = ref<HTMLCanvasElement | null>(null);
+const qrDataUrl = ref<string>('');
 const selectedTeacherForQr = ref<Teacher | null>(null);
 
 // Pagination state
@@ -674,30 +674,29 @@ function viewTeacherGroups(teacher: Teacher) {
 
 async function showTeacherQr(teacher: Teacher) {
   selectedTeacherForQr.value = teacher;
+  qrDataUrl.value = '';
   qrDialog.value = true;
   qrLoading.value = true;
 
   try {
     const data = await getTeacherStaticQr(teacher.user_id);
-    if (data && data.qr_code) {
-      await nextTick();
-      if (qrCanvas.value) {
-        await QRCode.toCanvas(qrCanvas.value, data.qr_code, {
-          width: 300,
-          margin: 2,
-          color: {
-            dark: "#000000",
-            light: "#ffffff",
-          },
-        });
-      }
+    if (data && data.bot_url) {
+      const QRCodeModule = await import('qrcode');
+      qrDataUrl.value = await QRCodeModule.toDataURL(data.bot_url, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#ffffff',
+        },
+      });
     }
   } catch (error) {
-    console.error("Failed to generate QR:", error);
+    console.error('Failed to generate QR:', error);
     toast.add({
-      title: "Xatolik",
-      description: "QR kodni yaratishda xatolik yuz berdi",
-      color: "error",
+      title: 'Xatolik',
+      description: 'QR kodni yaratishda xatolik yuz berdi',
+      color: 'error',
     });
     qrDialog.value = false;
   } finally {
@@ -706,25 +705,23 @@ async function showTeacherQr(teacher: Teacher) {
 }
 
 async function downloadQr() {
-  if (!qrCanvas.value || !selectedTeacherForQr.value) return;
+  if (!qrDataUrl.value || !selectedTeacherForQr.value) return;
 
   const fileName = `teacher-qr-${selectedTeacherForQr.value.username}.png`;
-  const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+  const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
   if (isTauri) {
     try {
-      const { save } = await import("@tauri-apps/plugin-dialog");
-      const { writeFile } = await import("@tauri-apps/plugin-fs");
+      const { save } = await import('@tauri-apps/plugin-dialog');
+      const { writeFile } = await import('@tauri-apps/plugin-fs');
 
       const filePath = await save({
-        filters: [{ name: "Image", extensions: ["png"] }],
+        filters: [{ name: 'Image', extensions: ['png'] }],
         defaultPath: fileName,
       });
 
       if (filePath) {
-        // Get base64 data and convert to Uint8Array
-        const dataUrl = qrCanvas.value.toDataURL("image/png");
-        const parts = dataUrl.split(",");
+        const parts = qrDataUrl.value.split(',');
         const base64 = parts[1];
 
         if (!base64) {
@@ -740,23 +737,23 @@ async function downloadQr() {
 
         await writeFile(filePath, bytes);
         toast.add({
-          title: "Muvaffaqiyat",
-          description: "QR kod muvaffaqiyatli saqlandi",
-          color: "success",
+          title: 'Muvaffaqiyat',
+          description: 'QR kod muvaffaqiyatli saqlandi',
+          color: 'success',
         });
       }
     } catch (error) {
-      console.error("Failed to save QR in Tauri:", error);
+      console.error('Failed to save QR in Tauri:', error);
       toast.add({
-        title: "Xatolik",
-        description: "QR kodni saqlashda xatolik yuz berdi",
-        color: "error",
+        title: 'Xatolik',
+        description: 'QR kodni saqlashda xatolik yuz berdi',
+        color: 'error',
       });
     }
   } else {
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.download = fileName;
-    link.href = qrCanvas.value.toDataURL("image/png");
+    link.href = qrDataUrl.value;
     link.click();
   }
 }

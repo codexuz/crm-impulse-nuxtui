@@ -16,7 +16,7 @@ export const useStaffAttendance = () => {
    * Get static teacher QR (Admin)
    */
   const getTeacherStaticQr = async (teacherId: string) => {
-    return await api.get<{ qr_code: string }>(apiService.value, `/staff-attendance/static-qr/${teacherId}`)
+    return await api.get<{ teacher_id: string; bot_url: string }>(apiService.value, `/staff-attendance/static-qr/${teacherId}`)
   }
 
   /**
