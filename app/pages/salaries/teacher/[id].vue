@@ -592,6 +592,8 @@ const transactionTypeOptions = [
   { label: "Oylik", value: "oylik" },
   { label: "Avans", value: "avans" },
   { label: "Bonus", value: "bonus" },
+  { label: "Hamyon", value: "hamyon" },
+  { label: "Jarima", value: "jarima" },
 ];
 
 // Table columns for transactions
@@ -1259,28 +1261,30 @@ const getTransactionLabel = (type: string) => {
     oylik: "Oylik",
     avans: "Avans",
     bonus: "Bonus",
+    hamyon: "Hamyon",
+    jarima: "Jarima",
   };
   return labels[type] || type;
 };
 
 const getTransactionBadgeColor = (type: string) => {
-  if (type === "kirim" || type === "bonus") return "green";
+  if (type === "kirim" || type === "bonus" || type === "hamyon") return "green";
   return "gray";
 };
 
 const getTransactionIcon = (type: string) => {
-  if (type === "kirim" || type === "bonus") return "i-lucide-arrow-down-left";
+  if (type === "kirim" || type === "bonus" || type === "hamyon") return "i-lucide-arrow-down-left";
   return "i-lucide-arrow-up-right";
 };
 
 const getTransactionAmountClass = (type: string) => {
-  if (type === "kirim" || type === "bonus")
+  if (type === "kirim" || type === "bonus" || type === "hamyon")
     return "text-green-600 font-semibold text-right";
   return "text-red-600 font-semibold text-right";
 };
 
 const getTransactionSign = (type: string) => {
-  if (type === "kirim" || type === "bonus") return "+";
+  if (type === "kirim" || type === "bonus" || type === "hamyon") return "+";
   return "-";
 };
 
