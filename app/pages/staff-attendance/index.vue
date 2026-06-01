@@ -4,6 +4,7 @@
       <UDashboardNavbar title="Xodimlar davomati" :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="staffNavItems" highlight />
         </template>
 
         <template #description>
@@ -72,6 +73,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, h, resolveComponent } from "vue";
+import type { NavigationMenuItem } from "@nuxt/ui";
 import { useStaffAttendance } from "~/composables/useStaffAttendance";
 import type {
   StaffAttendanceRecord,
@@ -81,6 +83,19 @@ import type {
 definePageMeta({
   middleware: ["auth"],
 });
+
+const staffNavItems: NavigationMenuItem[] = [
+  {
+    label: "Davomat yozuvlari",
+    icon: "i-lucide-fingerprint",
+    to: "/staff-attendance",
+  },
+  {
+    label: "Xodimlar",
+    icon: "i-lucide-users",
+    to: "/staff-attendance/staff",
+  },
+];
 
 const UIcon = resolveComponent("UIcon");
 const UAvatar = resolveComponent("UAvatar");
