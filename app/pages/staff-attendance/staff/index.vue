@@ -34,26 +34,28 @@
     </template>
 
     <template #body>
-      <UCard>
-        <template #header>
-          <h3 class="text-base font-semibold">Xodimlar ro'yxati</h3>
-        </template>
+      <div>
+        <UCard>
+          <template #header>
+            <h3 class="text-base font-semibold">Xodimlar ro'yxati</h3>
+          </template>
 
-        <UTable :data="staff" :columns="columns" :loading="isLoading" :empty="'Xodimlar topilmadi'" />
+          <UTable :data="staff" :columns="columns" :loading="isLoading" :empty="'Xodimlar topilmadi'" />
 
-        <template #footer>
-          <div class="flex items-center justify-between">
-            <div class="text-sm text-gray-500">
-              <span class="font-medium">{{ paginationStart }}</span> dan
-              <span class="font-medium">{{ paginationEnd }}</span> gacha, jami
-              <span class="font-medium">{{ totalItems }}</span> ta xodim
+          <template #footer>
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-gray-500">
+                <span class="font-medium">{{ paginationStart }}</span> dan
+                <span class="font-medium">{{ paginationEnd }}</span> gacha, jami
+                <span class="font-medium">{{ totalItems }}</span> ta xodim
+              </div>
+
+              <UPagination :model-value="page" :total="totalItems" :items-per-page="limit" show-last show-first
+                @update:page="(p: number) => (page = p)" />
             </div>
-
-            <UPagination :model-value="page" :total="totalItems" :items-per-page="limit" show-last show-first
-              @update:page="(p: number) => (page = p)" />
-          </div>
-        </template>
-      </UCard>
+          </template>
+        </UCard>
+      </div>
 
       <!-- QR Code Modal -->
       <UModal v-model:open="qrDialog" :ui="{ width: 'sm:max-w-[400px]' }">
@@ -293,15 +295,27 @@ const columns: TableColumn<StaffMember>[] = [
   },
   {
     id: "actions",
-    header: "QR kod",
+    header: "Amallar",
     cell: ({ row }) =>
-      h(UButton, {
-        variant: "ghost",
-        icon: "i-lucide-qr-code",
-        size: "sm",
-        square: true,
-        onClick: () => showStaffQr(row.original),
-      }),
+      h("div", { class: "flex items-center gap-1" }, [
+        h(UButton, {
+          variant: "ghost",
+          color: "neutral",
+          icon: "i-lucide-clock",
+          size: "sm",
+          square: true,
+          title: "Ish vaqti / profil",
+          onClick: () => navigateTo(`/staff-attendance/staff/${row.original.user_id}`),
+        }),
+        h(UButton, {
+          variant: "ghost",
+          icon: "i-lucide-qr-code",
+          size: "sm",
+          square: true,
+          title: "QR kod",
+          onClick: () => showStaffQr(row.original),
+        }),
+      ]),
   },
 ];
 

@@ -63,3 +63,30 @@ export interface StaffAttendanceListResponse {
   limit: number;
   totalPages: number;
 }
+
+export interface StaffProfile {
+  id: string;
+  staff_id: string;
+  in_time: string | null;
+  out_time: string | null;
+  createdAt: string;
+  updatedAt: string;
+  staff?: {
+    user_id: string;
+    username: string;
+    first_name: string;
+    last_name: string;
+    avatar_url: string | null;
+  };
+}
+
+export interface CreateStaffProfileDto {
+  staff_id: string;
+  in_time?: string;
+  out_time?: string;
+}
+
+export interface UpdateStaffProfileDto {
+  in_time?: string;
+  out_time?: string;
+}

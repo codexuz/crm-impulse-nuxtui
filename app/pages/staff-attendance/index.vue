@@ -47,26 +47,28 @@
     </template>
 
     <template #body>
-      <UCard>
-        <template #header>
-          <h3 class="text-base font-semibold">Davomat yozuvlari</h3>
-        </template>
+      <div>
+        <UCard>
+          <template #header>
+            <h3 class="text-base font-semibold">Davomat yozuvlari</h3>
+          </template>
 
-        <UTable :data="records" :columns="columns" :loading="pending" :empty="'Davomat yozuvlari topilmadi'" />
+          <UTable :data="records" :columns="columns" :loading="pending" :empty="'Davomat yozuvlari topilmadi'" />
 
-        <template #footer>
-          <div class="flex items-center justify-between">
-            <div class="text-sm text-gray-500">
-              <span class="font-medium">{{ paginationStart }}</span> dan
-              <span class="font-medium">{{ paginationEnd }}</span> gacha, jami
-              <span class="font-medium">{{ totalRecords }}</span> ta yozuv
+          <template #footer>
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-gray-500">
+                <span class="font-medium">{{ paginationStart }}</span> dan
+                <span class="font-medium">{{ paginationEnd }}</span> gacha, jami
+                <span class="font-medium">{{ totalRecords }}</span> ta yozuv
+              </div>
+
+              <UPagination :model-value="currentPage" :total="totalRecords" :items-per-page="limit" show-last
+                show-first @update:page="(p: number) => (currentPage = p)" />
             </div>
-
-            <UPagination :model-value="currentPage" :total="totalRecords" :items-per-page="limit" show-last show-first
-              @update:page="(p: number) => (currentPage = p)" />
-          </div>
-        </template>
-      </UCard>
+          </template>
+        </UCard>
+      </div>
     </template>
   </UDashboardPanel>
 </template>
