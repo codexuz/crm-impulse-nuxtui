@@ -1,7 +1,7 @@
 <template>
   <UDashboardPanel id="staff">
     <template #header>
-      <UDashboardNavbar title="Xodimlar" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar title="" :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
           <UNavigationMenu :items="staffNavItems" highlight />
@@ -16,6 +16,7 @@
             @click="loadStaff">
             Yangilash
           </UButton>
+          <UButton icon="i-lucide-plus" label="Yordamchi o'qituvchi qo'shish" @click="openAddDialog" />
         </template>
       </UDashboardNavbar>
 
@@ -84,6 +85,50 @@
           </div>
         </template>
       </UModal>
+
+      <!-- Add Support Teacher Modal -->
+      <UModal v-model:open="addDialog" :ui="{ width: 'sm:max-w-[425px]' }">
+        <template #header>
+          <h3 class="text-lg font-semibold">Yangi yordamchi o'qituvchi qo'shish</h3>
+        </template>
+
+        <template #body>
+          <div class="space-y-4">
+            <UFormField label="Ism" required>
+              <UInput v-model="newStaff.first_name" placeholder="Ism" />
+            </UFormField>
+
+            <UFormField label="Familiya" required>
+              <UInput v-model="newStaff.last_name" placeholder="Familiya" />
+            </UFormField>
+
+            <UFormField label="Login" required>
+              <UInput v-model="newStaff.username" placeholder="Login" />
+            </UFormField>
+
+            <UFormField label="Telefon">
+              <UInput v-model="newStaff.phone" v-maska data-maska="+998 ## ### ## ##"
+                placeholder="+998 xx xxx xx xx" />
+            </UFormField>
+
+            <UFormField label="Parol" required>
+              <UInput v-model="newStaff.password" :type="showPassword ? 'text' : 'password'" placeholder="Parol">
+                <template #trailing>
+                  <UButton variant="ghost" :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'" size="xs"
+                    @click="showPassword = !showPassword" />
+                </template>
+              </UInput>
+            </UFormField>
+          </div>
+        </template>
+
+        <template #footer>
+          <div class="flex justify-end gap-3">
+            <UButton color="neutral" variant="subtle" label="Bekor qilish" @click="addDialog = false" />
+            <UButton :label="isCreating ? 'Yaratilmoqda...' : 'Yaratish'" :loading="isCreating" @click="addStaff" />
+          </div>
+        </template>
+      </UModal>
     </template>
   </UDashboardPanel>
 </template>
@@ -140,6 +185,18 @@ const UButton = resolveComponent("UButton");
 const staff = ref<StaffMember[]>([]);
 const search = ref("");
 const isLoading = ref(false);
+
+// Create state
+const addDialog = ref(false);
+const isCreating = ref(false);
+const showPassword = ref(false);
+const newStaff = ref({
+  first_name: "",
+  last_name: "",
+  username: "",
+  phone: "",
+  password: "",
+});
 
 // QR state
 const qrDialog = ref(false);
@@ -281,6 +338,47 @@ async function loadStaff() {
     });
   } finally {
     isLoading.value = false;
+  }
+}
+
+function openAddDialog() {
+  newStaff.value = {
+    first_name: "",
+    last_name: "",
+    username: "",
+    phone: "",
+    password: "",
+  };
+  showPassword.value = false;
+  addDialog.value = true;
+}
+
+async function addStaff() {
+  try {
+    isCreating.value = true;
+    const data = {
+      ...newStaff.value,
+      phone: newStaff.value.phone ? newStaff.value.phone.replace(/\s+/g, "") : "",
+    };
+    await api.post(apiService.value, "/users/support-teachers", data);
+
+    await loadStaff();
+
+    toast.add({
+      title: "Muvaffaqiyat",
+      description: "Yordamchi o'qituvchi muvaffaqiyatli yaratildi",
+      color: "success",
+    });
+    addDialog.value = false;
+  } catch (error: any) {
+    console.error("Failed to create support teacher:", error);
+    toast.add({
+      title: "Xatolik",
+      description: error.message || "Yordamchi o'qituvchi yaratishda xatolik",
+      color: "error",
+    });
+  } finally {
+    isCreating.value = false;
   }
 }
 

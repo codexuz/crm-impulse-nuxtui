@@ -1,7 +1,7 @@
 <template>
   <UDashboardPanel id="staff-attendance">
     <template #header>
-      <UDashboardNavbar title="Xodimlar davomati" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar title="" :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
           <UNavigationMenu :items="staffNavItems" highlight />
@@ -152,6 +152,18 @@ const columns = [
       ]),
   },
   {
+    accessorKey: "createdAt",
+    header: "Vaqt",
+    cell: ({ row }: any) =>
+      h("div", { class: "flex items-center gap-2" }, [
+        h(UIcon, {
+          name: "i-heroicons-clock",
+          class: "w-4 h-4 text-gray-400",
+        }),
+        h("span", { class: "font-medium" }, formatTashkentTime(row.original.createdAt)),
+      ]),
+  },
+  {
     accessorKey: "teacher",
     header: "Xodim",
     cell: ({ row }: any) => {
@@ -270,6 +282,17 @@ const formatDate = (dateString: string): string =>
     month: "short",
     day: "numeric",
   });
+
+// Format a timestamp as time in the Asia/Tashkent (UTC+5) timezone
+const formatTashkentTime = (dateString: string): string => {
+  if (!dateString) return "—";
+  return new Date(dateString).toLocaleTimeString("en-GB", {
+    timeZone: "Asia/Tashkent",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+};
 
 const formatMoney = (amount: number): string =>
   `${amount.toLocaleString("uz-UZ")} so'm`;
