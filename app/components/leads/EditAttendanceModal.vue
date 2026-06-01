@@ -11,6 +11,7 @@ interface Attendance {
   status: "present" | "absent";
   note?: string;
   date: string;
+  isTeacherPayable?: boolean;
 }
 
 const open = defineModel<boolean>("open");
@@ -73,6 +74,7 @@ watch(
         status: newRecord.status,
         date: newRecord.date,
         note: newRecord.note || "",
+        isTeacherPayable: newRecord.isTeacherPayable ?? true,
       };
     }
   },
@@ -89,6 +91,7 @@ const handleSubmit = async () => {
       status: formData.value.status,
       date: formData.value.date,
       note: formData.value.note,
+      isTeacherPayable: formData.value.isTeacherPayable,
     });
 
     toast.add({
@@ -331,6 +334,31 @@ const handleSubmit = async () => {
                 :ui="{ rounded: 'rounded-lg' }"
               />
             </UFormGroup>
+
+            <!-- Teacher Payment Toggle -->
+            <div
+              class="flex items-start justify-between gap-4 rounded-lg border border-gray-200 dark:border-gray-700 p-4"
+            >
+              <div class="flex items-start gap-3">
+                <UIcon
+                  name="i-heroicons-banknotes"
+                  class="w-5 h-5 text-primary-500 shrink-0 mt-0.5"
+                />
+                <div>
+                  <p
+                    class="text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    O'qituvchiga to'lov hisoblansin
+                  </p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Yoqilsa, ushbu davomat uchun o'qituvchiga to'lov, hamyon va
+                    tranzaksiya hisoblanadi. O'chirilsa, faqat davomat
+                    belgilanadi.
+                  </p>
+                </div>
+              </div>
+              <USwitch v-model="formData.isTeacherPayable" size="lg" />
+            </div>
           </div>
         </div>
       </form>

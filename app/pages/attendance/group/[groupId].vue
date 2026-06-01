@@ -73,11 +73,14 @@
         <!-- Attendance Table -->
         <UCard>
           <template #header>
-            <div class="flex items-center justify-between">
+            <div class="flex flex-wrap items-center justify-between gap-3">
               <h3 class="text-base font-semibold">
                 Talabalar davomati - {{ formatDate(selectedDate) }}
               </h3>
-              <div class="flex gap-2">
+              <div class="flex flex-wrap items-center gap-3">
+                <USwitch v-model="isTeacherPayable" label="O'qituvchiga to'lov hisoblansin"
+                  :disabled="isSaving"
+                  :ui="{ label: 'text-sm text-gray-600 dark:text-gray-300' }" />
                 <UButton icon="i-lucide-refresh-cw" color="neutral" variant="outline" size="sm"
                   @click="fetchAttendanceData" :disabled="isLoading || isSaving" :loading="isLoading">
                   Yangilash
@@ -135,6 +138,7 @@ const group = reactive({
 });
 const groupStudents = ref<any[]>([]);
 const selectedDate = ref(new Date());
+const isTeacherPayable = ref(true);
 const attendanceData = reactive<
   Record<string, { status: string; note: string }>
 >({});
@@ -405,6 +409,7 @@ const saveAttendance = async () => {
         status: data.status,
         note: data.note,
         date: formattedDate,
+        isTeacherPayable: isTeacherPayable.value,
       }));
 
     // Save each attendance record

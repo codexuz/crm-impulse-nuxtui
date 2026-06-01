@@ -1,6 +1,11 @@
 import { api } from '~/lib/api'
 import { useAuth } from '~/composables/useAuth'
-import type { ScanStaffAttendanceDto, AttendanceRecord } from '~/types/attendance'
+import type {
+  ScanStaffAttendanceDto,
+  AttendanceRecord,
+  StaffAttendanceListParams,
+  StaffAttendanceListResponse
+} from '~/types/attendance'
 
 export const useStaffAttendance = () => {
   const { apiService } = useAuth()
@@ -43,11 +48,29 @@ export const useStaffAttendance = () => {
     })
   }
 
+  /**
+   * List all staff attendances (Admin). Paginated with optional filters.
+   */
+  const getAllAttendances = (params: StaffAttendanceListParams = {}) => {
+    const search = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        search.append(key, String(value))
+      }
+    })
+    const qs = search.toString()
+    return api.get<StaffAttendanceListResponse>(
+      apiService.value,
+      `/staff-attendance${qs ? `?${qs}` : ''}`
+    )
+  }
+
   return {
     getQrPayload,
     getTeacherStaticQr,
     scanAttendance,
     autoScan,
-    getMyHistory
+    getMyHistory,
+    getAllAttendances
   }
 }

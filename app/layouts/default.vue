@@ -147,6 +147,14 @@ const links = computed(() => [
             open.value = false;
           },
         },
+        {
+          label: "Xodimlar davomati",
+          icon: "i-lucide-fingerprint",
+          to: "/staff-attendance",
+          onSelect: () => {
+            open.value = false;
+          },
+        },
       ]
       : []),
   ],

@@ -132,6 +132,7 @@ interface Attendance {
   status: "present" | "absent";
   note?: string;
   date: string;
+  isTeacherPayable?: boolean;
   createdAt: string;
   updatedAt: string;
   student?: {
