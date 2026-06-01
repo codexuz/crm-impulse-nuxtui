@@ -137,6 +137,22 @@ const links = computed(() => [
         open.value = false;
       },
     },
+      {
+          label: "Xodimlar davomati",
+          icon: "i-lucide-fingerprint",
+          to: "/staff-attendance",
+          onSelect: () => {
+            open.value = false;
+          },
+        },
+        {
+          label: "Jarima & Bonus",
+          icon: "i-lucide-hand-coins",
+          to: "/jarima-bonus",
+          onSelect: () => {
+            open.value = false;
+          },
+        },
     ...(hasFinancialAccess.value
       ? [
         {

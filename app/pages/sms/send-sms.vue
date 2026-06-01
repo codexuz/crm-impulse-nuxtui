@@ -96,6 +96,11 @@ const smsNavItems: NavigationMenuItem[] = [
     to: '/sms/send-sms'
   },
   {
+    label: 'Ommaviy SMS',
+    icon: 'i-lucide-users',
+    to: '/sms/send-bulk'
+  },
+  {
     label: 'Shablonlar',
     icon: 'i-lucide-file-text',
     to: '/sms/templates'
