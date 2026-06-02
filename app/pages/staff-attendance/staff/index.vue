@@ -16,7 +16,7 @@
             @click="loadStaff">
             Yangilash
           </UButton>
-          <UButton icon="i-lucide-plus" label="Yordamchi o'qituvchi qo'shish" @click="openAddDialog" />
+          <UButton icon="i-lucide-plus" label="Xodim qo'shish" @click="openAddDialog" />
         </template>
       </UDashboardNavbar>
 
@@ -88,33 +88,40 @@
         </template>
       </UModal>
 
-      <!-- Add Support Teacher Modal -->
+      <!-- Add Staff Modal -->
       <UModal v-model:open="addDialog" :ui="{ width: 'sm:max-w-[425px]' }">
         <template #header>
-          <h3 class="text-lg font-semibold">Yangi yordamchi o'qituvchi qo'shish</h3>
+          <h3 class="text-lg font-semibold">Yangi xodim qo'shish</h3>
         </template>
 
         <template #body>
           <div class="space-y-4">
+            <UFormField label="Lavozim" required>
+              <USelectMenu v-model="newStaff.role" :items="staffRoleOptions" class="w-full">
+                <template #label>{{ staffRoleLabels[newStaff.role] || newStaff.role }}</template>
+                <template #item="{ item }">{{ staffRoleLabels[item] || item }}</template>
+              </USelectMenu>
+            </UFormField>
+
             <UFormField label="Ism" required>
-              <UInput v-model="newStaff.first_name" placeholder="Ism" />
+              <UInput v-model="newStaff.first_name" placeholder="Ism" class="w-full" />
             </UFormField>
 
             <UFormField label="Familiya" required>
-              <UInput v-model="newStaff.last_name" placeholder="Familiya" />
+              <UInput v-model="newStaff.last_name" placeholder="Familiya" class="w-full" />
             </UFormField>
 
             <UFormField label="Login" required>
-              <UInput v-model="newStaff.username" placeholder="Login" />
+              <UInput v-model="newStaff.username" placeholder="Login" class="w-full" />
             </UFormField>
 
             <UFormField label="Telefon">
               <UInput v-model="newStaff.phone" v-maska data-maska="+998 ## ### ## ##"
-                placeholder="+998 xx xxx xx xx" />
+                placeholder="+998 xx xxx xx xx" class="w-full" />
             </UFormField>
 
             <UFormField label="Parol" required>
-              <UInput v-model="newStaff.password" :type="showPassword ? 'text' : 'password'" placeholder="Parol">
+              <UInput v-model="newStaff.password" :type="showPassword ? 'text' : 'password'" placeholder="Parol" class="w-full">
                 <template #trailing>
                   <UButton variant="ghost" :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'" size="xs"
                     @click="showPassword = !showPassword" />
@@ -208,7 +215,15 @@ const newStaff = ref({
   username: "",
   phone: "",
   password: "",
+  role: "support_teacher",
 });
+
+const staffRoleOptions = ["support_teacher", "teacher", "admin"];
+const staffRoleLabels: Record<string, string> = {
+  support_teacher: "Yordamchi o'qituvchi",
+  teacher: "O'qituvchi",
+  admin: "Admin",
+};
 
 // QR state
 const qrDialog = ref(false);
@@ -372,6 +387,7 @@ function openAddDialog() {
     username: "",
     phone: "",
     password: "",
+    role: "support_teacher",
   };
   showPassword.value = false;
   addDialog.value = true;
@@ -390,7 +406,7 @@ async function addStaff() {
 
     toast.add({
       title: "Muvaffaqiyat",
-      description: "Yordamchi o'qituvchi muvaffaqiyatli yaratildi",
+      description: "Xodim muvaffaqiyatli yaratildi",
       color: "success",
     });
     addDialog.value = false;

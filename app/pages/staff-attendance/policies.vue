@@ -94,6 +94,15 @@
           <UIcon name="i-lucide-shield-off" class="size-12 opacity-30" />
           <p>Hech qanday qoida topilmadi. "Yangi qoida" tugmasini bosing.</p>
         </div>
+
+        <!-- Pagination -->
+        <div v-if="totalItems > limit" class="flex items-center justify-between pt-4">
+          <div class="text-sm text-muted">
+            Jami <span class="font-medium">{{ totalItems }}</span> ta qoida
+          </div>
+          <UPagination :model-value="page" :total="totalItems" :items-per-page="limit"
+            show-last show-first @update:page="(p: number) => { page = p; load() }" />
+        </div>
       </div>
     </template>
   </UDashboardPanel>
@@ -211,6 +220,9 @@ async function loadRoles() {
 const policies = ref<AttendancePolicy[]>([]);
 const isLoading = ref(false);
 const deletingId = ref<string | null>(null);
+const page = ref(1);
+const limit = ref(20);
+const totalItems = ref(0);
 
 const dialog = ref(false);
 const isSaving = ref(false);
@@ -233,7 +245,9 @@ const form = ref(defaultForm());
 async function load() {
   isLoading.value = true;
   try {
-    policies.value = await getPolicies();
+    const res = await getPolicies(page.value, limit.value);
+    policies.value = res.data;
+    totalItems.value = res.total;
   } catch (err: any) {
     toast.add({ title: "Xatolik", description: err.message, color: "error" });
   } finally {
@@ -278,8 +292,9 @@ async function save() {
       const idx = policies.value.findIndex((p) => p.id === editing.value!.id);
       if (idx !== -1) policies.value[idx] = updated;
     } else {
-      const created = await createPolicy(payload);
-      policies.value.unshift(created);
+      await createPolicy(payload);
+      page.value = 1;
+      await load();
     }
 
     dialog.value = false;
@@ -295,8 +310,8 @@ async function remove(id: string) {
   deletingId.value = id;
   try {
     await deletePolicy(id);
-    policies.value = policies.value.filter((p) => p.id !== id);
     toast.add({ title: "Qoida o'chirildi", color: "success" });
+    await load();
   } catch (err: any) {
     toast.add({ title: "Xatolik", description: err.message, color: "error" });
   } finally {

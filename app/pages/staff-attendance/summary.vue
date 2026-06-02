@@ -24,7 +24,7 @@
           <UInput v-model="startDate" type="date" class="w-44" />
           <span class="text-muted text-sm self-center">—</span>
           <UInput v-model="endDate" type="date" class="w-44" />
-          <UButton icon="i-lucide-search" :loading="isLoading" @click="load">Qidirish</UButton>
+          <UButton icon="i-lucide-search" :loading="isLoading" @click="() => { page = 1; load() }">Qidirish</UButton>
         </template>
       </UDashboardToolbar>
     </template>
@@ -69,6 +69,16 @@
         </div>
 
         <UTable v-else :data="summary" :columns="columns" :empty="'Ma\'lumot topilmadi'" />
+
+        <template #footer>
+          <div class="flex items-center justify-between">
+            <div class="text-sm text-muted">
+              Jami <span class="font-medium">{{ totalItems }}</span> ta xodim
+            </div>
+            <UPagination :model-value="page" :total="totalItems" :items-per-page="limit"
+              show-last show-first @update:page="(p: number) => { page = p; load() }" />
+          </div>
+        </template>
       </UCard>
       </div>
     </template>
@@ -102,6 +112,9 @@ const endDate = ref(now.toISOString().slice(0, 10));
 
 const summary = ref<AttendanceSummaryItem[]>([]);
 const isLoading = ref(false);
+const page = ref(1);
+const limit = ref(20);
+const totalItems = ref(0);
 
 const totalStats = computed(() =>
   summary.value.reduce(
@@ -189,7 +202,9 @@ async function load() {
   if (!startDate.value || !endDate.value) return;
   isLoading.value = true;
   try {
-    summary.value = await getSummary({ startDate: startDate.value, endDate: endDate.value });
+    const res = await getSummary({ startDate: startDate.value, endDate: endDate.value, page: page.value, limit: limit.value });
+    summary.value = res.data;
+    totalItems.value = res.total;
   } catch (err: any) {
     toast.add({ title: "Xatolik", description: err.message, color: "error" });
   } finally {

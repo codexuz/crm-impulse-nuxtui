@@ -9,6 +9,7 @@ import type {
   StaffAttendanceEvent,
   AttendancePolicy,
   AttendancePolicyDto,
+  PaginatedResponse,
 } from '~/types/attendance'
 
 export const useStaffAttendance = () => {
@@ -67,10 +68,12 @@ export const useStaffAttendance = () => {
   // Analytics
   // ---------------------------------------------------------------------------
 
-  const getSummary = (params: { startDate: string; endDate: string; teacherId?: string }) => {
+  const getSummary = (params: { startDate: string; endDate: string; teacherId?: string; page?: number; limit?: number }) => {
     const search = new URLSearchParams({ startDate: params.startDate, endDate: params.endDate })
     if (params.teacherId) search.append('teacherId', params.teacherId)
-    return api.get<AttendanceSummaryItem[]>(apiService.value, `/staff-attendance/summary?${search.toString()}`)
+    if (params.page) search.append('page', String(params.page))
+    if (params.limit) search.append('limit', String(params.limit))
+    return api.get<PaginatedResponse<AttendanceSummaryItem>>(apiService.value, `/staff-attendance/summary?${search.toString()}`)
   }
 
   // ---------------------------------------------------------------------------
@@ -89,8 +92,8 @@ export const useStaffAttendance = () => {
   // Policy CRUD
   // ---------------------------------------------------------------------------
 
-  const getPolicies = () => {
-    return api.get<AttendancePolicy[]>(apiService.value, '/staff-attendance/policies')
+  const getPolicies = (page = 1, limit = 20) => {
+    return api.get<PaginatedResponse<AttendancePolicy>>(apiService.value, `/staff-attendance/policies?page=${page}&limit=${limit}`)
   }
 
   const createPolicy = (data: AttendancePolicyDto) => {
