@@ -247,10 +247,10 @@ const typeOptions = [
   { value: "early_leave", label: "Erta ketish" },
 ];
 
-const typeFilterOptions = [{ value: "", label: "Barcha turlar" }, ...typeOptions];
+const typeFilterOptions = [{ value: "all", label: "Barcha turlar" }, ...typeOptions];
 
 const statusFilterOptions = [
-  { value: "", label: "Barcha holatlar" },
+  { value: "all", label: "Barcha holatlar" },
   { value: "pending", label: "Kutilmoqda" },
   { value: "approved", label: "Tasdiqlangan" },
   { value: "rejected", label: "Rad etilgan" },
@@ -283,7 +283,7 @@ const page = ref(1);
 const limit = ref(20);
 const totalItems = ref(0);
 
-const filters = ref({ status: "" as string, type: "" as string, date: "" as string });
+const filters = ref({ status: "all" as string, type: "all" as string, date: "" as string });
 
 async function load() {
   isLoading.value = true;
@@ -291,8 +291,8 @@ async function load() {
     const res = await getPermissions({
       page: page.value,
       limit: limit.value,
-      status: (filters.value.status || undefined) as any,
-      type: (filters.value.type || undefined) as any,
+      status: (filters.value.status === "all" ? undefined : filters.value.status) as any,
+      type: (filters.value.type === "all" ? undefined : filters.value.type) as any,
       date: filters.value.date || undefined,
     });
     items.value = res.data;
