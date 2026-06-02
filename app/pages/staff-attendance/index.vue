@@ -97,6 +97,16 @@ const staffNavItems: NavigationMenuItem[] = [
     icon: "i-lucide-users",
     to: "/staff-attendance/staff",
   },
+  {
+    label: "Hisobot",
+    icon: "i-lucide-bar-chart-2",
+    to: "/staff-attendance/summary",
+  },
+  {
+    label: "Jarima qoidalari",
+    icon: "i-lucide-shield-alert",
+    to: "/staff-attendance/policies",
+  },
 ];
 
 const UIcon = resolveComponent("UIcon");

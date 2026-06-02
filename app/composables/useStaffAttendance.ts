@@ -4,53 +4,51 @@ import type {
   ScanStaffAttendanceDto,
   AttendanceRecord,
   StaffAttendanceListParams,
-  StaffAttendanceListResponse
+  StaffAttendanceListResponse,
+  AttendanceSummaryItem,
+  StaffAttendanceEvent,
+  AttendancePolicy,
+  AttendancePolicyDto,
 } from '~/types/attendance'
 
 export const useStaffAttendance = () => {
   const { apiService } = useAuth()
 
-  /**
-   * Get QR payload for a group (Admin)
-   */
+  // ---------------------------------------------------------------------------
+  // QR helpers
+  // ---------------------------------------------------------------------------
+
   const getQrPayload = async (groupId: string) => {
     return await api.get<{ qr_code: string }>(apiService.value, `/staff-attendance/qr-payload/${groupId}`)
   }
 
-  /**
-   * Get static teacher QR (Admin)
-   */
   const getTeacherStaticQr = async (teacherId: string) => {
     return await api.get<{ teacher_id: string; bot_url: string }>(apiService.value, `/staff-attendance/static-qr/${teacherId}`)
   }
 
-  /**
-   * Manual Scan (Teacher/Admin)
-   */
+  // ---------------------------------------------------------------------------
+  // Scan
+  // ---------------------------------------------------------------------------
+
   const scanAttendance = async (data: ScanStaffAttendanceDto) => {
     return await api.post(apiService.value, '/staff-attendance/scan', data)
   }
 
-  /**
-   * Automatic Scan (Mainly for Bot/Admin triggers)
-   */
   const autoScan = async (teacherId: string, type: 'in' | 'out' = 'in') => {
     return await api.post(apiService.value, '/staff-attendance/automatic-scan', { teacher_id: teacherId, type })
   }
 
-  /**
-   * Get current teacher's attendance history
-   */
+  // ---------------------------------------------------------------------------
+  // Records
+  // ---------------------------------------------------------------------------
+
   const getMyHistory = () => {
     return useFetch<AttendanceRecord[]>(`${apiService.value.baseUrl}/staff-attendance/my-attendances`, {
       key: 'my-staff-attendance',
-      headers: apiService.value.headers
+      headers: apiService.value.headers,
     })
   }
 
-  /**
-   * List all staff attendances (Admin). Paginated with optional filters.
-   */
   const getAllAttendances = (params: StaffAttendanceListParams = {}) => {
     const search = new URLSearchParams()
     Object.entries(params).forEach(([key, value]) => {
@@ -61,8 +59,50 @@ export const useStaffAttendance = () => {
     const qs = search.toString()
     return api.get<StaffAttendanceListResponse>(
       apiService.value,
-      `/staff-attendance${qs ? `?${qs}` : ''}`
+      `/staff-attendance${qs ? `?${qs}` : ''}`,
     )
+  }
+
+  // ---------------------------------------------------------------------------
+  // Analytics
+  // ---------------------------------------------------------------------------
+
+  const getSummary = (params: { startDate: string; endDate: string; teacherId?: string }) => {
+    const search = new URLSearchParams({ startDate: params.startDate, endDate: params.endDate })
+    if (params.teacherId) search.append('teacherId', params.teacherId)
+    return api.get<AttendanceSummaryItem[]>(apiService.value, `/staff-attendance/summary?${search.toString()}`)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Audit event log
+  // ---------------------------------------------------------------------------
+
+  const getEvents = (params: { staffId?: string; limit?: number } = {}) => {
+    const search = new URLSearchParams()
+    if (params.staffId) search.append('staffId', params.staffId)
+    if (params.limit) search.append('limit', String(params.limit))
+    const qs = search.toString()
+    return api.get<StaffAttendanceEvent[]>(apiService.value, `/staff-attendance/events${qs ? `?${qs}` : ''}`)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Policy CRUD
+  // ---------------------------------------------------------------------------
+
+  const getPolicies = () => {
+    return api.get<AttendancePolicy[]>(apiService.value, '/staff-attendance/policies')
+  }
+
+  const createPolicy = (data: AttendancePolicyDto) => {
+    return api.post<AttendancePolicy>(apiService.value, '/staff-attendance/policies', data)
+  }
+
+  const updatePolicy = (id: string, data: AttendancePolicyDto) => {
+    return api.patch<AttendancePolicy>(apiService.value, `/staff-attendance/policies/${id}`, data)
+  }
+
+  const deletePolicy = (id: string) => {
+    return api.delete<{ message: string }>(apiService.value, `/staff-attendance/policies/${id}`)
   }
 
   return {
@@ -71,6 +111,12 @@ export const useStaffAttendance = () => {
     scanAttendance,
     autoScan,
     getMyHistory,
-    getAllAttendances
+    getAllAttendances,
+    getSummary,
+    getEvents,
+    getPolicies,
+    createPolicy,
+    updatePolicy,
+    deletePolicy,
   }
 }

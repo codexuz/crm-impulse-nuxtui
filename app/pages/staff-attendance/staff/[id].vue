@@ -46,44 +46,71 @@
                 </div>
               </div>
             </div>
+
+            <div class="flex gap-2">
+              <UBadge :color="profile ? 'success' : 'neutral'" variant="subtle" size="lg">
+                {{ profile ? 'Profil sozlangan' : 'Profil yo\'q' }}
+              </UBadge>
+              <UButton v-if="!profile" icon="i-lucide-plus" size="sm" @click="ensureProfile">
+                Profil yaratish
+              </UButton>
+              <UButton v-if="profile" color="error" variant="ghost" icon="i-lucide-trash-2" size="sm"
+                :loading="isDeleting" @click="removeProfile">
+                Profilni o'chirish
+              </UButton>
+            </div>
           </div>
         </UCard>
 
-        <!-- Work time (staff profile) -->
+        <!-- Shifts management -->
         <UCard>
           <template #header>
             <div class="flex items-center justify-between">
-              <h3 class="text-base font-semibold">Ish vaqti</h3>
-              <UBadge :color="profile ? 'success' : 'neutral'" variant="subtle">
-                {{ profile ? 'Sozlangan' : 'Sozlanmagan' }}
-              </UBadge>
+              <h3 class="text-base font-semibold">Ish smenalari</h3>
+              <UButton icon="i-lucide-plus" size="sm" :disabled="!profile" @click="openAddShift">
+                Smena qo'shish
+              </UButton>
             </div>
           </template>
 
-          <div class="space-y-4">
-            <p class="text-sm text-muted">
-              Davomat uchun kutilayotgan kelish va ketish vaqtlari. Kelish vaqtiga nisbatan kechikish jarima hisoblanadi.
-            </p>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <UFormField label="Kelish vaqti (kirish)">
-                <UInput v-model="form.in_time" type="time" icon="i-lucide-log-in" class="w-full" />
-              </UFormField>
-
-              <UFormField label="Ketish vaqti (chiqish)">
-                <UInput v-model="form.out_time" type="time" icon="i-lucide-log-out" class="w-full" />
-              </UFormField>
-            </div>
+          <div v-if="!profile" class="py-6 text-center text-sm text-muted">
+            Smena qo'shish uchun avval profil yarating.
           </div>
 
-          <template #footer>
-            <div class="flex justify-end gap-3">
-              <UButton v-if="profile" color="error" variant="ghost" icon="i-lucide-trash-2"
-                :label="isDeleting ? 'O\'chirilmoqda...' : 'Tozalash'" :loading="isDeleting" @click="removeProfile" />
-              <UButton icon="i-lucide-save" :label="isSaving ? 'Saqlanmoqda...' : 'Saqlash'" :loading="isSaving"
-                @click="saveProfile" />
+          <div v-else-if="shifts.length === 0 && !shiftsLoading" class="py-6 text-center text-sm text-muted">
+            Hech qanday smena yo'q. "Smena qo'shish" tugmasini bosing.
+          </div>
+
+          <div v-else class="divide-y divide-default">
+            <div v-if="shiftsLoading" class="flex justify-center py-8">
+              <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-primary" />
             </div>
-          </template>
+
+            <div v-for="shift in shifts" :key="shift.id"
+              class="flex items-center justify-between py-3 px-1 gap-4">
+              <div class="flex items-center gap-3 min-w-0">
+                <UBadge :color="shift.is_active ? 'success' : 'neutral'" variant="subtle" size="sm">
+                  {{ dayLabels[shift.day_of_week] || shift.day_of_week }}
+                </UBadge>
+                <div class="flex items-center gap-1 text-sm font-medium">
+                  <UIcon name="i-lucide-log-in" class="size-4 text-green-500" />
+                  {{ shift.in_time.slice(0, 5) }}
+                  <span class="text-muted mx-1">—</span>
+                  <UIcon name="i-lucide-log-out" class="size-4 text-red-400" />
+                  {{ shift.out_time ? shift.out_time.slice(0, 5) : '?' }}
+                </div>
+                <span v-if="shift.grace_period_minutes > 0" class="text-xs text-muted">
+                  +{{ shift.grace_period_minutes }} daq. chegirma
+                </span>
+              </div>
+              <div class="flex items-center gap-1 shrink-0">
+                <UButton variant="ghost" color="neutral" icon="i-lucide-pencil" size="xs" square
+                  @click="openEditShift(shift)" />
+                <UButton variant="ghost" color="error" icon="i-lucide-trash-2" size="xs" square
+                  @click="deleteShift(shift.id)" />
+              </div>
+            </div>
+          </div>
         </UCard>
 
         <!-- Attendance history -->
@@ -99,14 +126,65 @@
               <div class="text-sm text-gray-500">
                 Jami <span class="font-medium">{{ totalRecords }}</span> ta yozuv
               </div>
-              <UPagination :model-value="currentPage" :total="totalRecords" :items-per-page="limit" show-last show-first
-                @update:page="(p: number) => (currentPage = p)" />
+              <UPagination :model-value="currentPage" :total="totalRecords" :items-per-page="limit"
+                show-last show-first @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>
         </UCard>
       </div>
     </template>
   </UDashboardPanel>
+
+  <!-- Add / Edit Shift Modal -->
+  <UModal v-model:open="shiftDialog" :ui="{ width: 'sm:max-w-[440px]' }">
+    <template #header>
+      <h3 class="text-lg font-semibold">
+        {{ editingShift ? 'Smenani tahrirlash' : 'Yangi smena qo\'shish' }}
+      </h3>
+    </template>
+
+    <template #body>
+      <div class="space-y-4">
+        <UFormField label="Kun" required>
+          <USelectMenu v-model="shiftForm.day_of_week" :items="dayOptions" value-key="value" class="w-full">
+            <template #label>
+              {{ dayLabels[shiftForm.day_of_week] || shiftForm.day_of_week }}
+            </template>
+          </USelectMenu>
+        </UFormField>
+
+        <div class="grid grid-cols-2 gap-4">
+          <UFormField label="Kirish vaqti" required>
+            <UInput v-model="shiftForm.in_time" type="time" icon="i-lucide-log-in" class="w-full" />
+          </UFormField>
+
+          <UFormField label="Chiqish vaqti">
+            <UInput v-model="shiftForm.out_time" type="time" icon="i-lucide-log-out" class="w-full" />
+          </UFormField>
+        </div>
+
+        <UFormField label="Chegirma (daqiqa)">
+          <UInput v-model.number="shiftForm.grace_period_minutes" type="number" min="0"
+            placeholder="0" class="w-full" />
+        </UFormField>
+
+        <UFormField label="Holat">
+          <div class="flex items-center gap-2">
+            <USwitch v-model="shiftForm.is_active" />
+            <span class="text-sm">{{ shiftForm.is_active ? 'Faol' : 'Faol emas' }}</span>
+          </div>
+        </UFormField>
+      </div>
+    </template>
+
+    <template #footer>
+      <div class="flex justify-end gap-3">
+        <UButton color="neutral" variant="subtle" label="Bekor qilish" @click="shiftDialog = false" />
+        <UButton :label="isSavingShift ? 'Saqlanmoqda...' : 'Saqlash'" :loading="isSavingShift"
+          @click="saveShift" />
+      </div>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
@@ -117,6 +195,8 @@ import { useStaffAttendance } from "~/composables/useStaffAttendance";
 import { useStaffProfile } from "~/composables/useStaffProfile";
 import type {
   StaffProfile,
+  StaffShift,
+  DayOfWeek,
   StaffAttendanceRecord,
   StaffAttendanceStatus,
 } from "~/types/attendance";
@@ -132,17 +212,22 @@ const staffId = computed(() => route.params.id as string);
 const { apiService } = useAuth();
 const { formatPhone } = usePhoneFormatter();
 const { getAllAttendances } = useStaffAttendance();
-const { getProfileByStaffId, createProfile, updateProfile, deleteProfile } =
-  useStaffProfile();
+const {
+  getProfileByStaffId,
+  createProfile,
+  deleteProfile,
+  getShifts,
+  addShift,
+  updateShift,
+  removeShift,
+} = useStaffProfile();
 const toast = useToast();
 
 const UIcon = resolveComponent("UIcon");
 const UAvatar = resolveComponent("UAvatar");
 const UBadge = resolveComponent("UBadge");
 
-interface StaffRole {
-  name: string;
-}
+interface StaffRole { name: string }
 interface StaffMember {
   user_id: string;
   first_name: string;
@@ -156,14 +241,38 @@ interface StaffMember {
 
 const staff = ref<StaffMember | null>(null);
 const profile = ref<StaffProfile | null>(null);
+const shifts = ref<StaffShift[]>([]);
 const isLoading = ref(false);
-const isSaving = ref(false);
 const isDeleting = ref(false);
+const shiftsLoading = ref(false);
 
-const form = ref<{ in_time: string; out_time: string }>({
-  in_time: "",
+// Shift form
+const shiftDialog = ref(false);
+const isSavingShift = ref(false);
+const editingShift = ref<StaffShift | null>(null);
+const defaultShiftForm = () => ({
+  day_of_week: "every_day" as DayOfWeek,
+  in_time: "09:00",
   out_time: "",
+  grace_period_minutes: 0,
+  is_active: true,
 });
+const shiftForm = ref(defaultShiftForm());
+
+const dayLabels: Record<string, string> = {
+  monday: "Dushanba",
+  tuesday: "Seshanba",
+  wednesday: "Chorshanba",
+  thursday: "Payshanba",
+  friday: "Juma",
+  saturday: "Shanba",
+  sunday: "Yakshanba",
+  every_day: "Har kuni",
+  odd: "Toq kunlar (D/Ch/J)",
+  even: "Juft kunlar (S/P/Sh)",
+};
+
+const dayOptions = Object.entries(dayLabels).map(([value, label]) => ({ value, label }));
 
 const roleLabels: Record<string, string> = {
   admin: "Admin",
@@ -172,7 +281,6 @@ const roleLabels: Record<string, string> = {
 };
 
 const roles = computed(() => (staff.value?.roles || []).map((r) => r.name));
-
 const initials = computed(() => {
   const first = staff.value?.first_name?.charAt(0) || "";
   const last = staff.value?.last_name?.charAt(0) || "";
@@ -209,19 +317,15 @@ const columns = [
     accessorKey: "type",
     header: "Turi",
     cell: ({ row }: any) =>
-      h(
-        UBadge,
-        { color: row.original.type === "in" ? "info" : "neutral", variant: "subtle" },
-        () => (row.original.type === "in" ? "Kirish" : "Chiqish"),
+      h(UBadge, { color: row.original.type === "in" ? "info" : row.original.type === "absent" ? "error" : "neutral", variant: "subtle" },
+        () => ({ in: "Kirish", out: "Chiqish", absent: "Kelmadi" }[row.original.type as string] ?? row.original.type),
       ),
   },
   {
     accessorKey: "group",
     header: "Guruh",
     cell: ({ row }: any) =>
-      h(
-        UBadge,
-        { color: row.original.group ? "primary" : "neutral", variant: "subtle" },
+      h(UBadge, { color: row.original.group ? "primary" : "neutral", variant: "subtle" },
         () => row.original.group?.name || "—",
       ),
   },
@@ -229,9 +333,7 @@ const columns = [
     accessorKey: "status",
     header: "Holat",
     cell: ({ row }: any) =>
-      h(
-        UBadge,
-        { color: getStatusColor(row.original.status), variant: "subtle" },
+      h(UBadge, { color: getStatusColor(row.original.status), variant: "subtle" },
         () => getStatusLabel(row.original.status),
       ),
   },
@@ -239,8 +341,7 @@ const columns = [
     accessorKey: "minutes_late",
     header: "Kechikish",
     cell: ({ row }: any) =>
-      h(
-        "span",
+      h("span",
         { class: row.original.minutes_late > 0 ? "text-red-600 dark:text-red-400" : "text-gray-400" },
         row.original.minutes_late > 0 ? `${row.original.minutes_late} daq.` : "—",
       ),
@@ -249,113 +350,24 @@ const columns = [
     accessorKey: "fine_amount",
     header: "Jarima",
     cell: ({ row }: any) =>
-      h(
-        "span",
-        {
-          class: row.original.fine_amount > 0
-            ? "font-medium text-red-600 dark:text-red-400"
-            : "text-gray-400",
-        },
+      h("span",
+        { class: row.original.fine_amount > 0 ? "font-medium text-red-600 dark:text-red-400" : "text-gray-400" },
         row.original.fine_amount > 0 ? formatMoney(row.original.fine_amount) : "—",
       ),
   },
 ];
 
-// Normalize a "HH:MM:SS" or "HH:MM" string to the "HH:MM" a time input expects.
-function toInputTime(value: string | null | undefined): string {
-  if (!value) return "";
-  return value.slice(0, 5);
-}
+// ---------------------------------------------------------------------------
+// Profile actions
+// ---------------------------------------------------------------------------
 
-async function loadStaff() {
+async function ensureProfile() {
   try {
-    staff.value = await api.get<StaffMember>(apiService.value, `/users/${staffId.value}`);
+    profile.value = await createProfile({ staff_id: staffId.value });
+    await loadShifts();
+    toast.add({ title: "Profil yaratildi", color: "success" });
   } catch (err: any) {
-    toast.add({
-      title: "Xatolik",
-      description: err.message || "Xodim ma'lumotini yuklashda xatolik",
-      color: "error",
-    });
-  }
-}
-
-async function loadProfile() {
-  try {
-    profile.value = await getProfileByStaffId(staffId.value);
-    form.value.in_time = toInputTime(profile.value?.in_time);
-    form.value.out_time = toInputTime(profile.value?.out_time);
-  } catch (err: any) {
-    toast.add({
-      title: "Xatolik",
-      description: err.message || "Ish vaqtini yuklashda xatolik",
-      color: "error",
-    });
-  }
-}
-
-async function loadAttendance() {
-  recordsPending.value = true;
-  try {
-    const response = await getAllAttendances({
-      page: currentPage.value,
-      limit: limit.value,
-      teacherId: staffId.value,
-    });
-    records.value = response.data || [];
-    totalRecords.value = response.total || 0;
-  } catch (err: any) {
-    toast.add({
-      title: "Xatolik",
-      description: err.message || "Davomat tarixini yuklashda xatolik",
-      color: "error",
-    });
-  } finally {
-    recordsPending.value = false;
-  }
-}
-
-async function loadAll() {
-  isLoading.value = true;
-  try {
-    await Promise.all([loadStaff(), loadProfile(), loadAttendance()]);
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-async function saveProfile() {
-  isSaving.value = true;
-  try {
-    const payload = {
-      in_time: form.value.in_time || undefined,
-      out_time: form.value.out_time || undefined,
-    };
-
-    if (profile.value) {
-      profile.value = await updateProfile(profile.value.id, payload);
-    } else {
-      profile.value = await createProfile({
-        staff_id: staffId.value,
-        ...payload,
-      });
-    }
-
-    form.value.in_time = toInputTime(profile.value?.in_time);
-    form.value.out_time = toInputTime(profile.value?.out_time);
-
-    toast.add({
-      title: "Muvaffaqiyat",
-      description: "Ish vaqti saqlandi",
-      color: "success",
-    });
-  } catch (err: any) {
-    toast.add({
-      title: "Xatolik",
-      description: err.message || "Ish vaqtini saqlashda xatolik",
-      color: "error",
-    });
-  } finally {
-    isSaving.value = false;
+    toast.add({ title: "Xatolik", description: err.message, color: "error" });
   }
 }
 
@@ -365,63 +377,139 @@ async function removeProfile() {
   try {
     await deleteProfile(profile.value.id);
     profile.value = null;
-    form.value.in_time = "";
-    form.value.out_time = "";
-    toast.add({
-      title: "Muvaffaqiyat",
-      description: "Ish vaqti tozalandi",
-      color: "success",
-    });
+    shifts.value = [];
+    toast.add({ title: "Profil o'chirildi", color: "success" });
   } catch (err: any) {
-    toast.add({
-      title: "Xatolik",
-      description: err.message || "Ish vaqtini o'chirishda xatolik",
-      color: "error",
-    });
+    toast.add({ title: "Xatolik", description: err.message, color: "error" });
   } finally {
     isDeleting.value = false;
   }
 }
 
-const formatDate = (dateString: string): string =>
-  new Date(dateString).toLocaleDateString("en-GB", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+// ---------------------------------------------------------------------------
+// Shift actions
+// ---------------------------------------------------------------------------
 
-const formatTashkentTime = (dateString: string): string => {
-  if (!dateString) return "—";
-  return new Date(dateString).toLocaleTimeString("en-GB", {
-    timeZone: "Asia/Tashkent",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-};
+function openAddShift() {
+  editingShift.value = null;
+  shiftForm.value = defaultShiftForm();
+  shiftDialog.value = true;
+}
 
-const formatMoney = (amount: number): string =>
-  `${amount.toLocaleString("uz-UZ")} so'm`;
-
-const getStatusColor = (status: StaffAttendanceStatus) => {
-  const colors: Record<string, string> = {
-    early: "info",
-    on_time: "success",
-    late: "error",
+function openEditShift(shift: StaffShift) {
+  editingShift.value = shift;
+  shiftForm.value = {
+    day_of_week: shift.day_of_week,
+    in_time: shift.in_time.slice(0, 5),
+    out_time: shift.out_time ? shift.out_time.slice(0, 5) : "",
+    grace_period_minutes: shift.grace_period_minutes,
+    is_active: shift.is_active,
   };
-  return colors[status] || "neutral";
+  shiftDialog.value = true;
+}
+
+async function saveShift() {
+  if (!profile.value) return;
+  isSavingShift.value = true;
+  try {
+    const payload = {
+      day_of_week: shiftForm.value.day_of_week,
+      in_time: shiftForm.value.in_time,
+      out_time: shiftForm.value.out_time || undefined,
+      grace_period_minutes: shiftForm.value.grace_period_minutes,
+      is_active: shiftForm.value.is_active,
+    };
+
+    if (editingShift.value) {
+      await updateShift(editingShift.value.id, payload);
+    } else {
+      await addShift(profile.value.id, payload);
+    }
+
+    await loadShifts();
+    shiftDialog.value = false;
+    toast.add({ title: "Smena saqlandi", color: "success" });
+  } catch (err: any) {
+    toast.add({ title: "Xatolik", description: err.message, color: "error" });
+  } finally {
+    isSavingShift.value = false;
+  }
+}
+
+async function deleteShift(shiftId: string) {
+  try {
+    await removeShift(shiftId);
+    shifts.value = shifts.value.filter((s) => s.id !== shiftId);
+    toast.add({ title: "Smena o'chirildi", color: "success" });
+  } catch (err: any) {
+    toast.add({ title: "Xatolik", description: err.message, color: "error" });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Load helpers
+// ---------------------------------------------------------------------------
+
+async function loadStaff() {
+  staff.value = await api.get<StaffMember>(apiService.value, `/users/${staffId.value}`);
+}
+
+async function loadProfile() {
+  profile.value = await getProfileByStaffId(staffId.value);
+}
+
+async function loadShifts() {
+  if (!profile.value) return;
+  shiftsLoading.value = true;
+  try {
+    shifts.value = await getShifts(profile.value.id);
+  } finally {
+    shiftsLoading.value = false;
+  }
+}
+
+async function loadAttendance() {
+  recordsPending.value = true;
+  try {
+    const response = await getAllAttendances({ page: currentPage.value, limit: limit.value, teacherId: staffId.value });
+    records.value = response.data || [];
+    totalRecords.value = response.total || 0;
+  } finally {
+    recordsPending.value = false;
+  }
+}
+
+async function loadAll() {
+  isLoading.value = true;
+  try {
+    await Promise.all([loadStaff(), loadProfile()]);
+    await Promise.all([loadShifts(), loadAttendance()]);
+  } catch (err: any) {
+    toast.add({ title: "Xatolik", description: err.message, color: "error" });
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Formatters
+// ---------------------------------------------------------------------------
+
+const formatDate = (d: string) => new Date(d).toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric" });
+
+const formatTashkentTime = (d: string) => {
+  if (!d) return "—";
+  return new Date(d).toLocaleTimeString("en-GB", { timeZone: "Asia/Tashkent", hour: "2-digit", minute: "2-digit", hour12: false });
 };
 
-const getStatusLabel = (status: StaffAttendanceStatus) => {
-  const labels: Record<string, string> = {
-    early: "Erta",
-    on_time: "O'z vaqtida",
-    late: "Kech",
-  };
-  return labels[status] || status;
-};
+const formatMoney = (n: number) => `${n.toLocaleString("uz-UZ")} so'm`;
+
+const getStatusColor = (s: StaffAttendanceStatus) =>
+  ({ early: "info", on_time: "success", late: "error" }[s] || "neutral");
+
+const getStatusLabel = (s: StaffAttendanceStatus) =>
+  ({ early: "Erta", on_time: "O'z vaqtida", late: "Kech" }[s] || s);
 
 watch(currentPage, loadAttendance);
-
 onMounted(loadAll);
 </script>
