@@ -10,6 +10,10 @@ import type {
   AttendancePolicy,
   AttendancePolicyDto,
   PaginatedResponse,
+  StaffPermission,
+  CreateStaffPermissionDto,
+  ReviewStaffPermissionDto,
+  StaffPermissionListParams,
 } from '~/types/attendance'
 
 export const useStaffAttendance = () => {
@@ -108,6 +112,44 @@ export const useStaffAttendance = () => {
     return api.delete<{ message: string }>(apiService.value, `/staff-attendance/policies/${id}`)
   }
 
+  // ---------------------------------------------------------------------------
+  // Permissions / leave (ruxsat)
+  // ---------------------------------------------------------------------------
+
+  const getPermissions = (params: StaffPermissionListParams = {}) => {
+    const search = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        search.append(key, String(value))
+      }
+    })
+    const qs = search.toString()
+    return api.get<PaginatedResponse<StaffPermission>>(
+      apiService.value,
+      `/staff-attendance/permissions${qs ? `?${qs}` : ''}`,
+    )
+  }
+
+  const getMyPermissions = () => {
+    return api.get<StaffPermission[]>(apiService.value, '/staff-attendance/my-permissions')
+  }
+
+  const createPermission = (data: CreateStaffPermissionDto) => {
+    return api.post<StaffPermission>(apiService.value, '/staff-attendance/permissions', data)
+  }
+
+  const updatePermission = (id: string, data: Partial<CreateStaffPermissionDto>) => {
+    return api.patch<StaffPermission>(apiService.value, `/staff-attendance/permissions/${id}`, data)
+  }
+
+  const reviewPermission = (id: string, data: ReviewStaffPermissionDto) => {
+    return api.patch<StaffPermission>(apiService.value, `/staff-attendance/permissions/${id}/review`, data)
+  }
+
+  const deletePermission = (id: string) => {
+    return api.delete<{ message: string }>(apiService.value, `/staff-attendance/permissions/${id}`)
+  }
+
   return {
     getQrPayload,
     getTeacherStaticQr,
@@ -121,5 +163,11 @@ export const useStaffAttendance = () => {
     createPolicy,
     updatePolicy,
     deletePolicy,
+    getPermissions,
+    getMyPermissions,
+    createPermission,
+    updatePermission,
+    reviewPermission,
+    deletePermission,
   }
 }

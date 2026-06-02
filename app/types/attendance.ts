@@ -16,7 +16,7 @@ export interface AttendanceRecord {
   updated_at: string;
 }
 
-export type StaffAttendanceStatus = 'early' | 'on_time' | 'late';
+export type StaffAttendanceStatus = 'early' | 'on_time' | 'late' | 'excused';
 
 export interface StaffAttendanceRecord {
   id: string;
@@ -26,6 +26,7 @@ export interface StaffAttendanceRecord {
   type: 'in' | 'out' | 'absent';
   fine_amount: number;
   minutes_late: number;
+  permission_id?: string | null;
   date: string;
   description?: string;
   createdAt: string;
@@ -164,6 +165,7 @@ export interface AttendanceSummaryItem {
   early: number;
   on_time: number;
   late: number;
+  excused?: number;
   absent?: number;
   total_fine: number;
   avg_minutes_late: number;
@@ -197,4 +199,58 @@ export interface StaffAttendanceEvent {
     first_name: string;
     last_name: string;
   };
+}
+
+// ---------------------------------------------------------------------------
+// Permissions / leave (ruxsat)
+// ---------------------------------------------------------------------------
+
+export type StaffPermissionType = 'full_day' | 'late_arrival' | 'early_leave';
+export type StaffPermissionStatus = 'pending' | 'approved' | 'rejected';
+
+export interface StaffPermission {
+  id: string;
+  staff_id: string;
+  type: StaffPermissionType;
+  start_date: string;
+  end_date: string;
+  permitted_time: string | null;
+  reason: string | null;
+  status: StaffPermissionStatus;
+  requested_by: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  review_note: string | null;
+  createdAt: string;
+  updatedAt: string;
+  staff?: {
+    user_id: string;
+    first_name: string;
+    last_name: string;
+    username: string;
+    avatar_url: string | null;
+  };
+}
+
+export interface CreateStaffPermissionDto {
+  staff_id: string;
+  type: StaffPermissionType;
+  start_date: string;
+  end_date?: string;
+  permitted_time?: string;
+  reason?: string;
+}
+
+export interface ReviewStaffPermissionDto {
+  status: 'approved' | 'rejected';
+  review_note?: string;
+}
+
+export interface StaffPermissionListParams {
+  page?: number;
+  limit?: number;
+  staffId?: string;
+  status?: StaffPermissionStatus | '';
+  type?: StaffPermissionType | '';
+  date?: string;
 }

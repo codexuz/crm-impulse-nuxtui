@@ -103,6 +103,11 @@ const staffNavItems: NavigationMenuItem[] = [
     to: "/staff-attendance/summary",
   },
   {
+    label: "Ruxsatlar",
+    icon: "i-lucide-calendar-check",
+    to: "/staff-attendance/permissions",
+  },
+  {
     label: "Jarima qoidalari",
     icon: "i-lucide-shield-alert",
     to: "/staff-attendance/policies",
@@ -135,6 +140,7 @@ const statusFilterOptions = [
   { value: "early", label: "Erta" },
   { value: "on_time", label: "O'z vaqtida" },
   { value: "late", label: "Kech" },
+  { value: "excused", label: "Ruxsatli" },
 ];
 
 const typeFilterOptions = [
@@ -314,6 +320,7 @@ const getStatusColor = (status: StaffAttendanceStatus) => {
     early: "info",
     on_time: "success",
     late: "error",
+    excused: "warning",
   };
   return colors[status] || "neutral";
 };
@@ -323,6 +330,7 @@ const getStatusLabel = (status: StaffAttendanceStatus) => {
     early: "Erta",
     on_time: "O'z vaqtida",
     late: "Kech",
+    excused: "Ruxsatli",
   };
   return labels[status] || status;
 };

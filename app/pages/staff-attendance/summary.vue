@@ -102,6 +102,7 @@ const staffNavItems: NavigationMenuItem[] = [
   { label: "Davomat yozuvlari", icon: "i-lucide-fingerprint", to: "/staff-attendance" },
   { label: "Xodimlar", icon: "i-lucide-users", to: "/staff-attendance/staff" },
   { label: "Hisobot", icon: "i-lucide-bar-chart-2", to: "/staff-attendance/summary" },
+  { label: "Ruxsatlar", icon: "i-lucide-calendar-check", to: "/staff-attendance/permissions" },
   { label: "Jarima qoidalari", icon: "i-lucide-shield-alert", to: "/staff-attendance/policies" },
 ];
 
@@ -165,6 +166,14 @@ const columns = [
     cell: ({ row }: any) =>
       h(UBadge, { color: row.original.late > 0 ? "error" : "neutral", variant: "subtle" },
         () => row.original.late,
+      ),
+  },
+  {
+    accessorKey: "excused",
+    header: "Ruxsatli",
+    cell: ({ row }: any) =>
+      h(UBadge, { color: (row.original.excused || 0) > 0 ? "warning" : "neutral", variant: "subtle" },
+        () => row.original.excused || 0,
       ),
   },
   {

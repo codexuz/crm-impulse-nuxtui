@@ -176,6 +176,11 @@ const staffNavItems: NavigationMenuItem[] = [
     to: "/staff-attendance/summary",
   },
   {
+    label: "Ruxsatlar",
+    icon: "i-lucide-calendar-check",
+    to: "/staff-attendance/permissions",
+  },
+  {
     label: "Jarima qoidalari",
     icon: "i-lucide-shield-alert",
     to: "/staff-attendance/policies",

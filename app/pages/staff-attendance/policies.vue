@@ -188,6 +188,7 @@ const staffNavItems: NavigationMenuItem[] = [
   { label: "Davomat yozuvlari", icon: "i-lucide-fingerprint", to: "/staff-attendance" },
   { label: "Xodimlar", icon: "i-lucide-users", to: "/staff-attendance/staff" },
   { label: "Hisobot", icon: "i-lucide-bar-chart-2", to: "/staff-attendance/summary" },
+  { label: "Ruxsatlar", icon: "i-lucide-calendar-check", to: "/staff-attendance/permissions" },
   { label: "Jarima qoidalari", icon: "i-lucide-shield-alert", to: "/staff-attendance/policies" },
 ];
 

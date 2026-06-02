@@ -505,10 +505,10 @@ const formatTashkentTime = (d: string) => {
 const formatMoney = (n: number) => `${n.toLocaleString("uz-UZ")} so'm`;
 
 const getStatusColor = (s: StaffAttendanceStatus) =>
-  ({ early: "info", on_time: "success", late: "error" }[s] || "neutral");
+  ({ early: "info", on_time: "success", late: "error", excused: "warning" }[s] || "neutral");
 
 const getStatusLabel = (s: StaffAttendanceStatus) =>
-  ({ early: "Erta", on_time: "O'z vaqtida", late: "Kech" }[s] || s);
+  ({ early: "Erta", on_time: "O'z vaqtida", late: "Kech", excused: "Ruxsatli" }[s] || s);
 
 watch(currentPage, loadAttendance);
 onMounted(loadAll);
