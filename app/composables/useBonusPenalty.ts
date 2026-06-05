@@ -38,6 +38,13 @@ export interface BonusPenaltyTransaction {
   teacher?: BonusPenaltyUserRef;
   student?: BonusPenaltyUserRef;
   category?: Pick<BonusPenaltyCategory, "id" | "name" | "type">;
+  lead?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    phone: string | null;
+    status: string;
+  } | null;
 }
 
 export interface BonusPenaltyWallet {

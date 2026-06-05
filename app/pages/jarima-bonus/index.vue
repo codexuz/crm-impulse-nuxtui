@@ -1,7 +1,7 @@
 <template>
   <UDashboardPanel id="jarima-bonus">
     <template #header>
-      <UDashboardNavbar title="Jarima & Bonus" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar title="" :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
           <UNavigationMenu :items="navItems" highlight />
@@ -81,8 +81,6 @@
 
 <script setup lang="ts">
 import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
-import { api } from "~/lib/api";
-import { useAuth } from "~/composables/useAuth";
 import {
   useBonusPenalty,
   BONUS_PENALTY_TYPE_LABELS,
@@ -96,12 +94,12 @@ const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
 const UPopover = resolveComponent("UPopover");
 
-const { apiService } = useAuth();
 const { formatPhone } = usePhoneFormatter();
 const {
   listTransactions,
   deleteTransaction,
   listCategories,
+  listWallets,
   signedAmount,
   typeColor,
 } = useBonusPenalty();
@@ -166,7 +164,7 @@ const teacherOptions = computed(() =>
 );
 
 const teacherFilterOptions = computed(() => [
-  { label: "Barcha o'qituvchilar", value: null },
+  { label: "Barcha xondimlar", value: null },
   ...teacherOptions.value,
 ]);
 
@@ -203,6 +201,14 @@ const teacherPhone = (row: BonusPenaltyTransaction) => {
   return teachers.value.find((x) => x.user_id === row.teacher_id)?.phone || "";
 };
 
+// Referring student (only present on "referal" transactions).
+const studentName = (row: BonusPenaltyTransaction) =>
+  row.student
+    ? `${row.student.first_name ?? ""} ${row.student.last_name ?? ""}`.trim() ||
+      row.student.username ||
+      "-"
+    : "-";
+
 const formatDate = (dateString?: string | null) => {
   if (!dateString) return "N/A";
   const date = new Date(dateString);
@@ -216,7 +222,7 @@ const isDeleting = ref(false);
 const columns: TableColumn<BonusPenaltyTransaction>[] = [
   {
     accessorKey: "teacher",
-    header: "O'qituvchi",
+    header: "Xodimlar",
     cell: ({ row }) => {
       const phone = teacherPhone(row.original);
       return h("div", {}, [
@@ -235,6 +241,38 @@ const columns: TableColumn<BonusPenaltyTransaction>[] = [
         { color: typeColor(type), variant: "subtle" },
         () => BONUS_PENALTY_TYPE_LABELS[type] || type,
       );
+    },
+  },
+  {
+    accessorKey: "student",
+    header: "Taklif qilgan o'quvchi",
+    cell: ({ row }) => {
+      const t = row.original;
+      if (t.type !== "referal" || (!t.student && !t.lead)) {
+        return h("span", { class: "text-gray-400" }, "-");
+      }
+      const phone = t.student?.phone;
+      const leadName = t.lead
+        ? `${t.lead.first_name ?? ""} ${t.lead.last_name ?? ""}`.trim()
+        : "";
+      return h("div", {}, [
+        h("div", { class: "font-medium" }, t.student ? studentName(t) : "-"),
+        phone ? h("div", { class: "text-xs text-gray-500" }, formatPhone(phone)) : null,
+        leadName
+          ? h(
+              "button",
+              {
+                type: "button",
+                class: "text-xs text-blue-600 hover:underline cursor-pointer",
+                onClick: () =>
+                  navigateTo(
+                    `/leads?page=1&limit=10&search=${encodeURIComponent(t.lead!.first_name)}`,
+                  ),
+              },
+              `→ Lead: ${leadName}`,
+            )
+          : null,
+      ]);
     },
   },
   {
@@ -365,13 +403,16 @@ const fetchSummary = async () => {
   }
 };
 
+// Recipients come from the wallets' embedded staff data (every eligible
+// admin/teacher/support_teacher has a wallet) — no /users/* call needed.
 const fetchTeachers = async () => {
   try {
-    const response = await api.get<{ data: BonusPenaltyUserRef[] }>(
-      apiService.value,
-      "/users/teachers?limit=1000",
-    );
-    teachers.value = response.data || [];
+    const wallets = await listWallets();
+    const map = new Map<string, BonusPenaltyUserRef>();
+    for (const w of wallets) {
+      if (w.teacher?.user_id) map.set(w.teacher.user_id, w.teacher);
+    }
+    teachers.value = Array.from(map.values());
   } catch {
     teachers.value = [];
   }

@@ -71,8 +71,6 @@
 
 <script setup lang="ts">
 import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
-import { api } from "~/lib/api";
-import { useAuth } from "~/composables/useAuth";
 import {
   useBonusPenalty,
   type BonusPenaltyType,
@@ -82,7 +80,6 @@ import {
 
 const UButton = resolveComponent("UButton");
 
-const { apiService } = useAuth();
 const { formatPhone } = usePhoneFormatter();
 const { listWallets, formatCurrency } = useBonusPenalty();
 const toast = useToast();
@@ -96,23 +93,26 @@ const navItems: NavigationMenuItem[] = [
 ];
 
 const wallets = ref<BonusPenaltyWallet[]>([]);
-const teachers = ref<BonusPenaltyUserRef[]>([]);
 const loading = ref(true);
 const searchQuery = ref("");
+
+// Recipients for the create modal are derived from the wallets' embedded
+// staff data — no separate /users/teachers or /users/staff call needed.
+const teachers = computed<BonusPenaltyUserRef[]>(() =>
+  wallets.value
+    .map((w) => w.teacher)
+    .filter((t): t is BonusPenaltyUserRef => !!t),
+);
 
 const showDialog = ref(false);
 const presetTeacherId = ref<string | null>(null);
 const presetType = ref<BonusPenaltyType>("bonus");
 
-const teacherName = (w: BonusPenaltyWallet) => {
-  if (w.teacher?.first_name) return `${w.teacher.first_name} ${w.teacher.last_name || ""}`.trim();
-  const t = teachers.value.find((x) => x.user_id === w.teacher_id);
-  return t ? `${t.first_name} ${t.last_name}` : w.teacher_id;
-};
-const teacherPhone = (w: BonusPenaltyWallet) => {
-  if (w.teacher?.phone) return w.teacher.phone;
-  return teachers.value.find((x) => x.user_id === w.teacher_id)?.phone || "";
-};
+const teacherName = (w: BonusPenaltyWallet) =>
+  w.teacher?.first_name
+    ? `${w.teacher.first_name} ${w.teacher.last_name || ""}`.trim()
+    : w.teacher_id;
+const teacherPhone = (w: BonusPenaltyWallet) => w.teacher?.phone || "";
 
 const filteredWallets = computed(() => {
   const q = searchQuery.value.toLowerCase().trim();
@@ -130,7 +130,7 @@ const negativeTotal = computed(() =>
 const columns: TableColumn<BonusPenaltyWallet>[] = [
   {
     accessorKey: "teacher",
-    header: "O'qituvchi",
+    header: "Xodim",
     cell: ({ row }) => {
       const phone = teacherPhone(row.original);
       return h("div", {}, [
@@ -196,19 +196,7 @@ const fetchWallets = async () => {
   }
 };
 
-const fetchTeachers = async () => {
-  try {
-    const response = await api.get<{ data: BonusPenaltyUserRef[] }>(
-      apiService.value,
-      "/users/teachers?limit=1000",
-    );
-    teachers.value = response.data || [];
-  } catch {
-    teachers.value = [];
-  }
-};
-
-const fetchAll = () => Promise.all([fetchWallets(), fetchTeachers()]);
+const fetchAll = () => fetchWallets();
 
 const openCreate = (teacherId: string, type: BonusPenaltyType) => {
   presetTeacherId.value = teacherId;
