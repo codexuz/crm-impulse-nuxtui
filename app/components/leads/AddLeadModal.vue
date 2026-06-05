@@ -47,7 +47,74 @@ const newLead = reactive({
   question: "",
   course_ids: [],
   notes: "",
+  // Referral: a student referring this lead; the teacher is credited a bonus
+  // when the lead enrolls. referral_teacher_id is optional — the backend
+  // resolves it from the student's active group when left empty.
+  referred_by_student_id: null as string | null,
+  referral_teacher_id: null as string | null,
+  referral_bonus_amount: null as number | null,
 });
+
+// Referral student search
+interface UserRef {
+  user_id: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+}
+const students = ref<UserRef[]>([]);
+const isLoadingStudents = ref(false);
+const studentSearch = ref("");
+const teachers = ref<UserRef[]>([]);
+
+const studentOptions = computed(() =>
+  students.value.map((s) => ({
+    label: `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim() || s.user_id,
+    value: s.user_id,
+  })),
+);
+
+const teacherOptions = computed(() =>
+  teachers.value.map((t) => ({
+    label: `${t.first_name ?? ""} ${t.last_name ?? ""}`.trim() || t.user_id,
+    value: t.user_id,
+  })),
+);
+
+const searchStudents = async (query: string) => {
+  if (!query || query.length < 2) {
+    students.value = [];
+    return;
+  }
+  isLoadingStudents.value = true;
+  try {
+    const response = await api.get<{ data: UserRef[] }>(
+      apiService.value,
+      `/users/students?query=${encodeURIComponent(query)}&limit=20`,
+    );
+    students.value = response.data || [];
+  } catch (error) {
+    console.error("Failed to search students:", error);
+    students.value = [];
+  } finally {
+    isLoadingStudents.value = false;
+  }
+};
+
+watch(studentSearch, (q) => searchStudents(q));
+
+const loadTeachers = async () => {
+  try {
+    const response = await api.get<{ data: UserRef[] }>(
+      apiService.value,
+      "/users/teachers?limit=1000",
+    );
+    teachers.value = response.data || [];
+  } catch (error) {
+    console.error("Failed to load teachers:", error);
+    teachers.value = [];
+  }
+};
 
 const courseOptions = computed(() =>
   courses.value
@@ -91,7 +158,7 @@ const loadCourses = async () => {
 const createLead = async (close: () => void) => {
   isCreatingLead.value = true;
   try {
-    const leadData = {
+    const leadData: Record<string, any> = {
       ...newLead,
       phone: newLead.phone.replace(/\s+/g, ""),
       parent_phone_number: newLead.parent_phone_number.replace(/\s+/g, ""),
@@ -99,6 +166,16 @@ const createLead = async (close: () => void) => {
       course_ids: newLead.course_ids && newLead.course_ids.length > 0 ? newLead.course_ids : [],
       admin_id: auth.value.user?.user_id || auth.value.user?.id,
     };
+
+    // Only send referral fields when a referring student is chosen.
+    if (!newLead.referred_by_student_id) {
+      delete leadData.referred_by_student_id;
+      delete leadData.referral_teacher_id;
+      delete leadData.referral_bonus_amount;
+    } else {
+      if (!newLead.referral_teacher_id) delete leadData.referral_teacher_id;
+      if (!newLead.referral_bonus_amount) delete leadData.referral_bonus_amount;
+    }
 
     await api.post(apiService.value, "/leads", leadData);
     toast.add({
@@ -133,11 +210,17 @@ const resetForm = () => {
   newLead.question = "";
   newLead.course_ids = [];
   newLead.notes = "";
+  newLead.referred_by_student_id = null;
+  newLead.referral_teacher_id = null;
+  newLead.referral_bonus_amount = null;
+  students.value = [];
+  studentSearch.value = "";
 };
 
 // Load courses on mount
 onMounted(() => {
   loadCourses();
+  loadTeachers();
 });
 </script>
 
@@ -244,6 +327,36 @@ onMounted(() => {
               </template>
             </USelectMenu>
           </UFormField>
+        </div>
+
+        <!-- Referral Section -->
+        <div class="space-y-4">
+          <div class="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-800">
+            <UIcon name="i-lucide-gift" class="w-4 h-4 text-primary" />
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+              Referal (taklif)
+            </h3>
+          </div>
+
+          <UFormField label="Taklif qilgan o'quvchi"
+            help="O'quvchi tanlansa, lead o'qishga yozilganda uning o'qituvchisiga referal bonus beriladi">
+            <USelectMenu v-model="newLead.referred_by_student_id" v-model:search-term="studentSearch"
+              :items="studentOptions" value-key="value" :loading="isLoadingStudents"
+              placeholder="O'quvchini qidiring..." searchable class="w-full" />
+          </UFormField>
+
+          <div v-if="newLead.referred_by_student_id" class="grid grid-cols-2 gap-4">
+            <UFormField label="Bonus oluvchi o'qituvchi (ixtiyoriy)"
+              help="Bo'sh qoldirilsa, o'quvchining guruhidan aniqlanadi">
+              <USelectMenu v-model="newLead.referral_teacher_id" :items="teacherOptions" value-key="value"
+                placeholder="O'qituvchini tanlang" searchable class="w-full" />
+            </UFormField>
+
+            <UFormField label="Referal bonus summasi (ixtiyoriy)">
+              <UInput v-model.number="newLead.referral_bonus_amount" type="number" placeholder="Masalan: 50000"
+                class="w-full" />
+            </UFormField>
+          </div>
         </div>
 
         <!-- Additional Information Section -->

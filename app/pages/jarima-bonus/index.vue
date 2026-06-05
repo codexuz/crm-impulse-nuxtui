@@ -4,73 +4,42 @@
       <UDashboardNavbar title="Jarima & Bonus" :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
+          <UNavigationMenu :items="navItems" highlight />
         </template>
 
         <template #description>
-          O'qituvchilarga bonus berish va jarima yozish
+          O'qituvchilarga bonus, jarima va referal to'lovlari
         </template>
 
         <template #right>
-          <UButton icon="i-lucide-hand-coins" label="Bonus / Jarima qo'shish" @click="openDialog()" />
+          <UButton icon="i-lucide-hand-coins" label="Bonus / Jarima qo'shish" @click="openCreate()" />
         </template>
       </UDashboardNavbar>
     </template>
 
     <template #body>
       <div class="space-y-6">
-        <!-- Stats Overview -->
-        <div class="grid gap-4 md:grid-cols-3">
-          <UCard>
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm font-medium text-gray-500">Jami summa</p>
-                <p class="text-2xl font-bold mt-1">{{ formatCurrency(totalAmount) }}</p>
-                <p class="text-xs text-gray-500 mt-1">Tanlangan filtr bo'yicha</p>
-              </div>
-              <span class="i-lucide-banknote text-gray-400 text-2xl"></span>
-            </div>
-          </UCard>
+        <!-- Stats -->
+        <JarimaBonusWalletStatsCards :bonus-total="summary.bonus" :jarima-total="summary.jarima"
+          :referal-total="summary.referal" :count="totalCount" />
 
-          <UCard>
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm font-medium text-gray-500">Yozuvlar soni</p>
-                <p class="text-2xl font-bold mt-1">{{ totalCount }}</p>
-                <p class="text-xs text-gray-500 mt-1">Bonus va jarimalar</p>
-              </div>
-              <span class="i-lucide-list text-gray-400 text-2xl"></span>
-            </div>
-          </UCard>
-
-          <UCard>
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm font-medium text-gray-500">Tur</p>
-                <p class="text-2xl font-bold mt-1">
-                  {{ typeOptions.find((t) => t.value === typeFilter)?.label || "Barchasi" }}
-                </p>
-                <p class="text-xs text-gray-500 mt-1">Joriy filtr</p>
-              </div>
-              <span class="i-lucide-filter text-gray-400 text-2xl"></span>
-            </div>
-          </UCard>
-        </div>
-
-        <!-- Filters Section -->
+        <!-- Filters -->
         <UDashboardToolbar>
           <template #left>
             <USelectMenu v-model="teacherFilter" :items="teacherFilterOptions" value-key="value"
-              placeholder="O'qituvchi" class="w-56" />
+              placeholder="O'qituvchi" searchable class="w-56" />
           </template>
 
           <template #right>
-            <USelectMenu v-model="typeFilter" :items="typeOptions" value-key="value" placeholder="Tur" class="w-36">
+            <USelectMenu v-model="typeFilter" :items="typeFilterOptions" value-key="value" placeholder="Tur"
+              class="w-36">
               <template #label>
-                {{ typeOptions.find((t) => t.value === typeFilter)?.label || "Tur" }}
+                {{ typeFilterOptions.find((t) => t.value === typeFilter)?.label || "Tur" }}
               </template>
             </USelectMenu>
 
-            <UInput v-model.number="minAmount" type="number" placeholder="Min. summa" class="w-32" />
+            <USelectMenu v-model="categoryFilter" :items="categoryFilterOptions" value-key="value"
+              placeholder="Kategoriya" class="w-44" />
 
             <div class="flex items-center gap-2">
               <UInput v-model="startDate" type="date" class="w-40" />
@@ -78,15 +47,14 @@
             </div>
 
             <UButton v-if="hasActiveFilters" icon="i-lucide-x" label="Tozalash" variant="ghost" @click="clearFilters" />
-
             <UButton icon="i-lucide-refresh-cw" label="Yangilash" variant="outline" @click="fetchRecords" />
           </template>
         </UDashboardToolbar>
 
-        <!-- Records Table -->
+        <!-- Table -->
         <UCard>
           <template #header>
-            <h3 class="text-base font-semibold">Bonus va jarimalar</h3>
+            <h3 class="text-base font-semibold">Bonus, jarima va referal yozuvlari</h3>
           </template>
 
           <UTable :data="records" :columns="columns" :loading="loading" :empty="'Yozuvlar topilmadi'" />
@@ -96,10 +64,8 @@
               <div class="text-sm text-gray-500">
                 <span class="font-medium">{{ paginationStart }}</span> dan
                 <span class="font-medium">{{ paginationEnd }}</span> gacha, jami
-                <span class="font-medium">{{ totalCount }}</span>
-                ta yozuv
+                <span class="font-medium">{{ totalCount }}</span> ta yozuv
               </div>
-
               <UPagination :model-value="currentPage" :total="totalCount" :items-per-page="itemsPerPage" show-last
                 show-first @update:page="(p: number) => (currentPage = p)" />
             </div>
@@ -107,107 +73,54 @@
         </UCard>
       </div>
 
-      <!-- Bonus / Jarima Modal -->
-      <UModal v-model:open="showDialog" :title="form.type === 'bonus' ? 'O\'qituvchiga bonus' : 'O\'qituvchiga jarima'">
-        <template #body>
-          <form @submit.prevent="submit" class="space-y-4">
-            <UFormField label="Tur" name="type">
-              <USelectMenu v-model="form.type" :items="formTypeOptions" value-key="value" class="w-full">
-                <template #label>
-                  {{ form.type === "bonus" ? "Bonus" : "Jarima" }}
-                </template>
-              </USelectMenu>
-            </UFormField>
-
-            <UFormField label="O'qituvchi" name="teacher">
-              <USelectMenu v-model="form.teacher_id" :items="teacherOptions" value-key="value"
-                placeholder="O'qituvchini tanlang" class="w-full" />
-            </UFormField>
-
-            <UFormField label="Summa" name="amount">
-              <UInput v-model.number="form.amount" type="number" placeholder="Summa kiriting" class="w-full" />
-            </UFormField>
-
-            <UFormField label="Izoh" name="description">
-              <UTextarea v-model="form.description" placeholder="Izoh kiriting..." :rows="3" class="w-full" />
-            </UFormField>
-
-            <UFormField label="Sana" name="date">
-              <UInput v-model="form.expense_date" type="date" class="w-full" />
-            </UFormField>
-          </form>
-        </template>
-
-        <template #footer="{ close }">
-          <div class="flex justify-end gap-2">
-            <UButton label="Bekor qilish" variant="outline" @click="close" />
-            <UButton :label="form.type === 'bonus' ? 'Bonus berish' : 'Jarima yozish'"
-              :color="form.type === 'bonus' ? 'green' : 'red'" :loading="isSubmitting" @click="submit" />
-          </div>
-        </template>
-      </UModal>
+      <JarimaBonusTransactionModal v-model:open="showDialog" :teachers="teachers" :categories="categories"
+        :default-teacher-id="presetTeacherId" :default-type="presetType" @created="onCreated" />
     </template>
   </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
-import type { TableColumn } from "@nuxt/ui";
+import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
+import {
+  useBonusPenalty,
+  BONUS_PENALTY_TYPE_LABELS,
+  type BonusPenaltyType,
+  type BonusPenaltyTransaction,
+  type BonusPenaltyCategory,
+  type BonusPenaltyUserRef,
+} from "~/composables/useBonusPenalty";
 
 const UBadge = resolveComponent("UBadge");
+const UButton = resolveComponent("UButton");
+const UPopover = resolveComponent("UPopover");
 
-const { apiService, auth } = useAuth();
+const { apiService } = useAuth();
 const { formatPhone } = usePhoneFormatter();
+const {
+  listTransactions,
+  deleteTransaction,
+  listCategories,
+  signedAmount,
+  typeColor,
+} = useBonusPenalty();
 const toast = useToast();
 
-definePageMeta({
-  middleware: ["auth"],
-});
+definePageMeta({ middleware: ["auth"] });
 
-type TransactionType = "bonus" | "jarima";
+const navItems: NavigationMenuItem[] = [
+  { label: "Tranzaksiyalar", icon: "i-lucide-hand-coins", to: "/jarima-bonus" },
+  { label: "Hamyonlar", icon: "i-lucide-wallet", to: "/jarima-bonus/wallets" },
+  { label: "Kategoriyalar", icon: "i-lucide-tags", to: "/jarima-bonus/categories" },
+];
 
-interface Teacher {
-  user_id: string;
-  username: string;
-  first_name: string;
-  last_name: string;
-  phone: string;
-  is_active: boolean;
-}
-
-interface ExpenseCategory {
-  id: string;
-  name: string;
-  description: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-// A bonus/penalty expense row. Fields beyond the basics are optional because
-// the backend may nest teacher/category info or send it flat.
-interface BonusPenaltyRow {
-  id: string;
-  teacher_id: string | null;
-  teacher_name?: string;
-  teacher?: { first_name?: string; last_name?: string; phone?: string };
-  type?: string;
-  category_id?: string;
-  category?: { name?: string };
-  title?: string;
-  amount: number;
-  description: string | null;
-  expense_date: string;
-  created_at?: string;
-}
-
-// State
-const records = ref<BonusPenaltyRow[]>([]);
-const teachers = ref<Teacher[]>([]);
-const categories = ref<ExpenseCategory[]>([]);
+// --- State ---
+const records = ref<BonusPenaltyTransaction[]>([]);
+const teachers = ref<BonusPenaltyUserRef[]>([]);
+const categories = ref<BonusPenaltyCategory[]>([]);
 const loading = ref(true);
 
-// Current-month date defaults (YYYY-MM-DD, local time)
 const pad = (n: number) => String(n).padStart(2, "0");
 const getMonthStart = () => {
   const d = new Date();
@@ -220,45 +133,34 @@ const getMonthEnd = () => {
 };
 
 // Filters
-const typeFilter = ref<"all" | TransactionType>("all");
+const typeFilter = ref<"all" | BonusPenaltyType>("all");
 const teacherFilter = ref<string | null>(null);
-const minAmount = ref<number | null>(null);
+const categoryFilter = ref<string | null>(null);
 const startDate = ref(getMonthStart());
 const endDate = ref(getMonthEnd());
 
-// Pagination (server-side)
+// Pagination
 const currentPage = ref(1);
 const itemsPerPage = 10;
 const totalCount = ref(0);
-const totalAmount = ref(0);
+const summary = reactive({ bonus: 0, jarima: 0, referal: 0 });
 
-// Modal
+// Create modal
 const showDialog = ref(false);
-const isSubmitting = ref(false);
-const form = reactive({
-  type: "bonus" as TransactionType,
-  teacher_id: "" as string,
-  amount: 0,
-  description: "",
-  expense_date: new Date().toISOString().split("T")[0],
-});
+const presetTeacherId = ref<string | null>(null);
+const presetType = ref<BonusPenaltyType>("bonus");
 
-// Options
-const typeOptions = [
+// --- Options ---
+const typeFilterOptions = [
   { label: "Barchasi", value: "all" as const },
   { label: "Bonus", value: "bonus" as const },
   { label: "Jarima", value: "jarima" as const },
-];
-
-// Type options for the create modal (no "Barchasi")
-const formTypeOptions = [
-  { label: "Bonus", value: "bonus" as const },
-  { label: "Jarima", value: "jarima" as const },
+  { label: "Referal", value: "referal" as const },
 ];
 
 const teacherOptions = computed(() =>
   teachers.value.map((t) => ({
-    label: `${t.first_name} ${t.last_name}`,
+    label: `${t.first_name ?? ""} ${t.last_name ?? ""}`.trim() || t.username || t.user_id,
     value: t.user_id,
   })),
 );
@@ -268,11 +170,16 @@ const teacherFilterOptions = computed(() => [
   ...teacherOptions.value,
 ]);
 
+const categoryFilterOptions = computed(() => [
+  { label: "Barcha kategoriyalar", value: null },
+  ...categories.value.map((c) => ({ label: c.name, value: c.id })),
+]);
+
 const hasActiveFilters = computed(
   () =>
     typeFilter.value !== "all" ||
     teacherFilter.value !== null ||
-    minAmount.value !== null ||
+    categoryFilter.value !== null ||
     startDate.value !== getMonthStart() ||
     endDate.value !== getMonthEnd(),
 );
@@ -284,47 +191,37 @@ const paginationEnd = computed(() =>
   Math.min(currentPage.value * itemsPerPage, totalCount.value),
 );
 
-// Helpers to read fields that the backend may send flat or nested
-const categoryNameById = (id?: string) =>
-  categories.value.find((c) => c.id === id)?.name || "";
-
-const getType = (row: BonusPenaltyRow): TransactionType => {
-  const raw = (
-    row.type ||
-    row.category?.name ||
-    categoryNameById(row.category_id) ||
-    row.title ||
-    ""
-  ).toLowerCase();
-  return raw.includes("jarima") ? "jarima" : "bonus";
-};
-
-const getTeacherName = (row: BonusPenaltyRow) => {
-  if (row.teacher_name) return row.teacher_name;
+// --- Helpers ---
+const teacherName = (row: BonusPenaltyTransaction) => {
   if (row.teacher?.first_name)
     return `${row.teacher.first_name} ${row.teacher.last_name || ""}`.trim();
   const t = teachers.value.find((x) => x.user_id === row.teacher_id);
   return t ? `${t.first_name} ${t.last_name}` : "-";
 };
-
-const getTeacherPhone = (row: BonusPenaltyRow) => {
+const teacherPhone = (row: BonusPenaltyTransaction) => {
   if (row.teacher?.phone) return row.teacher.phone;
-  const t = teachers.value.find((x) => x.user_id === row.teacher_id);
-  return t?.phone || "";
+  return teachers.value.find((x) => x.user_id === row.teacher_id)?.phone || "";
 };
 
-// Table columns
-const columns: TableColumn<BonusPenaltyRow>[] = [
+const formatDate = (dateString?: string | null) => {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  return `${pad(date.getUTCDate())}-${pad(date.getUTCMonth() + 1)}-${date.getUTCFullYear()}`;
+};
+
+const deletePopoverOpen = ref<Record<string, boolean>>({});
+const isDeleting = ref(false);
+
+// --- Columns ---
+const columns: TableColumn<BonusPenaltyTransaction>[] = [
   {
     accessorKey: "teacher",
     header: "O'qituvchi",
     cell: ({ row }) => {
-      const phone = getTeacherPhone(row.original);
+      const phone = teacherPhone(row.original);
       return h("div", {}, [
-        h("div", { class: "font-medium" }, getTeacherName(row.original)),
-        phone
-          ? h("div", { class: "text-xs text-gray-500" }, formatPhone(phone))
-          : null,
+        h("div", { class: "font-medium" }, teacherName(row.original)),
+        phone ? h("div", { class: "text-xs text-gray-500" }, formatPhone(phone)) : null,
       ]);
     },
   },
@@ -332,237 +229,207 @@ const columns: TableColumn<BonusPenaltyRow>[] = [
     accessorKey: "type",
     header: "Tur",
     cell: ({ row }) => {
-      const type = getType(row.original);
+      const type = row.original.type;
       return h(
         UBadge,
-        { color: type === "bonus" ? "green" : "red", variant: "subtle" },
-        () => [
-          h("span", {
-            class: `${type === "bonus" ? "i-lucide-trending-up" : "i-lucide-trending-down"} mr-1`,
-          }),
-          type === "bonus" ? "Bonus" : "Jarima",
-        ],
+        { color: typeColor(type), variant: "subtle" },
+        () => BONUS_PENALTY_TYPE_LABELS[type] || type,
       );
     },
   },
   {
+    accessorKey: "category",
+    header: "Kategoriya",
+    cell: ({ row }) => row.original.category?.name || "-",
+  },
+  {
     accessorKey: "amount",
     header: "Summa",
-    cell: ({ row }) => {
-      const type = getType(row.original);
-      return h(
+    cell: ({ row }) =>
+      h(
         "span",
         {
           class:
-            type === "bonus"
-              ? "font-semibold text-green-600"
-              : "font-semibold text-red-600",
+            row.original.type === "jarima"
+              ? "font-semibold text-red-600"
+              : "font-semibold text-green-600",
         },
-        `${type === "bonus" ? "+" : "-"} ${formatCurrency(row.original.amount)}`,
-      );
-    },
+        signedAmount(row.original),
+      ),
   },
   {
     accessorKey: "description",
     header: "Izoh",
     cell: ({ row }) =>
-      h(
-        "div",
-        { class: "max-w-[220px] truncate" },
-        row.original.description || "-",
-      ),
+      h("div", { class: "max-w-[220px] truncate" }, row.original.description || "-"),
   },
   {
-    accessorKey: "expense_date",
+    accessorKey: "created_at",
     header: "Sana",
-    cell: ({ row }) => formatDate(row.original.expense_date),
+    cell: ({ row }) => formatDate(row.original.created_at),
+  },
+  {
+    id: "actions",
+    header: "",
+    cell: ({ row }) => {
+      const id = row.original.id;
+      return h("div", { class: "flex justify-end" }, [
+        h(
+          UPopover,
+          {
+            open: deletePopoverOpen.value[id] || false,
+            "onUpdate:open": (v: boolean) => (deletePopoverOpen.value[id] = v),
+          },
+          {
+            default: () =>
+              h(UButton, {
+                color: "error",
+                variant: "ghost",
+                icon: "i-lucide-trash-2",
+                size: "sm",
+                square: true,
+              }),
+            content: () =>
+              h("div", { class: "p-4 max-w-sm space-y-3" }, [
+                h("p", { class: "text-sm text-gray-600" },
+                  "Yozuvni o'chirish hamyon balansini tiklaydi. Davom etilsinmi?"),
+                h("div", { class: "flex justify-end gap-2" }, [
+                  h(UButton, {
+                    color: "neutral",
+                    variant: "subtle",
+                    label: "Bekor",
+                    size: "sm",
+                    onClick: () => (deletePopoverOpen.value[id] = false),
+                  }),
+                  h(UButton, {
+                    color: "error",
+                    label: isDeleting.value ? "O'chirilmoqda..." : "O'chirish",
+                    loading: isDeleting.value,
+                    size: "sm",
+                    onClick: async () => {
+                      await confirmDelete(id);
+                      deletePopoverOpen.value[id] = false;
+                    },
+                  }),
+                ]),
+              ]),
+          },
+        ),
+      ]);
+    },
   },
 ];
 
-// Methods
+// --- Data ---
+const queryBase = () => ({
+  teacher_id: teacherFilter.value || undefined,
+  category_id: categoryFilter.value || undefined,
+  start_date: startDate.value || undefined,
+  end_date: endDate.value || undefined,
+});
+
 const fetchRecords = async () => {
   loading.value = true;
   try {
-    const params = new URLSearchParams({
-      page: currentPage.value.toString(),
-      limit: itemsPerPage.toString(),
+    const response = await listTransactions({
+      page: currentPage.value,
+      limit: itemsPerPage,
+      type: typeFilter.value === "all" ? undefined : typeFilter.value,
+      ...queryBase(),
     });
-    if (typeFilter.value !== "all") params.append("type", typeFilter.value);
-    if (teacherFilter.value) params.append("teacher_id", teacherFilter.value);
-    if (minAmount.value) params.append("min_amount", String(minAmount.value));
-    if (startDate.value) params.append("start_date", startDate.value);
-    if (endDate.value) params.append("end_date", endDate.value);
-
-    const response = await api.get<{
-      expenses: BonusPenaltyRow[];
-      total: number;
-      count: number;
-      page: number;
-      limit: number;
-      totalPages: number;
-    }>(
-      apiService.value,
-      `/expenses/teachers/bonus-penalty?${params.toString()}`,
-    );
-
-    records.value = response.expenses || [];
-    totalCount.value = response.count || 0;
-    totalAmount.value = response.total || 0;
+    records.value = response.data || [];
+    totalCount.value = response.pagination?.total || 0;
   } catch (error) {
-    console.error("Failed to fetch bonus/penalty records:", error);
-    toast.add({
-      title: "Xatolik",
-      description: "Yozuvlarni yuklashda xatolik yuz berdi",
-      color: "error",
-    });
+    console.error("Failed to fetch records:", error);
+    toast.add({ title: "Xatolik", description: "Yozuvlarni yuklashda xatolik", color: "error" });
     records.value = [];
     totalCount.value = 0;
-    totalAmount.value = 0;
   } finally {
     loading.value = false;
   }
 };
 
+// Per-type totals for the stat cards (one light call each, limit 1).
+const fetchSummary = async () => {
+  try {
+    const [bonus, jarima, referal] = await Promise.all([
+      listTransactions({ ...queryBase(), type: "bonus", limit: 1 }),
+      listTransactions({ ...queryBase(), type: "jarima", limit: 1 }),
+      listTransactions({ ...queryBase(), type: "referal", limit: 1 }),
+    ]);
+    summary.bonus = bonus.totalAmount || 0;
+    summary.jarima = jarima.totalAmount || 0;
+    summary.referal = referal.totalAmount || 0;
+  } catch (error) {
+    console.error("Failed to fetch summary:", error);
+  }
+};
+
 const fetchTeachers = async () => {
   try {
-    const response = await api.get<{ data: Teacher[] }>(
+    const response = await api.get<{ data: BonusPenaltyUserRef[] }>(
       apiService.value,
-      "/users/teachers?limit=100",
+      "/users/teachers?limit=1000",
     );
     teachers.value = response.data || [];
-  } catch (error) {
-    console.error("Failed to fetch teachers:", error);
+  } catch {
     teachers.value = [];
   }
 };
 
 const fetchCategories = async () => {
   try {
-    const response = await api.get<ExpenseCategory[]>(
-      apiService.value,
-      "/expense-categories?names=bonus,jarima",
-    );
-    categories.value = response || [];
-  } catch (error) {
-    console.error("Failed to fetch categories:", error);
+    categories.value = await listCategories();
+  } catch {
     categories.value = [];
   }
 };
 
-// Resolve the expense category matching the chosen type (bonus / jarima).
-const findCategoryForType = (type: TransactionType) =>
-  categories.value.find((c) => c.name.toLowerCase().includes(type));
+const confirmDelete = async (id: string) => {
+  isDeleting.value = true;
+  try {
+    await deleteTransaction(id);
+    toast.add({ title: "Muvaffaqiyat", description: "Yozuv o'chirildi", color: "success" });
+    await Promise.all([fetchRecords(), fetchSummary()]);
+  } catch (error) {
+    console.error("Failed to delete:", error);
+    toast.add({ title: "Xatolik", description: "O'chirishda xatolik", color: "error" });
+  } finally {
+    isDeleting.value = false;
+  }
+};
 
-const openDialog = (teacherId?: string, type: TransactionType = "bonus") => {
-  form.type = type;
-  form.teacher_id = teacherId || "";
-  form.amount = 0;
-  form.description = "";
-  form.expense_date = new Date().toISOString().split("T")[0];
+const openCreate = (teacherId?: string, type: BonusPenaltyType = "bonus") => {
+  presetTeacherId.value = teacherId || null;
+  presetType.value = type;
   showDialog.value = true;
 };
 
-const submit = async () => {
-  if (!form.teacher_id) {
-    toast.add({ title: "Xatolik", description: "Iltimos, o'qituvchini tanlang.", color: "error" });
-    return;
-  }
-  if (!form.amount || form.amount <= 0) {
-    toast.add({ title: "Xatolik", description: "Iltimos, to'g'ri summa kiriting.", color: "error" });
-    return;
-  }
-
-  const category = findCategoryForType(form.type);
-  if (!category) {
-    toast.add({
-      title: "Xatolik",
-      description: `"${form.type === "bonus" ? "Bonus" : "Jarima"}" kategoriyasi topilmadi.`,
-      color: "error",
-    });
-    return;
-  }
-
-  isSubmitting.value = true;
-  try {
-    const teacher = teachers.value.find((t) => t.user_id === form.teacher_id);
-    const teacherName = teacher
-      ? `${teacher.first_name} ${teacher.last_name}`
-      : "";
-    const typeLabel = form.type === "bonus" ? "Bonus" : "Jarima";
-
-    const payload = {
-      title: `${teacherName} ${typeLabel}`.trim(),
-      category_id: category.id,
-      description: form.description || null,
-      amount: Number(form.amount),
-      expense_date: new Date(form.expense_date).toISOString(),
-      teacher_id: form.teacher_id,
-      reported_by: auth.value.user?.id || null,
-    };
-
-    await api.post(apiService.value, "/expenses", payload);
-
-    toast.add({
-      title: "Muvaffaqiyat",
-      description:
-        form.type === "bonus"
-          ? "Bonus muvaffaqiyatli berildi."
-          : "Jarima muvaffaqiyatli yozildi.",
-      color: "success",
-    });
-
-    showDialog.value = false;
-    currentPage.value = 1;
-    await fetchRecords();
-  } catch (error) {
-    console.error("Failed to submit:", error);
-    toast.add({
-      title: "Xatolik",
-      description: "Amalni bajarishda xatolik yuz berdi.",
-      color: "error",
-    });
-  } finally {
-    isSubmitting.value = false;
-  }
+const onCreated = async () => {
+  currentPage.value = 1;
+  await Promise.all([fetchRecords(), fetchSummary()]);
 };
 
 const clearFilters = () => {
   typeFilter.value = "all";
   teacherFilter.value = null;
-  minAmount.value = null;
+  categoryFilter.value = null;
   startDate.value = getMonthStart();
   endDate.value = getMonthEnd();
 };
 
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("uz-UZ", {
-    style: "decimal",
-    minimumFractionDigits: 0,
-  }).format(amount) + " so'm";
-
-const formatDate = (dateString: string) => {
-  if (!dateString) return "N/A";
-  const date = new Date(dateString);
-  const day = String(date.getUTCDate()).padStart(2, "0");
-  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const year = date.getUTCFullYear();
-  return `${day}-${month}-${year}`;
-};
-
-// Refetch on filter changes (reset to first page)
-watch([typeFilter, teacherFilter, minAmount, startDate, endDate], () => {
+watch([typeFilter, teacherFilter, categoryFilter, startDate, endDate], () => {
   currentPage.value = 1;
   fetchRecords();
+  fetchSummary();
 });
 
-// Refetch on page change
-watch(currentPage, () => {
-  fetchRecords();
-});
+watch(currentPage, fetchRecords);
 
 onMounted(() => {
   fetchCategories();
   fetchTeachers();
   fetchRecords();
+  fetchSummary();
 });
 </script>
