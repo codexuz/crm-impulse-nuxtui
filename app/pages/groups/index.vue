@@ -286,6 +286,12 @@ const columns: TableColumn<Group>[] = [
                   onSelect: () =>
                     navigateTo({ path: `/attendance/group/${row.original.id}`, query: route.query }),
                 },
+                {
+                  label: "Baholar",
+                  icon: "i-lucide-star",
+                  onSelect: () =>
+                    navigateTo({ path: `/groups/${row.original.id}/${row.original.teacher_id}/grading`, query: route.query }),
+                },
               ],
             ],
           },

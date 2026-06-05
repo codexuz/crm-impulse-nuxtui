@@ -161,6 +161,35 @@ export interface Attendance {
   updatedAt: string;
 }
 
+export interface Grading {
+  id: string;
+  student_id: string;
+  teacher_id: string;
+  group_id: string;
+  grade: number;
+  percent: number;
+  lesson_name?: string;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+  student?: {
+    user_id: string;
+    first_name: string;
+    last_name: string;
+    username?: string;
+  };
+  teacher?: {
+    user_id: string;
+    first_name: string;
+    last_name: string;
+    username?: string;
+  };
+  group?: {
+    id: string;
+    name: string;
+  };
+}
+
 export interface Exam {
   id: string;
   title: string;
