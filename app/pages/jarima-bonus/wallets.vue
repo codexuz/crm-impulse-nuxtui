@@ -11,7 +11,7 @@
 
         <template #right>
           <UPopover v-model:open="settleAllPopoverOpen">
-            <UButton icon="i-lucide-receipt-text" label="Hammasini hisob-kitob qilish" color="primary"
+            <UButton icon="i-lucide-receipt-text" label="Hammasini to'lash" color="primary"
               :loading="isSettlingAll" :disabled="positiveTotal === 0 && negativeTotal === 0" />
             <template #content>
               <div class="p-4 max-w-xs space-y-3">
@@ -218,7 +218,7 @@ const columns: TableColumn<BonusPenaltyWallet>[] = [
                 variant: "ghost",
                 icon: "i-lucide-receipt-text",
                 size: "sm",
-                label: "Hisob-kitob",
+                label: "To'lash",
                 disabled: w.amount === 0,
               }),
             content: () =>
