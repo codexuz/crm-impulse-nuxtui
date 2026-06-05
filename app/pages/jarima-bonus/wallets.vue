@@ -10,6 +10,24 @@
         <template #description> O'qituvchilarning bonus & jarima hamyonlari </template>
 
         <template #right>
+          <UPopover v-model:open="settleAllPopoverOpen">
+            <UButton icon="i-lucide-receipt-text" label="Hammasini hisob-kitob qilish" color="primary"
+              :loading="isSettlingAll" :disabled="positiveTotal === 0 && negativeTotal === 0" />
+            <template #content>
+              <div class="p-4 max-w-xs space-y-3">
+                <p class="text-sm text-gray-600">
+                  Barcha noldan farqli hamyonlar to'langan deb belgilanadi va nolga tushiriladi.
+                </p>
+                <div class="flex justify-end gap-2">
+                  <UButton color="neutral" variant="subtle" label="Bekor" size="sm"
+                    @click="settleAllPopoverOpen = false" />
+                  <UButton color="primary" label="Tasdiqlash" size="sm" :loading="isSettlingAll"
+                    @click="onSettleAll" />
+                </div>
+              </div>
+            </template>
+          </UPopover>
+
           <UButton icon="i-lucide-refresh-cw" label="Yangilash" variant="outline" @click="fetchAll" />
         </template>
       </UDashboardNavbar>
@@ -79,9 +97,11 @@ import {
 } from "~/composables/useBonusPenalty";
 
 const UButton = resolveComponent("UButton");
+const UPopover = resolveComponent("UPopover");
 
 const { formatPhone } = usePhoneFormatter();
-const { listWallets, formatCurrency } = useBonusPenalty();
+const { listWallets, settleWallet, settleAllWallets, formatCurrency } =
+  useBonusPenalty();
 const toast = useToast();
 
 definePageMeta({ middleware: ["auth"] });
@@ -107,6 +127,11 @@ const teachers = computed<BonusPenaltyUserRef[]>(() =>
 const showDialog = ref(false);
 const presetTeacherId = ref<string | null>(null);
 const presetType = ref<BonusPenaltyType>("bonus");
+
+const settlePopoverOpen = ref<Record<string, boolean>>({});
+const settlingId = ref<string | null>(null);
+const isSettlingAll = ref(false);
+const settleAllPopoverOpen = ref(false);
 
 const teacherName = (w: BonusPenaltyWallet) =>
   w.teacher?.first_name
@@ -161,15 +186,16 @@ const columns: TableColumn<BonusPenaltyWallet>[] = [
   {
     id: "actions",
     header: "Amallar",
-    cell: ({ row }) =>
-      h("div", { class: "flex justify-end gap-1" }, [
+    cell: ({ row }) => {
+      const w = row.original;
+      return h("div", { class: "flex justify-end gap-1" }, [
         h(UButton, {
           color: "success",
           variant: "ghost",
           icon: "i-lucide-plus",
           size: "sm",
           label: "Bonus",
-          onClick: () => openCreate(row.original.teacher_id, "bonus"),
+          onClick: () => openCreate(w.teacher_id, "bonus"),
         }),
         h(UButton, {
           color: "error",
@@ -177,9 +203,55 @@ const columns: TableColumn<BonusPenaltyWallet>[] = [
           icon: "i-lucide-minus",
           size: "sm",
           label: "Jarima",
-          onClick: () => openCreate(row.original.teacher_id, "jarima"),
+          onClick: () => openCreate(w.teacher_id, "jarima"),
         }),
-      ]),
+        h(
+          UPopover,
+          {
+            open: settlePopoverOpen.value[w.id] || false,
+            "onUpdate:open": (v: boolean) => (settlePopoverOpen.value[w.id] = v),
+          },
+          {
+            default: () =>
+              h(UButton, {
+                color: "primary",
+                variant: "ghost",
+                icon: "i-lucide-receipt-text",
+                size: "sm",
+                label: "Hisob-kitob",
+                disabled: w.amount === 0,
+              }),
+            content: () =>
+              h("div", { class: "p-4 max-w-xs space-y-3" }, [
+                h("p", { class: "text-sm text-gray-600" }, [
+                  "Balans ",
+                  h("span", { class: "font-semibold" }, formatCurrency(w.amount)),
+                  " to'langan deb belgilanadi va hamyon nolga tushiriladi.",
+                ]),
+                h("div", { class: "flex justify-end gap-2" }, [
+                  h(UButton, {
+                    color: "neutral",
+                    variant: "subtle",
+                    label: "Bekor",
+                    size: "sm",
+                    onClick: () => (settlePopoverOpen.value[w.id] = false),
+                  }),
+                  h(UButton, {
+                    color: "primary",
+                    label: settlingId.value === w.id ? "..." : "Tasdiqlash",
+                    loading: settlingId.value === w.id,
+                    size: "sm",
+                    onClick: async () => {
+                      await settleOne(w);
+                      settlePopoverOpen.value[w.id] = false;
+                    },
+                  }),
+                ]),
+              ]),
+          },
+        ),
+      ]);
+    },
   },
 ];
 
@@ -197,6 +269,47 @@ const fetchWallets = async () => {
 };
 
 const fetchAll = () => fetchWallets();
+
+const settleOne = async (w: BonusPenaltyWallet) => {
+  settlingId.value = w.id;
+  try {
+    const res = await settleWallet(w.id);
+    toast.add({
+      title: "Hisob-kitob qilindi",
+      description: `${formatCurrency(res.paid_amount)} to'langan deb belgilandi`,
+      color: "success",
+    });
+    await fetchWallets();
+  } catch (error) {
+    console.error("Failed to settle wallet:", error);
+    toast.add({ title: "Xatolik", description: "Hisob-kitobda xatolik", color: "error" });
+  } finally {
+    settlingId.value = null;
+  }
+};
+
+const onSettleAll = async () => {
+  settleAllPopoverOpen.value = false;
+  await settleAll();
+};
+
+const settleAll = async () => {
+  isSettlingAll.value = true;
+  try {
+    const res = await settleAllWallets();
+    toast.add({
+      title: "Hammasi hisob-kitob qilindi",
+      description: `${res.count} ta hamyon, jami ${formatCurrency(res.total_paid)}`,
+      color: "success",
+    });
+    await fetchWallets();
+  } catch (error) {
+    console.error("Failed to settle all wallets:", error);
+    toast.add({ title: "Xatolik", description: "Hisob-kitobda xatolik", color: "error" });
+  } finally {
+    isSettlingAll.value = false;
+  }
+};
 
 const openCreate = (teacherId: string, type: BonusPenaltyType) => {
   presetTeacherId.value = teacherId;

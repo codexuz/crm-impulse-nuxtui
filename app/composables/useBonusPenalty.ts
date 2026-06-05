@@ -149,6 +149,21 @@ export const useBonusPenalty = () => {
       { amount },
     );
 
+  // Settle (reset) a wallet after its balance has been paid out.
+  const settleWallet = (walletId: string) =>
+    api.patch<{ id: string; teacher_id: string; paid_amount: number }>(
+      apiService.value,
+      `/bonus-penalty-wallet/${walletId}/settle`,
+      {},
+    );
+
+  const settleAllWallets = () =>
+    api.post<{ count: number; total_paid: number }>(
+      apiService.value,
+      "/bonus-penalty-wallet/settle-all",
+      {},
+    );
+
   // --- Categories ---------------------------------------------------------
   const listCategories = (type?: BonusPenaltyType) =>
     api.get<BonusPenaltyCategory[]>(
@@ -191,6 +206,8 @@ export const useBonusPenalty = () => {
     listWallets,
     getWalletByTeacher,
     adjustWalletAmount,
+    settleWallet,
+    settleAllWallets,
     listCategories,
     createCategory,
     updateCategory,
