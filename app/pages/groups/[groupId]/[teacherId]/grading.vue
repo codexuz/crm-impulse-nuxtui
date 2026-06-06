@@ -10,7 +10,7 @@
             icon="i-lucide-arrow-left"
             color="neutral"
             variant="ghost"
-            @click="navigateTo({ path: `/groups/${groupId}/students`, query: route.query })"
+            @click="navigateTo({ path: '/groups', query: route.query })"
           />
         </template>
 

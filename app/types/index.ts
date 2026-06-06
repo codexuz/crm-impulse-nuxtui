@@ -194,6 +194,7 @@ export interface Exam {
   id: string;
   title: string;
   group_id: string;
+  teacher_id?: string | null;
   branch_id?: string | null;
   scheduled_at: string;
   status: "scheduled" | "completed" | "cancelled";

@@ -85,40 +85,46 @@
             </div>
           </UCard>
 
-          <!-- Wallet Info Card -->
-          <UCard v-if="wallet">
+          <!-- Bonus-Penalty Wallet Card -->
+          <UCard>
             <template #header>
               <h4 class="text-sm font-bold flex items-center gap-2">
-                <span class="i-lucide-info text-primary text-lg"></span>
-                Hamyon ma'lumotlari
+                <span class="i-lucide-badge-percent text-amber-500 text-lg"></span>
+                Bonus & Jarima hamyoni
               </h4>
             </template>
 
-            <ul class="space-y-3 text-sm">
+            <div class="flex flex-col items-center py-2 mb-3 border-b">
+              <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Balans</span>
+              <span :class="['text-2xl font-black', (bonusWallet?.amount ?? 0) >= 0 ? 'text-green-600' : 'text-red-600']">
+                {{ bonusWallet ? formatCurrency(bonusWallet.amount) : "0 so'm" }}
+              </span>
+            </div>
+
+            <ul class="space-y-2 text-sm mb-4">
               <li class="flex justify-between">
-                <span class="text-gray-500">Hamyon ID</span>
-                <span class="font-mono text-xs">{{ wallet.id?.substring(0, 8) }}...</span>
-              </li>
-              <li class="flex justify-between">
-                <span class="text-gray-500">Yaratilgan</span>
-                <span class="font-medium">{{
-                  formatDate(wallet.created_at)
-                }}</span>
-              </li>
-              <li class="flex justify-between">
-                <span class="text-gray-500">Yangilangan</span>
-                <span class="font-medium">{{
-                  formatDate(wallet.updated_at)
-                }}</span>
+                <span class="text-gray-500">Jami tranzaksiyalar</span>
+                <span class="font-medium">{{ totalBonusTransactions }} ta</span>
               </li>
             </ul>
+
+            <UButton
+              icon="i-lucide-rotate-ccw"
+              label="Hamyonni nollash"
+              color="red"
+              variant="soft"
+              size="sm"
+              block
+              :disabled="!bonusWallet || bonusWallet.amount === 0"
+              @click="settleConfirmDialog = true"
+            />
           </UCard>
         </aside>
 
         <!-- Right Column: Tabs and Content -->
         <div class="lg:col-span-9 space-y-6">
           <!-- Quick Stats Summary -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <UCard>
               <div class="flex justify-between items-start mb-2">
                 <span class="text-xs font-bold text-gray-500 uppercase">
@@ -169,6 +175,21 @@
                     ? formatDate(transactions[0].created_at)
                     : "Ma'lumot yo'q"
                 }}
+              </div>
+            </UCard>
+
+            <UCard>
+              <div class="flex justify-between items-start mb-2">
+                <span class="text-xs font-bold text-gray-500 uppercase">
+                  Bonus & Jarima
+                </span>
+                <span class="i-lucide-badge-percent text-amber-500 text-xl"></span>
+              </div>
+              <div :class="['text-2xl font-black', (bonusWallet?.amount ?? 0) >= 0 ? 'text-green-600' : 'text-red-600']">
+                {{ bonusWallet ? formatCurrency(bonusWallet.amount) : "0 so'm" }}
+              </div>
+              <div class="text-[10px] text-gray-500 font-bold mt-1">
+                {{ totalBonusTransactions }} ta tranzaksiya
               </div>
             </UCard>
           </div>
@@ -320,6 +341,54 @@
                   </div>
                 </div>
               </template>
+              <!-- Bonus-Penalty Tab -->
+              <template #bonus-penalty>
+                <div class="space-y-4">
+                  <UDashboardToolbar>
+                    <template #left>
+                      <USelectMenu v-model="bonusTransactionFilter" :items="bonusTypeOptions" value-key="value"
+                        placeholder="Turi" class="w-40">
+                        <template #label>
+                          {{ bonusTypeOptions.find((t) => t.value === bonusTransactionFilter)?.label || "Turi" }}
+                        </template>
+                      </USelectMenu>
+                    </template>
+
+                    <template #right>
+                      <div class="flex items-center gap-2">
+                        <UInput v-model="bonusDateFrom" type="date" placeholder="Dan" class="w-40" />
+                        <UInput v-model="bonusDateTo" type="date" placeholder="Gacha" class="w-40" />
+                      </div>
+                      <UButton icon="i-lucide-refresh-cw" label="Yangilash" variant="outline"
+                        @click="loadBonusTransactions" />
+                      <UButton
+                        icon="i-lucide-rotate-ccw"
+                        label="Nollash"
+                        color="red"
+                        variant="soft"
+                        :disabled="!bonusWallet || bonusWallet.amount === 0"
+                        @click="settleConfirmDialog = true"
+                      />
+                    </template>
+                  </UDashboardToolbar>
+
+                  <UTable :data="bonusTransactions" :columns="bonusTransactionColumns"
+                    :loading="loadingBonusTransactions" :empty="'Tranzaksiyalar topilmadi'" />
+
+                  <div v-if="totalBonusTransactions > 0"
+                    class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <div class="text-sm text-gray-500">
+                      <span class="font-medium">{{ bonusPaginationStart }}</span> dan
+                      <span class="font-medium">{{ bonusPaginationEnd }}</span> gacha, jami
+                      <span class="font-medium">{{ totalBonusTransactions }}</span> ta
+                      &nbsp;|&nbsp; Jami summa:
+                      <span class="font-semibold text-gray-800 dark:text-gray-200">{{ formatCurrency(totalBonusAmount) }}</span>
+                    </div>
+                    <UPagination :model-value="bonusPage" :total="totalBonusTransactions" :items-per-page="bonusPerPage"
+                      show-last show-first @update:page="(p: number) => (bonusPage = p)" />
+                  </div>
+                </div>
+              </template>
             </UTabs>
           </UCard>
         </div>
@@ -353,6 +422,27 @@
           <div class="flex justify-end gap-2">
             <UButton label="Bekor qilish" variant="outline" @click="close" />
             <UButton label="Saqlash" :loading="isSubmittingPayment" @click="submitPayment" />
+          </div>
+        </template>
+      </UModal>
+
+      <!-- Settle Confirm Modal -->
+      <UModal v-model:open="settleConfirmDialog" title="Hamyonni nollash">
+        <template #body>
+          <div class="space-y-3">
+            <p class="text-sm text-gray-700 dark:text-gray-300">
+              Joriy balans (<span :class="(bonusWallet?.amount ?? 0) >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'">
+                {{ bonusWallet ? formatCurrency(bonusWallet.amount) : "0 so'm" }}
+              </span>) nolga tushiriladi. Bu amalni bekor qilib bo'lmaydi.
+            </p>
+            <p class="text-sm text-gray-500">Davom etishni xohlaysizmi?</p>
+          </div>
+        </template>
+
+        <template #footer="{ close }">
+          <div class="flex justify-end gap-2">
+            <UButton label="Bekor qilish" variant="outline" @click="close" />
+            <UButton label="Ha, nollash" color="red" :loading="isSettling" @click="settleBonusWallet" />
           </div>
         </template>
       </UModal>
@@ -499,6 +589,29 @@ interface CompensatedLesson {
   };
 }
 
+interface BonusPenaltyWallet {
+  id: string;
+  teacher_id: string;
+  amount: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface BonusPenaltyTransaction {
+  id: string;
+  teacher_id: string;
+  student_id?: string | null;
+  lead_id?: string | null;
+  category_id?: string | null;
+  amount: number;
+  type: "bonus" | "jarima" | "referal";
+  description?: string | null;
+  created_at: string;
+  student?: { user_id: string; first_name: string; last_name: string; phone: string } | null;
+  lead?: { id: string; first_name: string; last_name: string; phone: string } | null;
+  category?: { id: string; name: string; type: string } | null;
+}
+
 const route = useRoute();
 const router = useRouter();
 const { apiService } = useAuth();
@@ -566,6 +679,20 @@ const compensatedLessonsPage = ref(1);
 const compensatedLessonsPerPage = ref(10);
 const totalCompensatedLessons = ref(0);
 
+// Bonus-penalty state
+const bonusWallet = ref<BonusPenaltyWallet | null>(null);
+const bonusTransactions = ref<BonusPenaltyTransaction[]>([]);
+const loadingBonusTransactions = ref(false);
+const bonusTransactionFilter = ref("all");
+const bonusPage = ref(1);
+const bonusPerPage = ref(10);
+const totalBonusTransactions = ref(0);
+const totalBonusAmount = ref(0);
+const bonusDateFrom = ref(getDefaultDateFrom());
+const bonusDateTo = ref(getDefaultDateTo());
+const settleConfirmDialog = ref(false);
+const isSettling = ref(false);
+
 // Tab items
 const tabItems = [
   {
@@ -582,6 +709,11 @@ const tabItems = [
     label: "Qoldirilgan darslar",
     icon: "i-lucide-calendar-x",
     slot: "compensated-lessons",
+  },
+  {
+    label: "Bonus & Jarima",
+    icon: "i-lucide-badge-percent",
+    slot: "bonus-penalty",
   },
 ];
 
@@ -836,6 +968,67 @@ const compensatedLessonsColumns: TableColumn<CompensatedLesson>[] = [
   },
 ];
 
+const bonusTypeOptions = [
+  { label: "Barchasi", value: "all" },
+  { label: "Bonus", value: "bonus" },
+  { label: "Jarima", value: "jarima" },
+  { label: "Referal", value: "referal" },
+];
+
+const bonusTransactionColumns: TableColumn<BonusPenaltyTransaction>[] = [
+  {
+    accessorKey: "created_at",
+    header: "Sana",
+    cell: ({ row }) => formatDateTime(row.original.created_at),
+  },
+  {
+    accessorKey: "type",
+    header: "Tur",
+    cell: ({ row }) => {
+      const colors: Record<string, string> = { bonus: "green", jarima: "red", referal: "blue" };
+      const labels: Record<string, string> = { bonus: "Bonus", jarima: "Jarima", referal: "Referal" };
+      return h(UBadge, { color: colors[row.original.type] || "gray" }, () => labels[row.original.type] || row.original.type);
+    },
+  },
+  {
+    accessorKey: "category",
+    header: "Kategoriya",
+    cell: ({ row }) =>
+      row.original.category
+        ? h("span", { class: "text-sm" }, row.original.category.name)
+        : h("span", { class: "text-gray-400 text-sm" }, "—"),
+  },
+  {
+    accessorKey: "student",
+    header: "O'quvchi / Lead",
+    cell: ({ row }) => {
+      const s = row.original.student;
+      const l = row.original.lead;
+      if (s) return h("span", { class: "text-sm font-medium" }, `${s.first_name} ${s.last_name}`);
+      if (l) return h("span", { class: "text-sm" }, `${l.first_name} ${l.last_name}`);
+      return h("span", { class: "text-gray-400 text-sm" }, "—");
+    },
+  },
+  {
+    accessorKey: "description",
+    header: "Izoh",
+    cell: ({ row }) =>
+      h("span", { class: "text-sm text-gray-500 max-w-48 truncate block" }, row.original.description || "—"),
+  },
+  {
+    accessorKey: "amount",
+    header: "Summa",
+    cell: ({ row }) => {
+      const isDebit = row.original.type === "jarima";
+      return h(
+        "span",
+        { class: isDebit ? "text-red-600 font-semibold" : "text-green-600 font-semibold" },
+        `${isDebit ? "−" : "+"} ${formatCurrency(row.original.amount)}`,
+      );
+    },
+  },
+];
+
 // Computed
 const filteredTransactions = computed(() => {
   // Return transactions as-is, filtering is done server-side
@@ -876,6 +1069,9 @@ const formattedExpenseCategories = computed(() => {
     value: category.id,
   }));
 });
+
+const bonusPaginationStart = computed(() => (bonusPage.value - 1) * bonusPerPage.value + 1);
+const bonusPaginationEnd = computed(() => Math.min(bonusPage.value * bonusPerPage.value, totalBonusTransactions.value));
 
 // Methods
 const loadTeacher = async () => {
@@ -1115,6 +1311,72 @@ const loadCompensatedLessons = async () => {
   }
 };
 
+const loadBonusWallet = async () => {
+  try {
+    bonusWallet.value = await api.get<BonusPenaltyWallet>(
+      apiService.value,
+      `/bonus-penalty-wallet/teacher/${teacherId.value}`,
+    );
+  } catch {
+    bonusWallet.value = null;
+  }
+};
+
+const loadBonusTransactions = async () => {
+  loadingBonusTransactions.value = true;
+  try {
+    const params = new URLSearchParams({
+      teacher_id: teacherId.value,
+      page: bonusPage.value.toString(),
+      limit: bonusPerPage.value.toString(),
+    });
+    if (bonusTransactionFilter.value !== "all") params.append("type", bonusTransactionFilter.value);
+    if (bonusDateFrom.value) params.append("start_date", new Date(bonusDateFrom.value).toISOString());
+    if (bonusDateTo.value) params.append("end_date", new Date(bonusDateTo.value).toISOString());
+
+    const response = await api.get<{
+      data: BonusPenaltyTransaction[];
+      pagination: { page: number; limit: number; total: number; totalPages: number };
+      totalAmount: number;
+    }>(apiService.value, `/bonus-penalty-transaction?${params.toString()}`);
+
+    if (response?.data) {
+      bonusTransactions.value = response.data;
+      bonusPage.value = response.pagination.page;
+      totalBonusTransactions.value = response.pagination.total;
+      totalBonusAmount.value = response.totalAmount;
+    } else {
+      bonusTransactions.value = [];
+      totalBonusTransactions.value = 0;
+      totalBonusAmount.value = 0;
+    }
+  } catch {
+    bonusTransactions.value = [];
+    totalBonusTransactions.value = 0;
+    totalBonusAmount.value = 0;
+  } finally {
+    loadingBonusTransactions.value = false;
+  }
+};
+
+const settleBonusWallet = async () => {
+  isSettling.value = true;
+  try {
+    await api.patch(
+      apiService.value,
+      `/bonus-penalty-wallet/teacher/${teacherId.value}/settle`,
+      {},
+    );
+    toast.add({ title: "Muvaffaqiyat", description: "Bonus & Jarima hamyoni nollandi.", color: "success" });
+    settleConfirmDialog.value = false;
+    await Promise.all([loadBonusWallet(), loadBonusTransactions()]);
+  } catch {
+    toast.add({ title: "Xatolik", description: "Hamyonni nollashda xatolik yuz berdi.", color: "error" });
+  } finally {
+    isSettling.value = false;
+  }
+};
+
 const markLessonAsPaid = async (walletEntryId: string) => {
   try {
     await api.patch(
@@ -1211,6 +1473,8 @@ const loadAllData = async () => {
       loadStudents(),
       loadExpenseCategories(),
       loadCompensatedLessons(),
+      loadBonusWallet(),
+      loadBonusTransactions(),
     ]);
   } finally {
     isLoading.value = false;
@@ -1302,6 +1566,15 @@ watch(currentPage, () => {
 // Watch for compensated lessons page changes
 watch(compensatedLessonsPage, () => {
   loadCompensatedLessons();
+});
+
+// Watch for bonus-penalty filter/page changes
+watch([bonusTransactionFilter, bonusDateFrom, bonusDateTo], () => {
+  bonusPage.value = 1;
+  loadBonusTransactions();
+});
+watch(bonusPage, () => {
+  loadBonusTransactions();
 });
 
 // Lifecycle

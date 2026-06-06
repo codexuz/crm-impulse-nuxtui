@@ -36,6 +36,12 @@
                                 </div>
 
                                 <div class="flex items-center gap-3">
+                                    <UIcon name="i-lucide-user" class="size-4 text-muted" />
+                                    <span class="text-muted w-32">O'qituvchi:</span>
+                                    <span class="font-medium">{{ teacherName }}</span>
+                                </div>
+
+                                <div class="flex items-center gap-3">
                                     <UIcon name="i-lucide-bar-chart" class="size-4 text-muted" />
                                     <span class="text-muted w-32">Daraja:</span>
                                     <span class="font-medium capitalize">{{ exam.level }}</span>
@@ -115,7 +121,7 @@
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
-import type { Exam, ExamResult } from "~/types";
+import type { Exam, ExamResult, Teacher } from "~/types";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 import { h, resolveComponent } from "vue";
@@ -136,9 +142,15 @@ const examId = computed(() => route.params.id as string);
 // Data
 const exam = ref<Exam | null>(null);
 const results = ref<ExamResult[]>([]);
+const teacher = ref<Teacher | null>(null);
 const isLoading = ref(true);
 const isLoadingResults = ref(false);
 const groupName = ref("Noma'lum");
+
+const teacherName = computed(() => {
+    if (!teacher.value) return "Noma'lum";
+    return `${teacher.value.first_name} ${teacher.value.last_name}`;
+});
 
 // Status config
 const statusColors: Record<string, string> = {
@@ -234,6 +246,18 @@ const loadExam = async () => {
                 groupName.value = groupRes.name || "Noma'lum";
             } catch {
                 groupName.value = "Noma'lum";
+            }
+        }
+
+        // Load teacher (teacher_id is resolved by backend, falling back to group's teacher)
+        if (exam.value?.teacher_id) {
+            try {
+                teacher.value = await api.get<Teacher>(
+                    apiService.value,
+                    `/users/${exam.value.teacher_id}`,
+                );
+            } catch {
+                teacher.value = null;
             }
         }
     } catch (error) {

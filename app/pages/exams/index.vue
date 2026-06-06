@@ -172,6 +172,16 @@ const columns: TableColumn<Exam>[] = [
         },
     },
     {
+        accessorKey: "teacher_id",
+        header: "O'qituvchi",
+        cell: ({ row }) => {
+            const teacher = teachers.value.find((t) => t.user_id === row.original.teacher_id);
+            return teacher
+                ? h("span", { class: "text-sm" }, `${teacher.first_name} ${teacher.last_name}`)
+                : h("span", { class: "text-gray-400 text-sm" }, "—");
+        },
+    },
+    {
         accessorKey: "level",
         header: "Daraja",
         cell: ({ row }) => {
