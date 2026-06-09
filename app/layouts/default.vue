@@ -153,6 +153,14 @@ const links = computed(() => [
             open.value = false;
           },
         },
+        {
+          label: "Do'kon",
+          icon: "i-lucide-shopping-bag",
+          to: "/shop/items",
+          onSelect: () => {
+            open.value = false;
+          },
+        },
     ...(hasFinancialAccess.value
       ? [
         {
