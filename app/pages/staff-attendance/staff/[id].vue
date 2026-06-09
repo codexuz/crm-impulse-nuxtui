@@ -89,6 +89,9 @@
             <div v-for="shift in shifts" :key="shift.id"
               class="flex items-center justify-between py-3 px-1 gap-4">
               <div class="flex items-center gap-3 min-w-0">
+                <UBadge v-if="shift.name" color="primary" variant="subtle" size="sm">
+                  {{ shiftNameLabels[shift.name] || shift.name }}
+                </UBadge>
                 <UBadge :color="shift.is_active ? 'success' : 'neutral'" variant="subtle" size="sm">
                   {{ dayLabels[shift.day_of_week] || shift.day_of_week }}
                 </UBadge>
@@ -145,6 +148,14 @@
 
     <template #body>
       <div class="space-y-4">
+        <UFormField label="Smena nomi">
+          <USelectMenu v-model="shiftForm.name" :items="shiftNameOptions" value-key="value" class="w-full">
+            <template #label>
+              {{ shiftNameLabels[shiftForm.name] || '—' }}
+            </template>
+          </USelectMenu>
+        </UFormField>
+
         <UFormField label="Kun" required>
           <USelectMenu v-model="shiftForm.day_of_week" :items="dayOptions" value-key="value" class="w-full">
             <template #label>
@@ -197,6 +208,7 @@ import type {
   StaffProfile,
   StaffShift,
   DayOfWeek,
+  ShiftName,
   StaffAttendanceRecord,
   StaffAttendanceStatus,
 } from "~/types/attendance";
@@ -251,6 +263,7 @@ const shiftDialog = ref(false);
 const isSavingShift = ref(false);
 const editingShift = ref<StaffShift | null>(null);
 const defaultShiftForm = () => ({
+  name: "" as ShiftName | "",
   day_of_week: "every_day" as DayOfWeek,
   in_time: "09:00",
   out_time: "",
@@ -273,6 +286,13 @@ const dayLabels: Record<string, string> = {
 };
 
 const dayOptions = Object.entries(dayLabels).map(([value, label]) => ({ value, label }));
+
+const shiftNameLabels: Record<string, string> = {
+  morning: "Ertalabki",
+  evening: "Kechki",
+};
+
+const shiftNameOptions = Object.entries(shiftNameLabels).map(([value, label]) => ({ value, label }));
 
 const roleLabels: Record<string, string> = {
   admin: "Admin",
@@ -399,6 +419,7 @@ function openAddShift() {
 function openEditShift(shift: StaffShift) {
   editingShift.value = shift;
   shiftForm.value = {
+    name: shift.name ?? "",
     day_of_week: shift.day_of_week,
     in_time: shift.in_time.slice(0, 5),
     out_time: shift.out_time ? shift.out_time.slice(0, 5) : "",
@@ -413,6 +434,7 @@ async function saveShift() {
   isSavingShift.value = true;
   try {
     const payload = {
+      name: shiftForm.value.name || undefined,
       day_of_week: shiftForm.value.day_of_week,
       in_time: shiftForm.value.in_time,
       out_time: shiftForm.value.out_time || undefined,

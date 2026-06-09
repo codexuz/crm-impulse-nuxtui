@@ -74,9 +74,12 @@ export type DayOfWeek =
   | 'friday' | 'saturday' | 'sunday'
   | 'every_day' | 'odd' | 'even';
 
+export type ShiftName = 'morning' | 'evening';
+
 export interface StaffShift {
   id: string;
   profile_id: string;
+  name: ShiftName | null;
   day_of_week: DayOfWeek;
   in_time: string;
   out_time: string | null;
@@ -87,6 +90,7 @@ export interface StaffShift {
 }
 
 export interface CreateStaffShiftDto {
+  name?: ShiftName;
   day_of_week?: DayOfWeek;
   in_time: string;
   out_time?: string;
