@@ -232,7 +232,7 @@ const loadAllTeachers = async (): Promise<NormalizedRecipient[]> => {
   for (let i = 0; i < 100; i++) {
     const response = await api.get<{ data: any[]; totalPages: number }>(
       apiService.value,
-      `/users/teachers?page=${pageNum}&limit=${lim}`,
+      `/users/teachers?page=${pageNum}&limit=${lim}&is_archived=false`,
     );
     for (const t of response.data || []) {
       collected.push({ id: t.user_id, phone: t.phone });
@@ -250,7 +250,7 @@ const loadAllParents = async (): Promise<NormalizedRecipient[]> => {
   for (let i = 0; i < 100; i++) {
     const response = await api.get<{ data: any[]; totalPages: number }>(
       apiService.value,
-      `/student-parents?page=${pageNum}&limit=${lim}`,
+      `/student-parents?page=${pageNum}&limit=${lim}&is_archived=false`,
     );
     for (const p of response.data || []) {
       collected.push({ id: p.id, phone: p.phone_number });
