@@ -80,27 +80,39 @@
                         </div>
 
                         <!-- Stats -->
-                        <div class="border-l pl-6 space-y-3 min-w-48">
+                        <div class="border-l pl-6 space-y-3 min-w-52">
                             <div class="flex justify-between items-center border-b pb-2">
                                 <div class="flex items-center gap-2">
                                     <UIcon name="i-lucide-trophy" class="size-4 text-amber-500" />
                                     <span class="text-sm text-muted font-medium">Points:</span>
                                 </div>
-                                <span class="text-lg font-bold">{{ student.student_profile?.points || 0 }}</span>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-lg font-bold">{{ student.student_profile?.points || 0 }}</span>
+                                    <UButton icon="i-lucide-sliders-horizontal" color="neutral" variant="ghost" size="xs"
+                                        square @click="openRewardModal('points')" />
+                                </div>
                             </div>
                             <div class="flex justify-between items-center border-b pb-2">
                                 <div class="flex items-center gap-2">
                                     <UIcon name="i-lucide-flame" class="size-4 text-orange-500" />
                                     <span class="text-sm text-muted font-medium">Streak:</span>
                                 </div>
-                                <span class="text-lg font-bold">{{ student.student_profile?.streaks || 0 }}</span>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-lg font-bold">{{ student.student_profile?.streaks || 0 }}</span>
+                                    <UButton icon="i-lucide-sliders-horizontal" color="neutral" variant="ghost" size="xs"
+                                        square @click="openRewardModal('streak')" />
+                                </div>
                             </div>
                             <div class="flex justify-between items-center border-b pb-2">
                                 <div class="flex items-center gap-2">
                                     <UIcon name="i-lucide-coins" class="size-4 text-yellow-500" />
                                     <span class="text-sm text-muted font-medium">Coins:</span>
                                 </div>
-                                <span class="text-lg font-bold">{{ student.student_profile?.coins || 0 }}</span>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-lg font-bold">{{ student.student_profile?.coins || 0 }}</span>
+                                    <UButton icon="i-lucide-sliders-horizontal" color="neutral" variant="ghost" size="xs"
+                                        square @click="openRewardModal('coins')" />
+                                </div>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-sm font-medium"
@@ -654,6 +666,40 @@
                     </div>
                 </template>
             </UModal>
+            <!-- Reward Management Modal -->
+            <UModal v-model:open="rewardDialog" :ui="{ width: 'sm:max-w-[360px]' }">
+                <template #header>
+                    <h3 class="text-lg font-semibold">{{ rewardModalTitle }}</h3>
+                </template>
+                <template #body>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-3 bg-elevated rounded-lg border">
+                            <span class="text-sm text-muted">Joriy qiymat:</span>
+                            <span class="font-bold text-xl">{{ currentRewardValue }}</span>
+                        </div>
+                        <UFormField label="Miqdor" required>
+                            <UInput v-model.number="rewardAmount" type="number" :min="1" placeholder="1"
+                                class="w-full" />
+                        </UFormField>
+                    </div>
+                </template>
+                <template #footer>
+                    <div class="flex justify-between gap-2 w-full">
+                        <UButton color="neutral" variant="subtle" label="Bekor qilish"
+                            @click="rewardDialog = false" />
+                        <div class="flex gap-2">
+                            <UButton color="error" variant="subtle" icon="i-lucide-minus" label="Ayirish"
+                                :loading="isAdjustingReward"
+                                :disabled="!rewardAmount || rewardAmount <= 0 || isAdjustingReward"
+                                @click="adjustReward('deduct')" />
+                            <UButton color="success" icon="i-lucide-plus" label="Qo'shish"
+                                :loading="isAdjustingReward"
+                                :disabled="!rewardAmount || rewardAmount <= 0 || isAdjustingReward"
+                                @click="adjustReward('add')" />
+                        </div>
+                    </div>
+                </template>
+            </UModal>
         </template>
     </UDashboardPanel>
 </template>
@@ -715,6 +761,12 @@ const gradesLimit = ref(10);
 const gradesTotalItems = ref(0);
 const gradesStartDate = ref("");
 const gradesEndDate = ref("");
+
+// Reward management
+const rewardDialog = ref(false);
+const rewardType = ref<'points' | 'coins' | 'streak'>('points');
+const rewardAmount = ref<number>(1);
+const isAdjustingReward = ref(false);
 
 // Group enrollment form
 const teachers = ref<Teacher[]>([]);
@@ -974,6 +1026,23 @@ const roadmapAccordionItems = computed(() => {
         defaultOpen: unit.status === 'unlocked' && unit.percentage < 100, // keep current active unit open
         data: unit,
     }));
+});
+
+const rewardModalTitle = computed(() => {
+    const titles: Record<string, string> = {
+        points: 'Ballarni boshqarish',
+        coins: 'Coinlarni boshqarish',
+        streak: 'Streakni boshqarish',
+    };
+    return titles[rewardType.value] ?? '';
+});
+
+const currentRewardValue = computed(() => {
+    if (!student.value?.student_profile) return 0;
+    const p = student.value.student_profile as any;
+    if (rewardType.value === 'points') return p.points || 0;
+    if (rewardType.value === 'coins') return p.coins || 0;
+    return p.streaks || 0;
 });
 
 // Functions
@@ -1479,6 +1548,49 @@ const deleteParent = async (parentId: string) => {
             description: "Ota-ona ma'lumotini o'chirishda xatolik",
             color: "error",
         });
+    }
+};
+
+const openRewardModal = (type: 'points' | 'coins' | 'streak') => {
+    rewardType.value = type;
+    rewardAmount.value = 1;
+    rewardDialog.value = true;
+};
+
+const adjustReward = async (action: 'add' | 'deduct') => {
+    if (!rewardAmount.value || rewardAmount.value <= 0) return;
+    isAdjustingReward.value = true;
+    try {
+        const uid = studentId.value;
+        const amt = rewardAmount.value;
+        let url = '';
+
+        if (rewardType.value === 'points') {
+            url = action === 'add'
+                ? `/student-profiles/${uid}/points/add/${amt}`
+                : `/student-profiles/${uid}/points/deduct/${amt}`;
+        } else if (rewardType.value === 'coins') {
+            url = action === 'add'
+                ? `/student-profiles/${uid}/coins/add/${amt}`
+                : `/student-profiles/${uid}/coins/deduct/${amt}`;
+        } else {
+            url = action === 'add'
+                ? `/student-profiles/${uid}/streak/add/${amt}`
+                : `/student-profiles/${uid}/streak/deduct/${amt}`;
+        }
+
+        await api.patch(apiService.value, url, {});
+        toast.add({ title: 'Muvaffaqiyat', description: 'Muvaffaqiyatli yangilandi', color: 'success' });
+        rewardDialog.value = false;
+        await loadStudentData();
+    } catch (error: any) {
+        toast.add({
+            title: 'Xatolik',
+            description: error?.message || 'Xatolik yuz berdi',
+            color: 'error',
+        });
+    } finally {
+        isAdjustingReward.value = false;
     }
 };
 
