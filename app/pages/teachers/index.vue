@@ -12,13 +12,14 @@
         </template>
 
         <template #right>
-          <UButton icon="i-lucide-plus" label="O'qituvchi qo'shish" @click="openAddDialog" />
+          <UButton icon="i-lucide-plus" :label="addButtonLabel" @click="openAddDialog" />
         </template>
       </UDashboardNavbar>
 
       <UDashboardToolbar>
         <template #left>
-          <UInput v-model="search" icon="i-lucide-search" placeholder="O'qituvchilarni qidirish..." class="w-64" />
+          <UInput v-model="search" icon="i-lucide-search" placeholder="Qidirish..." class="w-56" />
+          <USelectMenu v-model="roleFilter" :items="roleFilterItems" class="w-44" />
           <USelectMenu v-model="archivedFilter" :items="archivedFilterItems" class="w-44" />
         </template>
 
@@ -35,7 +36,7 @@
         <!-- Teachers Table -->
         <UCard>
           <template #header>
-            <h3 class="text-base font-semibold">O'qituvchilar ro'yxati</h3>
+            <h3 class="text-base font-semibold">{{ roleFilter?.label ?? "O'qituvchilar" }} ro'yxati</h3>
           </template>
 
           <UTable ref="table" v-model:sort="sort" :data="teachers" :columns="columns" :loading="isLoading"
@@ -59,7 +60,7 @@
       <!-- Add Teacher Modal -->
       <UModal v-model:open="addDialog" :ui="{ width: 'sm:max-w-[425px]' }">
         <template #header>
-          <h3 class="text-lg font-semibold">Yangi o'qituvchi qo'shish</h3>
+          <h3 class="text-lg font-semibold">{{ addButtonLabel }}</h3>
         </template>
 
         <template #body>
@@ -316,18 +317,33 @@ const UPopover = resolveComponent("UPopover");
 
 const toast = useToast();
 
+const roleFilterItems = [
+  { label: "O'qituvchilar", value: "teacher" },
+  { label: "Yordamchi o'qituvchilar", value: "support_teacher" },
+];
+const roleFilter = ref(roleFilterItems[0]);
+
 const archivedFilterItems = [
-  { label: "Faol o'qituvchilar", value: "false" },
-  { label: "Arxivlangan o'qituvchilar", value: "true" },
+  { label: "Faollar", value: "false" },
+  { label: "Arxivlanganlar", value: "true" },
 ];
 const archivedFilter = ref(archivedFilterItems[0]);
+
+const addButtonLabel = computed(() =>
+  roleFilter.value?.value === "support_teacher"
+    ? "Yordamchi qo'shish"
+    : "O'qituvchi qo'shish",
+);
 
 const teachers = ref<Teacher[]>([]);
 const search = ref("");
 const selectedTeacher = ref<Teacher | null>(null);
 const editingTeacher = ref<Teacher | null>(null);
 const deletePopoverOpen = ref<Record<string, boolean>>({});
+const hardDeletePopoverOpen = ref<Record<string, boolean>>({});
 const isDeleting = ref(false);
+const isHardDeleting = ref(false);
+const isUnarchiving = ref<string | null>(null);
 
 const newTeacher = ref<NewTeacher>({
   first_name: "",
@@ -441,12 +457,71 @@ const columns: TableColumn<Teacher>[] = [
           square: true,
           onClick: () => editTeacher(row.original),
         }),
+        row.original.is_active
+          ? h(
+              UPopover,
+              {
+                open: deletePopoverOpen.value[teacherId] || false,
+                "onUpdate:open": (value: boolean) => {
+                  deletePopoverOpen.value[teacherId] = value;
+                },
+              },
+              {
+                default: () =>
+                  h(UButton, {
+                    color: "warning",
+                    variant: "ghost",
+                    icon: "i-lucide-archive",
+                    size: "sm",
+                    square: true,
+                    title: "Arxivlash",
+                  }),
+                content: () =>
+                  h("div", { class: "p-4 max-w-sm space-y-3" }, [
+                    h("h4", { class: "font-semibold text-sm" }, "Arxivlash?"),
+                    h(
+                      "p",
+                      { class: "text-sm text-gray-600" },
+                      "O'qituvchi faolsizlantiriladi (qayta tiklash mumkin).",
+                    ),
+                    h("div", { class: "flex justify-end gap-2 mt-3" }, [
+                      h(UButton, {
+                        color: "neutral",
+                        variant: "subtle",
+                        label: "Bekor qilish",
+                        size: "sm",
+                        onClick: () => { deletePopoverOpen.value[teacherId] = false; },
+                      }),
+                      h(UButton, {
+                        color: "warning",
+                        label: isDeleting.value ? "Arxivlanmoqda..." : "Arxivlash",
+                        loading: isDeleting.value,
+                        size: "sm",
+                        onClick: async () => {
+                          await confirmDelete(row.original);
+                          deletePopoverOpen.value[teacherId] = false;
+                        },
+                      }),
+                    ]),
+                  ]),
+              },
+            )
+          : h(UButton, {
+              color: "success",
+              variant: "ghost",
+              icon: "i-lucide-archive-restore",
+              size: "sm",
+              square: true,
+              title: "Arxivdan chiqarish",
+              loading: isUnarchiving.value === teacherId,
+              onClick: () => unarchiveTeacher(row.original),
+            }),
         h(
           UPopover,
           {
-            open: deletePopoverOpen.value[teacherId] || false,
+            open: hardDeletePopoverOpen.value[teacherId] || false,
             "onUpdate:open": (value: boolean) => {
-              deletePopoverOpen.value[teacherId] = value;
+              hardDeletePopoverOpen.value[teacherId] = value;
             },
           },
           {
@@ -457,18 +532,15 @@ const columns: TableColumn<Teacher>[] = [
                 icon: "i-lucide-trash-2",
                 size: "sm",
                 square: true,
+                title: "Butunlay o'chirish (hard)",
               }),
             content: () =>
               h("div", { class: "p-4 max-w-sm space-y-3" }, [
-                h(
-                  "h4",
-                  { class: "font-semibold text-sm" },
-                  "Ishonchingiz komilmi?",
-                ),
+                h("h4", { class: "font-semibold text-sm" }, "Butunlay o'chirilsinmi?"),
                 h(
                   "p",
-                  { class: "text-sm text-gray-600" },
-                  "Bu o'qituvchining hisobini butunlay o'chiradi va barcha bog'langan ma'lumotlarni olib tashlaydi.",
+                  { class: "text-sm text-red-600" },
+                  "Bu amal qaytarib bo'lmaydi! Barcha ma'lumotlar o'chiriladi.",
                 ),
                 h("div", { class: "flex justify-end gap-2 mt-3" }, [
                   h(UButton, {
@@ -476,18 +548,16 @@ const columns: TableColumn<Teacher>[] = [
                     variant: "subtle",
                     label: "Bekor qilish",
                     size: "sm",
-                    onClick: () => {
-                      deletePopoverOpen.value[teacherId] = false;
-                    },
+                    onClick: () => { hardDeletePopoverOpen.value[teacherId] = false; },
                   }),
                   h(UButton, {
                     color: "error",
-                    label: isDeleting.value ? "O'chirilmoqda..." : "O'chirish",
-                    loading: isDeleting.value,
+                    label: isHardDeleting.value ? "O'chirilmoqda..." : "Butunlay o'chirish",
+                    loading: isHardDeleting.value,
                     size: "sm",
                     onClick: async () => {
-                      await confirmDelete(row.original);
-                      deletePopoverOpen.value[teacherId] = false;
+                      await confirmHardDelete(row.original);
+                      hardDeletePopoverOpen.value[teacherId] = false;
                     },
                   }),
                 ]),
@@ -513,6 +583,7 @@ async function loadTeachers() {
       params.append("query", search.value);
     }
     params.append("is_archived", archivedFilter.value?.value ?? "false");
+    params.append("role", roleFilter.value?.value ?? "teacher");
 
     const response = await api.get<{
       data: Teacher[];
@@ -554,7 +625,7 @@ async function addTeacher() {
     const data = {
       ...newTeacher.value,
       phone: newTeacher.value.phone ? newTeacher.value.phone.replace(/\s+/g, "") : "",
-      roles: ["teacher"],
+      role: roleFilter.value?.value ?? "teacher",
     };
     await api.post<Teacher>(apiService.value, "/users/teachers", data);
 
@@ -648,6 +719,50 @@ async function confirmDelete(teacher: Teacher) {
     });
   } finally {
     isDeleting.value = false;
+  }
+}
+
+async function unarchiveTeacher(teacher: Teacher) {
+  isUnarchiving.value = teacher.user_id;
+  try {
+    await api.patch<Teacher>(apiService.value, `/users/${teacher.user_id}/activate`, {});
+    await loadTeachers();
+    toast.add({
+      title: "Muvaffaqiyat",
+      description: "O'qituvchi arxivdan chiqarildi",
+      color: "success",
+    });
+  } catch (error: any) {
+    console.error("Failed to unarchive teacher:", error);
+    toast.add({
+      title: "Xatolik",
+      description: "Arxivdan chiqarishda xatolik",
+      color: "error",
+    });
+  } finally {
+    isUnarchiving.value = null;
+  }
+}
+
+async function confirmHardDelete(teacher: Teacher) {
+  isHardDeleting.value = true;
+  try {
+    await api.delete<void>(apiService.value, `/users/${teacher.user_id}/hard`);
+    await loadTeachers();
+    toast.add({
+      title: "Muvaffaqiyat",
+      description: "O'qituvchi butunlay o'chirildi",
+      color: "success",
+    });
+  } catch (error: any) {
+    console.error("Failed to hard delete teacher:", error);
+    toast.add({
+      title: "Xatolik",
+      description: "O'qituvchini o'chirishda xatolik",
+      color: "error",
+    });
+  } finally {
+    isHardDeleting.value = false;
   }
 }
 
@@ -792,6 +907,7 @@ const updateUrlParams = () => {
     query.search = search.value;
   }
   query.is_archived = archivedFilter.value?.value ?? "false";
+  query.role = roleFilter.value?.value ?? "teacher";
 
   router.push({ query });
 };
@@ -809,6 +925,9 @@ onMounted(() => {
   }
   if (route.query.is_archived) {
     archivedFilter.value = archivedFilterItems.find(i => i.value === route.query.is_archived) ?? archivedFilterItems[0];
+  }
+  if (route.query.role) {
+    roleFilter.value = roleFilterItems.find(i => i.value === route.query.role) ?? roleFilterItems[0];
   }
 
   loadTeachers();
@@ -840,6 +959,12 @@ watch(limit, () => {
 });
 
 watch(archivedFilter, () => {
+  page.value = 1;
+  loadTeachers();
+  updateUrlParams();
+});
+
+watch(roleFilter, () => {
   page.value = 1;
   loadTeachers();
   updateUrlParams();
