@@ -20,6 +20,16 @@
         <template #left>
           <UInput v-model="parentName" icon="i-lucide-user" placeholder="Ota-ona ismi..." class="w-48" />
           <UInput v-model="parentPhone" icon="i-lucide-phone" placeholder="Telefon raqami..." class="w-48" />
+          <USelectMenu
+            v-model="archivedFilter"
+            :items="archivedFilterItems"
+            class="w-44"
+          />
+          <USelectMenu
+            v-model="telegramFilter"
+            :items="telegramFilterItems"
+            class="w-44"
+          />
         </template>
 
         <template #right>
@@ -111,6 +121,19 @@ const sort = ref({ column: "full_name", direction: "asc" as const });
 const parentName = ref("");
 const parentPhone = ref("");
 const studentName = ref("");
+
+const archivedFilterItems = [
+  { label: "Aktiv ota-onalar", value: "false" },
+  { label: "Arxivlangan ota-onalar", value: "true" },
+];
+const telegramFilterItems = [
+  { label: "Barcha (Telegram)", value: "" },
+  { label: "Telegram ulangan", value: "true" },
+  { label: "Telegram ulanmagan", value: "false" },
+];
+
+const archivedFilter = ref(archivedFilterItems[0]);
+const telegramFilter = ref(telegramFilterItems[0]);
 
 // Dialogs
 const viewDialog = ref(false);
@@ -281,6 +304,10 @@ const loadParents = async () => {
     if (studentName.value) {
       params.append("student_name", studentName.value);
     }
+    params.append("is_archived", archivedFilter.value?.value ?? "false");
+    if (telegramFilter.value?.value) {
+      params.append("has_telegram", telegramFilter.value.value);
+    }
 
     const url = `/student-parents?${params.toString()}`;
     console.log("Loading parents from:", url);
@@ -399,6 +426,12 @@ onMounted(() => {
   if (route.query.student_name) {
     studentName.value = route.query.student_name as string;
   }
+  if (route.query.is_archived) {
+    archivedFilter.value = archivedFilterItems.find(i => i.value === route.query.is_archived) ?? archivedFilterItems[0];
+  }
+  if (route.query.has_telegram) {
+    telegramFilter.value = telegramFilterItems.find(i => i.value === route.query.has_telegram) ?? telegramFilterItems[0];
+  }
 
   loadParents();
 });
@@ -421,6 +454,10 @@ const updateUrlParams = () => {
   if (studentName.value) {
     query.student_name = studentName.value;
   }
+  query.is_archived = archivedFilter.value?.value ?? "false";
+  if (telegramFilter.value?.value) {
+    query.has_telegram = telegramFilter.value.value;
+  }
 
   router.push({ query });
 };
@@ -441,6 +478,8 @@ const handleSearchChange = () => {
 watch(parentName, handleSearchChange);
 watch(parentPhone, handleSearchChange);
 watch(studentName, handleSearchChange);
+watch(archivedFilter, () => { page.value = 1; loadParents(); updateUrlParams(); });
+watch(telegramFilter, () => { page.value = 1; loadParents(); updateUrlParams(); });
 
 // Reload when page or limit changes
 watch(page, () => {

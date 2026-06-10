@@ -19,6 +19,7 @@
       <UDashboardToolbar>
         <template #left>
           <UInput v-model="search" icon="i-lucide-search" placeholder="O'qituvchilarni qidirish..." class="w-64" />
+          <USelectMenu v-model="archivedFilter" :items="archivedFilterItems" class="w-44" />
         </template>
 
         <template #right>
@@ -315,6 +316,12 @@ const UPopover = resolveComponent("UPopover");
 
 const toast = useToast();
 
+const archivedFilterItems = [
+  { label: "Faol o'qituvchilar", value: "false" },
+  { label: "Arxivlangan o'qituvchilar", value: "true" },
+];
+const archivedFilter = ref(archivedFilterItems[0]);
+
 const teachers = ref<Teacher[]>([]);
 const search = ref("");
 const selectedTeacher = ref<Teacher | null>(null);
@@ -505,6 +512,7 @@ async function loadTeachers() {
     if (search.value) {
       params.append("query", search.value);
     }
+    params.append("is_archived", archivedFilter.value?.value ?? "false");
 
     const response = await api.get<{
       data: Teacher[];
@@ -783,6 +791,7 @@ const updateUrlParams = () => {
   if (search.value) {
     query.search = search.value;
   }
+  query.is_archived = archivedFilter.value?.value ?? "false";
 
   router.push({ query });
 };
@@ -797,6 +806,9 @@ onMounted(() => {
   }
   if (route.query.search) {
     search.value = route.query.search as string;
+  }
+  if (route.query.is_archived) {
+    archivedFilter.value = archivedFilterItems.find(i => i.value === route.query.is_archived) ?? archivedFilterItems[0];
   }
 
   loadTeachers();
@@ -822,6 +834,12 @@ watch(page, () => {
 });
 
 watch(limit, () => {
+  page.value = 1;
+  loadTeachers();
+  updateUrlParams();
+});
+
+watch(archivedFilter, () => {
   page.value = 1;
   loadTeachers();
   updateUrlParams();

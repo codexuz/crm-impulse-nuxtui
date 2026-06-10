@@ -71,15 +71,15 @@
           <div class="space-y-4">
             <div>
               <UFormField label="O'qituvchi" required>
-                <USelectMenu v-model="profileForm.user_id" :items="teacherOptions" value-attribute="value"
-                  option-attribute="label" placeholder="O'qituvchini tanlang" :disabled="isEditMode" />
+                <USelectMenu v-model="profileForm.user_id" :items="teacherOptions" value-key="value"
+                  placeholder="O'qituvchini tanlang" :disabled="isEditMode" />
               </UFormField>
             </div>
 
             <div>
               <UFormField label="To'lov turi" required>
                 <USelectMenu v-model="profileForm.payment_type" :items="paymentTypeSelectOptions"
-                  value-attribute="value" option-attribute="label" placeholder="To'lov turini tanlang" />
+                  value-key="value" placeholder="To'lov turini tanlang" />
               </UFormField>
             </div>
 

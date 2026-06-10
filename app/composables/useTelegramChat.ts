@@ -43,6 +43,7 @@ export interface TelegramConversation {
   telegram_chat_id: string
   parent_name: string
   parent_phone: string
+  student_name?: string
   last_message: string
   last_message_at: string
   unread_count: number

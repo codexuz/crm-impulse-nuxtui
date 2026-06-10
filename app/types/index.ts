@@ -270,6 +270,7 @@ export interface StudentParent {
   updatedAt?: string;
   student?: Student;
   telegram_chat_id?: string | null;
+  is_archived?: boolean;
 }
 
 export interface PaginatedResponse<T> {

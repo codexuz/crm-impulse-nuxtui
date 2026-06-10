@@ -5,6 +5,7 @@ export interface ParentWithTelegram {
   phone_number: string
   additional_number: string
   telegram_chat_id: string
+  student_name?: string
   createdAt: string
   updatedAt: string
 }

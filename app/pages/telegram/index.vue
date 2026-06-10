@@ -92,6 +92,12 @@
                                             </UBadge>
                                         </div>
                                         <p class="text-xs text-muted/60 mt-0.5 truncate">{{ conv.parent_phone }}</p>
+                                        <NuxtLink v-if="conv.student_id"
+                                            :to="`/students/${conv.student_id}`"
+                                            class="text-xs text-primary hover:underline truncate mt-0.5 block"
+                                            @click.stop>
+                                            {{ conv.student_name || 'Talaba sahifasi →' }}
+                                        </NuxtLink>
                                     </div>
                                 </div>
                             </button>
@@ -133,6 +139,12 @@
                                         <p class="text-sm font-medium truncate">{{ parent.full_name }}</p>
                                         <p class="text-xs text-muted truncate">{{ parent.phone_number ||
                                             parent.additional_number }}</p>
+                                        <NuxtLink v-if="parent.student_id"
+                                            :to="`/students/${parent.student_id}`"
+                                            class="text-xs text-primary hover:underline truncate mt-0.5 block"
+                                            @click.stop>
+                                            {{ parent.student_name || 'Talaba sahifasi →' }}
+                                        </NuxtLink>
                                     </div>
                                     <UIcon name="i-lucide-message-circle" class="size-4 text-muted shrink-0" />
                                 </div>
@@ -169,6 +181,11 @@
                                     <p class="text-sm font-semibold leading-tight">{{ activeConversation?.parent_name }}
                                     </p>
                                     <p class="text-xs text-muted">{{ activeConversation?.parent_phone }}</p>
+                                    <NuxtLink v-if="activeConversation?.student_id"
+                                        :to="`/students/${activeConversation.student_id}`"
+                                        class="text-xs text-primary hover:underline">
+                                        {{ activeConversation.student_name || 'Talaba sahifasi →' }}
+                                    </NuxtLink>
                                 </div>
                             </div>
                             <UButton icon="i-lucide-x" color="neutral" variant="ghost" size="sm" @click="handleClose" />

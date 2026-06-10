@@ -19,11 +19,26 @@
           <template #header>
             <div class="flex items-center gap-2">
               <Icon name="lucide:users" class="h-5 w-5" />
-              <h3 class="text-base font-semibold">Talabalarga ommaviy SMS</h3>
+              <h3 class="text-base font-semibold">Ommaviy SMS</h3>
             </div>
           </template>
 
           <div class="space-y-4">
+            <!-- Recipient type selector -->
+            <UFormField label="Qabul qiluvchilar turi">
+              <div class="flex flex-wrap gap-2">
+                <UButton
+                  v-for="type in recipientTypes"
+                  :key="type.value"
+                  :label="type.label"
+                  :icon="type.icon"
+                  :variant="recipientType === type.value ? 'solid' : 'outline'"
+                  size="sm"
+                  @click="selectRecipientType(type.value)"
+                />
+              </div>
+            </UFormField>
+
             <UFormField label="Shablon tanlang">
               <USelectMenu v-model="selectedTemplateId" :items="templateOptions" value-key="value"
                 :loading="isLoadingTemplates" placeholder="Shablonni tanlang" class="w-full">
@@ -44,10 +59,10 @@
             <div class="flex flex-wrap items-center justify-between gap-3">
               <p class="text-sm text-gray-500">
                 Qabul qiluvchilar:
-                <span class="font-medium">{{ recipientCount }}</span> talaba
-                <span v-if="isLoadingStudents" class="ml-2 text-xs">(yuklanmoqda...)</span>
+                <span class="font-medium">{{ recipientCount }}</span> {{ currentTypeLabel }}
+                <span v-if="isLoadingRecipients" class="ml-2 text-xs">(yuklanmoqda...)</span>
               </p>
-              <UButton icon="i-lucide-send" label="Barcha talabalarga yuborish"
+              <UButton icon="i-lucide-send" :label="`Barcha ${currentTypeLabel}ga yuborish`"
                 :disabled="!bulkMessage.trim() || recipientCount === 0 || isSendingBulk" :loading="isSendingBulk"
                 @click="confirmBulkOpen = true" />
             </div>
@@ -59,7 +74,7 @@
       <UModal v-model:open="confirmBulkOpen" title="Ommaviy SMS yuborish">
         <template #body>
           <p class="text-sm">
-            <span class="font-medium">{{ recipientCount }}</span> ta talabaga
+            <span class="font-medium">{{ recipientCount }}</span> ta {{ currentTypeLabel }}ga
             quyidagi xabar yuboriladi:
           </p>
           <div class="mt-3 p-3 rounded bg-gray-50 dark:bg-gray-800 text-sm whitespace-pre-wrap break-words">
@@ -70,7 +85,7 @@
         <template #footer="{ close }">
           <div class="flex justify-end gap-2">
             <UButton label="Bekor qilish" variant="outline" @click="close" />
-            <UButton label="Yuborish" icon="i-lucide-send" :loading="isSendingBulk" @click="sendBulkToAllStudents" />
+            <UButton label="Yuborish" icon="i-lucide-send" :loading="isSendingBulk" @click="sendBulk" />
           </div>
         </template>
       </UModal>
@@ -115,22 +130,35 @@ definePageMeta({
   middleware: ["auth"],
 });
 
-interface BulkStudent {
-  user_id: string;
+type RecipientType = "students" | "teachers" | "parents";
+
+interface NormalizedRecipient {
+  id: string;
   phone: string;
 }
 
+const recipientTypes = [
+  { value: "students" as RecipientType, label: "Talabalar", icon: "i-lucide-graduation-cap" },
+  { value: "teachers" as RecipientType, label: "O'qituvchilar", icon: "i-lucide-chalkboard-teacher" },
+  { value: "parents" as RecipientType, label: "Ota-onalar", icon: "i-lucide-users" },
+];
+
 // State
 const templates = ref<any[]>([]);
-const students = ref<BulkStudent[]>([]);
-const isLoadingStudents = ref(false);
+const recipients = ref<NormalizedRecipient[]>([]);
+const isLoadingRecipients = ref(false);
 const isLoadingTemplates = ref(false);
+const recipientType = ref<RecipientType>("students");
 const selectedTemplateId = ref<string | null>(null);
 const bulkMessage = ref("");
 const isSendingBulk = ref(false);
 const confirmBulkOpen = ref(false);
 
 const normalizePhone = (phone: string) => (phone || "").replace(/\D/g, "");
+
+const currentTypeLabel = computed(
+  () => recipientTypes.find((t) => t.value === recipientType.value)?.label ?? "talabalar",
+);
 
 const templateOptions = computed(() =>
   templates.value.map((t: any) => {
@@ -143,13 +171,12 @@ const templateOptions = computed(() =>
   }),
 );
 
-const validStudents = computed(() =>
-  students.value.filter((s) => normalizePhone(s.phone).length >= 9),
+const validRecipients = computed(() =>
+  recipients.value.filter((r) => normalizePhone(r.phone).length >= 9),
 );
 
-const recipientCount = computed(() => validStudents.value.length);
+const recipientCount = computed(() => validRecipients.value.length);
 
-// Fill the message box when a template is chosen
 watch(selectedTemplateId, (id) => {
   const opt = templateOptions.value.find((t) => t.value === id);
   if (opt) bulkMessage.value = opt.text;
@@ -180,53 +207,105 @@ const loadTemplates = async () => {
   }
 };
 
-// Fetch every student across all pages
-const loadAllStudents = async () => {
-  isLoadingStudents.value = true;
-  try {
-    const collected: BulkStudent[] = [];
-    let pageNum = 1;
-    const lim = 200;
-    // Guard against runaway loops
-    for (let i = 0; i < 100; i++) {
-      const response = await api.get<{
-        data: BulkStudent[];
-        totalPages: number;
-      }>(apiService.value, `/users/students?page=${pageNum}&limit=${lim}`);
-      collected.push(...(response.data || []));
-      if (pageNum >= (response.totalPages || 1)) break;
-      pageNum++;
+const loadAllStudents = async (): Promise<NormalizedRecipient[]> => {
+  const collected: NormalizedRecipient[] = [];
+  let pageNum = 1;
+  const lim = 200;
+  for (let i = 0; i < 100; i++) {
+    const response = await api.get<{ data: any[]; totalPages: number }>(
+      apiService.value,
+      `/users/students?page=${pageNum}&limit=${lim}`,
+    );
+    for (const s of response.data || []) {
+      collected.push({ id: s.user_id, phone: s.phone });
     }
-    students.value = collected;
+    if (pageNum >= (response.totalPages || 1)) break;
+    pageNum++;
+  }
+  return collected;
+};
+
+const loadAllTeachers = async (): Promise<NormalizedRecipient[]> => {
+  const collected: NormalizedRecipient[] = [];
+  let pageNum = 1;
+  const lim = 200;
+  for (let i = 0; i < 100; i++) {
+    const response = await api.get<{ data: any[]; totalPages: number }>(
+      apiService.value,
+      `/users/teachers?page=${pageNum}&limit=${lim}`,
+    );
+    for (const t of response.data || []) {
+      collected.push({ id: t.user_id, phone: t.phone });
+    }
+    if (pageNum >= (response.totalPages || 1)) break;
+    pageNum++;
+  }
+  return collected;
+};
+
+const loadAllParents = async (): Promise<NormalizedRecipient[]> => {
+  const collected: NormalizedRecipient[] = [];
+  let pageNum = 1;
+  const lim = 200;
+  for (let i = 0; i < 100; i++) {
+    const response = await api.get<{ data: any[]; totalPages: number }>(
+      apiService.value,
+      `/student-parents?page=${pageNum}&limit=${lim}`,
+    );
+    for (const p of response.data || []) {
+      collected.push({ id: p.id, phone: p.phone_number });
+    }
+    if (pageNum >= (response.totalPages || 1)) break;
+    pageNum++;
+  }
+  return collected;
+};
+
+const loadRecipients = async () => {
+  isLoadingRecipients.value = true;
+  recipients.value = [];
+  try {
+    if (recipientType.value === "students") {
+      recipients.value = await loadAllStudents();
+    } else if (recipientType.value === "teachers") {
+      recipients.value = await loadAllTeachers();
+    } else {
+      recipients.value = await loadAllParents();
+    }
   } catch (error) {
-    console.error("Failed to load students:", error);
+    console.error("Failed to load recipients:", error);
     toast.add({
       title: "Xatolik",
-      description: "Talabalarni yuklashda xatolik yuz berdi",
+      description: `${currentTypeLabel.value}ni yuklashda xatolik yuz berdi`,
       color: "error",
     });
-    students.value = [];
   } finally {
-    isLoadingStudents.value = false;
+    isLoadingRecipients.value = false;
   }
 };
 
-const sendBulkToAllStudents = async () => {
+const selectRecipientType = (type: RecipientType) => {
+  if (recipientType.value === type) return;
+  recipientType.value = type;
+  loadRecipients();
+};
+
+const sendBulk = async () => {
   if (!bulkMessage.value.trim()) {
     toast.add({ title: "Xatolik", description: "Xabar matni bo'sh.", color: "error" });
     return;
   }
   if (recipientCount.value === 0) {
-    toast.add({ title: "Xatolik", description: "Telefon raqami bor talaba topilmadi.", color: "error" });
+    toast.add({ title: "Xatolik", description: "Telefon raqami bor qabul qiluvchi topilmadi.", color: "error" });
     return;
   }
 
   isSendingBulk.value = true;
   try {
     const { sendBulkSMS } = useSMS();
-    const messages = validStudents.value.map((s) => ({
-      user_sms_id: s.user_id,
-      mobile_phone: normalizePhone(s.phone),
+    const messages = validRecipients.value.map((r) => ({
+      user_sms_id: r.id,
+      mobile_phone: normalizePhone(r.phone),
       message: bulkMessage.value,
     }));
 
@@ -234,7 +313,7 @@ const sendBulkToAllStudents = async () => {
 
     toast.add({
       title: "Muvaffaqiyat",
-      description: `${messages.length} ta talabaga SMS yuborildi`,
+      description: `${messages.length} ta ${currentTypeLabel.value}ga SMS yuborildi`,
       color: "success",
     });
 
@@ -255,6 +334,6 @@ const sendBulkToAllStudents = async () => {
 
 onMounted(() => {
   loadTemplates();
-  loadAllStudents();
+  loadRecipients();
 });
 </script>
