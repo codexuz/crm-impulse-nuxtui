@@ -344,6 +344,7 @@ const hardDeletePopoverOpen = ref<Record<string, boolean>>({});
 const isDeleting = ref(false);
 const isHardDeleting = ref(false);
 const isUnarchiving = ref<string | null>(null);
+const isPromoting = ref<string | null>(null);
 
 const newTeacher = ref<NewTeacher>({
   first_name: "",
@@ -457,6 +458,18 @@ const columns: TableColumn<Teacher>[] = [
           square: true,
           onClick: () => editTeacher(row.original),
         }),
+        roleFilter.value?.value === "support_teacher" && row.original.is_active
+          ? h(UButton, {
+              color: "primary",
+              variant: "ghost",
+              icon: "i-lucide-arrow-up-circle",
+              size: "sm",
+              square: true,
+              title: "O'qituvchiga o'tkazish",
+              loading: isPromoting.value === teacherId,
+              onClick: () => promoteToTeacher(row.original),
+            })
+          : null,
         row.original.is_active
           ? h(
               UPopover,
@@ -719,6 +732,27 @@ async function confirmDelete(teacher: Teacher) {
     });
   } finally {
     isDeleting.value = false;
+  }
+}
+
+async function promoteToTeacher(teacher: Teacher) {
+  isPromoting.value = teacher.user_id;
+  try {
+    await api.patch<Teacher>(apiService.value, `/users/${teacher.user_id}/promote-to-teacher`, {});
+    await loadTeachers();
+    toast.add({
+      title: "Muvaffaqiyat",
+      description: `${teacher.first_name} ${teacher.last_name} o'qituvchiga o'tkazildi`,
+      color: "success",
+    });
+  } catch (error: any) {
+    toast.add({
+      title: "Xatolik",
+      description: error?.data?.message || "O'tkazishda xatolik yuz berdi",
+      color: "error",
+    });
+  } finally {
+    isPromoting.value = null;
   }
 }
 
