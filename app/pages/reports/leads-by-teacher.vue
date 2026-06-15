@@ -8,7 +8,7 @@
                 </template>
 
                 <template #description>
-                    O'qituvchilar bo'yicha lidlar statistikasi
+                    Sinovga kelgan lidlar bo'yicha konversiya (har bir o'qituvchi uchun)
                 </template>
 
                 <template #right>
@@ -41,20 +41,11 @@
                 </div>
 
                 <template v-else-if="stats">
-                    <!-- Summary Cards -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                    <!-- Summary Cards (decided attended leads) -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <UCard>
-                            <div class="text-sm font-medium text-gray-600 dark:text-gray-400 pb-1">Jami tayinlangan
-                            </div>
-                            <div class="text-2xl font-bold text-blue-600">{{ stats.summary.totalAssigned }}</div>
-                        </UCard>
-                        <UCard>
-                            <div class="text-sm font-medium text-gray-600 dark:text-gray-400 pb-1">Keldi</div>
+                            <div class="text-sm font-medium text-gray-600 dark:text-gray-400 pb-1">Keldi (sinovda)</div>
                             <div class="text-2xl font-bold text-green-600">{{ stats.summary.totalAttended }}</div>
-                        </UCard>
-                        <UCard>
-                            <div class="text-sm font-medium text-gray-600 dark:text-gray-400 pb-1">Kelmadi</div>
-                            <div class="text-2xl font-bold text-red-600">{{ stats.summary.totalNotAttended }}</div>
                         </UCard>
                         <UCard>
                             <div class="text-sm font-medium text-gray-600 dark:text-gray-400 pb-1">O'quvchi bo'ldi</div>
@@ -64,10 +55,6 @@
                         <UCard>
                             <div class="text-sm font-medium text-gray-600 dark:text-gray-400 pb-1">Yo'qotildi</div>
                             <div class="text-2xl font-bold text-rose-600">{{ stats.summary.totalLost }}</div>
-                        </UCard>
-                        <UCard>
-                            <div class="text-sm font-medium text-gray-600 dark:text-gray-400 pb-1">Jarayonda</div>
-                            <div class="text-2xl font-bold text-amber-600">{{ stats.summary.totalInProgress }}</div>
                         </UCard>
                         <UCard>
                             <div class="text-sm font-medium text-gray-600 dark:text-gray-400 pb-1">Konversiya</div>
@@ -88,12 +75,9 @@
                                     <tr>
                                         <th class="px-4 py-3">#</th>
                                         <th class="px-4 py-3">O'qituvchi</th>
-                                        <th class="px-4 py-3 text-center">Tayinlangan</th>
-                                        <th class="px-4 py-3 text-center">Keldi</th>
-                                        <th class="px-4 py-3 text-center">Kelmadi</th>
+                                        <th class="px-4 py-3 text-center">Keldi (sinovda)</th>
                                         <th class="px-4 py-3 text-center text-emerald-600">O'quvchi bo'ldi</th>
                                         <th class="px-4 py-3 text-center text-rose-600">Yo'qotildi</th>
-                                        <th class="px-4 py-3 text-center">Jarayonda</th>
                                         <th class="px-4 py-3 text-center">Konversiya</th>
                                         <th class="px-4 py-3"></th>
                                     </tr>
@@ -104,14 +88,11 @@
                                             @click="toggleExpand(t.teacher_id)">
                                             <td class="px-4 py-3">{{ i + 1 }}</td>
                                             <td class="px-4 py-3 font-medium">{{ t.teacherName }}</td>
-                                            <td class="px-4 py-3 text-center">{{ t.totalAssigned }}</td>
                                             <td class="px-4 py-3 text-center text-green-600">{{ t.attended }}</td>
-                                            <td class="px-4 py-3 text-center text-red-500">{{ t.notAttended }}</td>
                                             <td class="px-4 py-3 text-center font-semibold text-emerald-600">{{
                                                 t.becameStudent }}</td>
                                             <td class="px-4 py-3 text-center font-semibold text-rose-600">{{ t.lost }}
                                             </td>
-                                            <td class="px-4 py-3 text-center text-amber-600">{{ t.inProgress }}</td>
                                             <td class="px-4 py-3 text-center">
                                                 <div class="flex items-center justify-center gap-2">
                                                     <div
@@ -134,14 +115,14 @@
 
                                         <!-- Expanded Leads -->
                                         <tr v-if="expandedTeacherId === t.teacher_id">
-                                            <td colspan="10" class="bg-gray-50 dark:bg-gray-800/30 px-6 py-4">
+                                            <td colspan="7" class="bg-gray-50 dark:bg-gray-800/30 px-6 py-4">
                                                 <p class="text-xs text-gray-400 mb-2">Lidlar ro'yxati ({{ t.leads.length
                                                     }})</p>
                                                 <table class="w-full text-xs">
                                                     <thead>
                                                         <tr class="text-gray-500">
                                                             <th class="text-left py-1">Lid ismi</th>
-                                                            <th class="text-center py-1">Sinov darsi</th>
+                                                            <th class="text-center py-1">Natija</th>
                                                             <th class="text-center py-1">Holati</th>
                                                         </tr>
                                                     </thead>
@@ -151,10 +132,9 @@
                                                             <td class="py-1">{{ lead.leadName }}</td>
                                                             <td class="py-1 text-center">
                                                                 <UBadge size="xs"
-                                                                    :color="trialStatusColor(lead.trialStatus)"
+                                                                    :color="outcomeColor(lead.outcome)"
                                                                     variant="subtle">
-                                                                    {{ TRIAL_STATUS_LABELS[lead.trialStatus] ??
-                                                                    lead.trialStatus }}
+                                                                    {{ OUTCOME_LABELS[lead.outcome] ?? lead.outcome }}
                                                                 </UBadge>
                                                             </td>
                                                             <td class="py-1 text-center">
@@ -189,7 +169,7 @@
 <script setup lang="ts">
 import { useReportsNav } from "~/composables/useReportsNav";
 import { useLeadsStatistics } from "~/composables/useLeadsStatistics";
-import type { LeadsStatisticsResponse } from "~/types";
+import type { LeadsStatisticsResponse, LeadAssignmentOutcome } from "~/types";
 
 definePageMeta({ middleware: "auth" });
 
@@ -203,10 +183,9 @@ const isLoading = ref(false);
 const stats = ref<LeadsStatisticsResponse | null>(null);
 const expandedTeacherId = ref<string | null>(null);
 
-const TRIAL_STATUS_LABELS: Record<string, string> = {
-    belgilangan: 'Belgilangan',
-    keldi: 'Keldi',
-    kelmadi: 'Kelmadi',
+const OUTCOME_LABELS: Record<LeadAssignmentOutcome, string> = {
+    became_student: "O'quvchi bo'ldi",
+    lost: "Yo'qotildi",
 };
 
 const presets = [
@@ -246,13 +225,10 @@ function toggleExpand(id: string) {
     expandedTeacherId.value = expandedTeacherId.value === id ? null : id;
 }
 
-function trialStatusColor(status: string): "info" | "success" | "error" {
-    const map: Record<string, "info" | "success" | "error"> = {
-        belgilangan: 'info',
-        keldi: 'success',
-        kelmadi: 'error',
-    };
-    return map[status] ?? 'info';
+function outcomeColor(
+    outcome: LeadAssignmentOutcome,
+): "success" | "error" {
+    return outcome === 'became_student' ? 'success' : 'error';
 }
 
 function leadStatusColor(status: string): "success" | "error" | "info" | "warning" {

@@ -13,6 +13,11 @@ export const useReportsNav = () => {
       icon: "i-lucide-user-check",
       to: "/reports/leads-by-teacher",
     },
+    {
+      label: "Retention (o'qituvchi bo'yicha)",
+      icon: "i-lucide-line-chart",
+      to: "/reports/teacher-retention",
+    },
   ]);
 
   return { reportsNavItems };

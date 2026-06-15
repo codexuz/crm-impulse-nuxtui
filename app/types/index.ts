@@ -356,34 +356,35 @@ export interface ArchivedStudentStatisticsQuery {
 
 // ── Leads Statistics by Teacher ─────────────────────────────────────────
 
+export type LeadAssignmentOutcome = 'became_student' | 'lost'
+
 export interface LeadDetail {
   lead_id: string
   leadName: string
-  trialStatus: 'belgilangan' | 'keldi' | 'kelmadi'
+  /** Final conversion outcome of this attended lead for the teacher. */
+  outcome: LeadAssignmentOutcome
   leadStatus: string
 }
 
 export interface TeacherLeadStats {
   teacher_id: string
   teacherName: string
-  totalAssigned: number
+  /** Decided attended leads (became student + lost). */
   attended: number
-  notAttended: number
-  pending: number
+  /** Attended leads that enrolled. */
   becameStudent: number
+  /** Attended leads that were lost. */
   lost: number
-  inProgress: number
+  /** becameStudent / attended, 0-100. */
   conversionRate: number
   leads: LeadDetail[]
 }
 
 export interface LeadsStatisticsSummary {
-  totalAssigned: number
   totalAttended: number
-  totalNotAttended: number
   totalBecameStudent: number
   totalLost: number
-  totalInProgress: number
+  /** Overall conversion among decided attended leads, 0-100. */
   overallConversionRate: number
 }
 
@@ -443,4 +444,46 @@ export interface FormResponse {
   answers: Record<string, any>
   createdAt: string
   updatedAt: string
+}
+
+// ── Retention stats (teacher monthly student retention) ──────────────────────
+export interface MonthlyRetention {
+  /** First day of the month, ISO date (e.g. "2026-06-01"). */
+  month: string
+  year: number
+  /** 1-12 */
+  monthNumber: number
+  /** Distinct students active in the teacher's groups at the start of the month. */
+  startCount: number
+  /** Of the start-of-month students, how many were still active at month end. */
+  retainedCount: number
+  /** Students who left during the month. */
+  leftCount: number
+  /** retainedCount / startCount, 0-1. null when there were no students to retain. */
+  retentionRate: number | null
+}
+
+export interface TeacherRetentionReport {
+  teacherId: string
+  months: MonthlyRetention[]
+  /** Simple average of the non-null monthly rates over the window, 0-1. */
+  averageRetentionRate: number | null
+}
+
+export interface TeacherRetentionWithTeacher extends TeacherRetentionReport {
+  teacher: {
+    user_id: string
+    first_name: string | null
+    last_name: string | null
+    username: string | null
+  } | null
+}
+
+export interface RetentionStatsQuery {
+  /** Number of trailing months to include (ending with the anchor month). */
+  months?: number
+  /** Anchor year (the last month included). */
+  year?: number
+  /** Anchor month 1-12 (the last month included). */
+  month?: number
 }
