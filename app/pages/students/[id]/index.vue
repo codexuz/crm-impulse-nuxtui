@@ -247,8 +247,13 @@
                                         class="space-y-2">
                                         <div class="flex items-center justify-between text-sm">
                                             <span class="font-medium">{{ progress.course_name }}</span>
-                                            <span class="text-muted">{{ progress.completed }} / {{ progress.total }} ta
-                                                dars</span>
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-muted">{{ progress.completed }} / {{ progress.total }}
+                                                    ta dars</span>
+                                                <UButton icon="i-lucide-rotate-ccw" color="warning" variant="ghost"
+                                                    size="xs" square title="Mashqlarni qayta boshlash"
+                                                    @click="openResetCourseModal(progress)" />
+                                            </div>
                                         </div>
                                         <div class="flex items-center gap-3">
                                             <UProgress v-model="progress.percentage" status class="flex-1"
@@ -700,6 +705,36 @@
                     </div>
                 </template>
             </UModal>
+
+            <!-- Reset Course Exercises Confirmation Modal -->
+            <UModal v-model:open="resetCourseDialog" :ui="{ width: 'sm:max-w-[440px]' }">
+                <template #header>
+                    <h3 class="text-lg font-semibold text-amber-600">Mashqlarni qayta boshlash</h3>
+                </template>
+                <template #body>
+                    <div class="space-y-3 text-sm">
+                        <p>
+                            <span class="font-semibold">{{ resettingCourse?.course_name }}</span>
+                            kursidagi barcha mashqlar shu o'quvchi uchun qayta boshlanadi.
+                        </p>
+                        <p class="text-muted">
+                            O'quvchining barcha topshiriqlari, baholari va kurs bo'yicha progressi
+                            tozalanadi va u mashqlarni qaytadan ishlay oladi. Yig'ilgan coin va ballar
+                            saqlanadi (qayta ishlaganda qayta berilmaydi). Bu amalni qaytarib bo'lmaydi.
+                        </p>
+                    </div>
+                </template>
+                <template #footer>
+                    <div class="flex justify-end gap-3 w-full">
+                        <UButton color="neutral" variant="subtle" label="Bekor qilish"
+                            @click="resetCourseDialog = false" />
+                        <UButton color="warning" icon="i-lucide-rotate-ccw"
+                            :label="isResettingCourse ? 'Qayta boshlanmoqda...' : 'Qayta boshlash'"
+                            :loading="isResettingCourse" :disabled="isResettingCourse"
+                            @click="resetCourseExercises" />
+                    </div>
+                </template>
+            </UModal>
         </template>
     </UDashboardPanel>
 </template>
@@ -767,6 +802,12 @@ const rewardDialog = ref(false);
 const rewardType = ref<'points' | 'coins' | 'streak'>('points');
 const rewardAmount = ref<number>(1);
 const isAdjustingReward = ref(false);
+
+// Reset course exercises
+type CourseProgress = { course_id: string; course_name: string; completed: number; total: number; percentage: number };
+const resetCourseDialog = ref(false);
+const resettingCourse = ref<CourseProgress | null>(null);
+const isResettingCourse = ref(false);
 
 // Group enrollment form
 const teachers = ref<Teacher[]>([]);
@@ -1591,6 +1632,40 @@ const adjustReward = async (action: 'add' | 'deduct') => {
         });
     } finally {
         isAdjustingReward.value = false;
+    }
+};
+
+const openResetCourseModal = (progress: CourseProgress) => {
+    resettingCourse.value = progress;
+    resetCourseDialog.value = true;
+};
+
+const resetCourseExercises = async () => {
+    if (!resettingCourse.value) return;
+    isResettingCourse.value = true;
+    try {
+        await api.delete<void>(
+            apiService.value,
+            `/homework-submissions/student/${studentId.value}/course/${resettingCourse.value.course_id}/reset`,
+        );
+        toast.add({
+            title: "Muvaffaqiyat",
+            description: "Kurs mashqlari qayta boshlandi",
+            color: "success",
+        });
+        resetCourseDialog.value = false;
+        resettingCourse.value = null;
+        // Refresh progress + roadmap to reflect the cleared state
+        await Promise.all([loadStudentProgress(), loadStudentRoadmap()]);
+    } catch (error: any) {
+        console.error("Failed to reset course exercises:", error);
+        toast.add({
+            title: "Xatolik",
+            description: error?.message || "Mashqlarni qayta boshlashda xatolik",
+            color: "error",
+        });
+    } finally {
+        isResettingCourse.value = false;
     }
 };
 
