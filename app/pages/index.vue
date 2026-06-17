@@ -56,7 +56,7 @@
           </div>
           <div class="text-2xl font-bold">{{ dashboard.upcomingPaymentsCount }}</div>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            <span :class="{ 'blur-sm select-none': !hasFinancialAccess }">{{ formatCurrency(dashboard.upcomingPaymentsAmount) }}</span> kutilmoqda
+            <span v-if="hasFinancialAccess">{{ formatCurrency(dashboard.upcomingPaymentsAmount) }}</span><span v-else class="select-none text-gray-400 dark:text-gray-600 tracking-wider">••••••••</span> kutilmoqda
           </p>
         </UCard>
 
@@ -69,7 +69,7 @@
           </div>
           <div class="text-2xl font-bold text-red-600">{{ dashboard.overduePaymentsCount }}</div>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            <span :class="{ 'blur-sm select-none': !hasFinancialAccess }">{{ formatCurrency(dashboard.overduePaymentsAmount) }}</span> qarzdorlik
+            <span v-if="hasFinancialAccess">{{ formatCurrency(dashboard.overduePaymentsAmount) }}</span><span v-else class="select-none text-gray-400 dark:text-gray-600 tracking-wider">••••••••</span> qarzdorlik
           </p>
         </UCard>
       </div>

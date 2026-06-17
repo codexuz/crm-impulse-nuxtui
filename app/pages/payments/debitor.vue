@@ -41,8 +41,9 @@
                 <UIcon name="i-lucide-banknote" class="w-4 h-4 text-gray-500" />
               </div>
             </template>
-            <div class="text-2xl font-bold" :class="{ 'blur-sm select-none inline-block': !hasFinancialAccess }">
-              {{ formatCurrency(totalOverdueAmount) }}
+            <div class="text-2xl font-bold">
+              <span v-if="hasFinancialAccess">{{ formatCurrency(totalOverdueAmount) }}</span>
+              <span v-else class="select-none text-gray-400 dark:text-gray-600 tracking-wider">••••••••</span>
             </div>
             <p class="text-xs text-gray-500 mt-1">To'lanmagan to'lovlar</p>
           </UCard>
