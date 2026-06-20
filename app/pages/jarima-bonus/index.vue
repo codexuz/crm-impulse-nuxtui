@@ -363,7 +363,7 @@ const baseColumns: TableColumn<BonusPenaltyTransaction>[] = [
 const columns = computed<TableColumn<BonusPenaltyTransaction>[]>(() =>
   hasFinancialAccess.value
     ? baseColumns
-    : baseColumns.filter((c) => "id" in c && c.id !== "actions"),
+    : baseColumns.filter((c) => !("id" in c) || c.id !== "actions"),
 );
 
 // --- Data ---
