@@ -95,6 +95,7 @@ const UButton = resolveComponent("UButton");
 const UPopover = resolveComponent("UPopover");
 
 const { formatPhone } = usePhoneFormatter();
+const { hasFinancialAccess } = useFinancialAccess();
 const {
   listTransactions,
   deleteTransaction,
@@ -219,7 +220,7 @@ const deletePopoverOpen = ref<Record<string, boolean>>({});
 const isDeleting = ref(false);
 
 // --- Columns ---
-const columns: TableColumn<BonusPenaltyTransaction>[] = [
+const baseColumns: TableColumn<BonusPenaltyTransaction>[] = [
   {
     accessorKey: "teacher",
     header: "Xodimlar",
@@ -357,6 +358,13 @@ const columns: TableColumn<BonusPenaltyTransaction>[] = [
     },
   },
 ];
+
+// Delete (actions) column is only visible to owner/manager — hidden for admins.
+const columns = computed<TableColumn<BonusPenaltyTransaction>[]>(() =>
+  hasFinancialAccess.value
+    ? baseColumns
+    : baseColumns.filter((c) => "id" in c && c.id !== "actions"),
+);
 
 // --- Data ---
 const queryBase = () => ({
