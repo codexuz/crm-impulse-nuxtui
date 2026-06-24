@@ -53,8 +53,8 @@ const hydrate = () => {
       teacher_id: a.teacher_id || "",
       group_id: a.group_id,
       days: a.days || "",
-      start_time: a.start_time || "",
-      end_time: a.end_time || "",
+      start_time: (a.start_time || "").slice(0, 5),
+      end_time: (a.end_time || "").slice(0, 5),
       start_date: a.start_date || "",
       end_date: a.end_date || "",
       is_active: a.is_active ?? true,
@@ -152,8 +152,10 @@ const submit = async (close: () => void) => {
     };
     if (formData.value.teacher_id) payload.teacher_id = formData.value.teacher_id;
     if (formData.value.days) payload.days = formData.value.days;
-    if (formData.value.start_time) payload.start_time = formData.value.start_time;
-    if (formData.value.end_time) payload.end_time = formData.value.end_time;
+    if (formData.value.start_time)
+      payload.start_time = formData.value.start_time.slice(0, 5);
+    if (formData.value.end_time)
+      payload.end_time = formData.value.end_time.slice(0, 5);
     if (formData.value.start_date) payload.start_date = formData.value.start_date;
     if (formData.value.end_date) payload.end_date = formData.value.end_date;
     if (formData.value.notes) payload.notes = formData.value.notes;
