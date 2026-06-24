@@ -9,25 +9,15 @@
           Support o'qituvchilarni guruhlarga kunlar va vaqt bilan biriktiring
         </template>
         <template #right>
-          <SupportAssignmentModal
-            :support-teachers="supportTeachers"
-            :groups="groups"
-            :teachers="mainTeachers"
-            @submit="loadAssignments"
-          />
+          <SupportAssignmentModal :support-teachers="supportTeachers" :groups="groups" :teachers="mainTeachers"
+            @submit="loadAssignments" />
         </template>
       </UDashboardNavbar>
 
       <UDashboardToolbar>
         <template #right>
-          <USelectMenu
-            v-model="filterTeacher"
-            :items="teacherFilterOptions"
-            value-key="value"
-            placeholder="Support o'qituvchi"
-            searchable
-            class="w-52"
-          >
+          <USelectMenu v-model="filterTeacher" :items="teacherFilterOptions" value-key="value"
+            placeholder="Support o'qituvchi" searchable class="w-52">
             <template #label>
               {{
                 teacherFilterOptions.find((t) => t.value === filterTeacher)
@@ -36,14 +26,8 @@
             </template>
           </USelectMenu>
 
-          <USelectMenu
-            v-model="filterMainTeacher"
-            :items="mainTeacherFilterOptions"
-            value-key="value"
-            placeholder="O'qituvchi"
-            searchable
-            class="w-52"
-          >
+          <USelectMenu v-model="filterMainTeacher" :items="mainTeacherFilterOptions" value-key="value"
+            placeholder="O'qituvchi" searchable class="w-52">
             <template #label>
               {{
                 mainTeacherFilterOptions.find((t) => t.value === filterMainTeacher)
@@ -52,14 +36,8 @@
             </template>
           </USelectMenu>
 
-          <USelectMenu
-            v-model="filterGroup"
-            :items="groupFilterOptions"
-            value-key="value"
-            placeholder="Guruh"
-            searchable
-            class="w-44"
-          >
+          <USelectMenu v-model="filterGroup" :items="groupFilterOptions" value-key="value" placeholder="Guruh"
+            searchable class="w-44">
             <template #label>
               {{
                 groupFilterOptions.find((g) => g.value === filterGroup)?.label ||
@@ -68,13 +46,8 @@
             </template>
           </USelectMenu>
 
-          <USelectMenu
-            v-model="filterDays"
-            :items="daysFilterOptions"
-            value-key="value"
-            placeholder="Kunlar"
-            class="w-40"
-          >
+          <USelectMenu v-model="filterDays" :items="daysFilterOptions" value-key="value" placeholder="Kunlar"
+            class="w-40">
             <template #label>
               {{
                 daysFilterOptions.find((d) => d.value === filterDays)?.label ||
@@ -87,30 +60,33 @@
     </template>
 
     <template #body>
+      <div>
       <UCard>
         <template #header>
           <h3 class="text-base font-semibold">Biriktirishlar ro'yxati</h3>
         </template>
 
-        <UTable
-          :data="assignments"
-          :columns="columns"
-          :loading="isLoading"
-          :empty="'Biriktirishlar topilmadi'"
-        />
+        <UTable :data="assignments" :columns="columns" :loading="isLoading" :empty="'Biriktirishlar topilmadi'" />
+
+        <template #footer>
+          <div class="flex items-center justify-between">
+            <div class="text-sm text-gray-500">
+              <span class="font-medium">{{ paginationStart }}</span> dan
+              <span class="font-medium">{{ paginationEnd }}</span> gacha, jami
+              <span class="font-medium">{{ totalRecords }}</span> ta biriktirish
+            </div>
+
+            <UPagination :model-value="currentPage" :total="totalRecords" :items-per-page="pageLimit" show-last
+              show-first @update:page="(p: number) => (currentPage = p)" />
+          </div>
+        </template>
       </UCard>
+      </div>
     </template>
 
     <!-- Edit modal (controlled) -->
-    <SupportAssignmentModal
-      v-if="editing"
-      v-model:open="editOpen"
-      :support-teachers="supportTeachers"
-      :groups="groups"
-      :teachers="mainTeachers"
-      :assignment="editing"
-      @submit="onEdited"
-    >
+    <SupportAssignmentModal v-if="editing" v-model:open="editOpen" :support-teachers="supportTeachers" :groups="groups"
+      :teachers="mainTeachers" :assignment="editing" @submit="onEdited">
       <span class="hidden" />
     </SupportAssignmentModal>
   </UDashboardPanel>
@@ -136,6 +112,20 @@ const groups = ref<Group[]>([]);
 const supportTeachers = ref<Teacher[]>([]);
 const mainTeachers = ref<Teacher[]>([]);
 const isLoading = ref(true);
+
+// Pagination
+const currentPage = ref(1);
+const pageLimit = ref(10);
+const totalRecords = ref(0);
+
+const paginationStart = computed(() =>
+  totalRecords.value === 0
+    ? 0
+    : (currentPage.value - 1) * pageLimit.value + 1,
+);
+const paginationEnd = computed(() =>
+  Math.min(currentPage.value * pageLimit.value, totalRecords.value),
+);
 
 const editing = ref<SupportAssignment | null>(null);
 const editOpen = ref(false);
@@ -294,6 +284,8 @@ const loadAssignments = async () => {
   isLoading.value = true;
   try {
     const params = new URLSearchParams();
+    params.append("page", currentPage.value.toString());
+    params.append("limit", pageLimit.value.toString());
     if (filterTeacher.value !== "all")
       params.append("support_teacher_id", filterTeacher.value);
     if (filterMainTeacher.value !== "all")
@@ -302,11 +294,14 @@ const loadAssignments = async () => {
       params.append("group_id", filterGroup.value);
     if (filterDays.value !== "all") params.append("days", filterDays.value);
 
-    const qs = params.toString();
-    assignments.value = await api.get<SupportAssignment[]>(
-      apiService.value,
-      qs ? `/support-assignments?${qs}` : "/support-assignments",
-    );
+    const res = await api.get<{
+      data: SupportAssignment[];
+      total: number;
+      totalPages: number;
+      currentPage: number;
+    }>(apiService.value, `/support-assignments?${params.toString()}`);
+    assignments.value = res.data || [];
+    totalRecords.value = res.total || 0;
   } catch (error) {
     console.error("Failed to load support assignments:", error);
     toast.add({
@@ -386,6 +381,11 @@ const removeAssignment = async (id: string) => {
 };
 
 watch([filterTeacher, filterMainTeacher, filterGroup, filterDays], () => {
+  currentPage.value = 1;
+  loadAssignments();
+});
+
+watch(currentPage, () => {
   loadAssignments();
 });
 
