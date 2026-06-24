@@ -199,6 +199,7 @@ export interface Exam {
   scheduled_at: string;
   status: "scheduled" | "completed" | "cancelled";
   is_online: boolean;
+  bonusOrPenaltyAdded?: boolean;
   level: "beginner" | "elementary" | "pre-intermediate" | "intermediate";
   created_at: string;
   updated_at: string;

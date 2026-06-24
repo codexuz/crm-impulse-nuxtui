@@ -223,6 +223,20 @@ const columns: TableColumn<Exam>[] = [
         },
     },
     {
+        accessorKey: "bonusOrPenaltyAdded",
+        header: "Bonus/Jarima",
+        cell: ({ row }) => {
+            return h(
+                UBadge,
+                {
+                    variant: "subtle",
+                    color: row.original.bonusOrPenaltyAdded ? "success" : "neutral",
+                },
+                () => (row.original.bonusOrPenaltyAdded ? "Qo'shilgan" : "Qo'shilmagan"),
+            );
+        },
+    },
+    {
         id: "actions",
         header: "Amallar",
         cell: ({ row }) => {
