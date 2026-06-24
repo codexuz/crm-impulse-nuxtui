@@ -123,6 +123,14 @@ const links = computed(() => [
         open.value = false;
       },
     },
+    {
+      label: "Support biriktirish",
+      icon: "i-lucide-life-buoy",
+      to: "/support-assignments",
+      onSelect: () => {
+        open.value = false;
+      },
+    },
   ],
   [
     {

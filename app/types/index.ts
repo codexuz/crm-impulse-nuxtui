@@ -109,6 +109,49 @@ export interface Group {
   };
 }
 
+export type SupportDays = "odd" | "even" | "every_day" | "other_day";
+
+export interface SupportAssignment {
+  id: string;
+  support_teacher_id: string;
+  group_id: string;
+  days?: SupportDays | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  is_active: boolean;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  teacher?: {
+    user_id: string;
+    first_name: string;
+    last_name: string;
+    avatar_url?: string | null;
+  };
+  group?: Group;
+}
+
+export interface SupportAttendance {
+  id: string;
+  assignment_id?: string | null;
+  support_teacher_id: string;
+  group_id: string;
+  student_id: string;
+  status: "present" | "absent" | "late";
+  note?: string | null;
+  date: string;
+  createdAt: string;
+  updatedAt: string;
+  student?: {
+    user_id: string;
+    first_name: string;
+    last_name: string;
+    avatar_url?: string | null;
+  };
+}
+
 export interface GroupStudent {
   id: string;
   group_id: string;
