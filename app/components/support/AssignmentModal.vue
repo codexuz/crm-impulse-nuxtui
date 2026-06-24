@@ -20,9 +20,6 @@ const props = withDefaults(defineProps<Props>(), {
 });
 const emit = defineEmits(["submit"]);
 
-// Filter the group dropdown by the group's main teacher
-const groupTeacherFilter = ref("all");
-
 const isEdit = computed(() => !!props.assignment);
 const isSubmitting = ref(false);
 
@@ -35,6 +32,7 @@ const dayOptions = [
 
 const emptyForm = () => ({
   support_teacher_id: "",
+  teacher_id: "",
   group_id: "",
   days: "" as string,
   start_time: "",
@@ -52,6 +50,7 @@ const hydrate = () => {
     const a = props.assignment;
     formData.value = {
       support_teacher_id: a.support_teacher_id,
+      teacher_id: a.teacher_id || "",
       group_id: a.group_id,
       days: a.days || "",
       start_time: a.start_time || "",
@@ -75,45 +74,57 @@ const teacherOptions = computed(() =>
   })),
 );
 
-// Main teachers that actually have at least one group, for the filter dropdown
-const groupTeacherOptions = computed(() => {
+// Main teachers that actually have at least one group. Selecting one is saved
+// as teacher_id AND narrows the group dropdown to that teacher's groups.
+const mainTeacherOptions = computed(() => {
   const teacherIdsWithGroups = new Set(
     props.groups.map((g) => g.teacher_id).filter(Boolean),
   );
-  const named = props.teachers
+  return props.teachers
     .filter((t) => teacherIdsWithGroups.has(t.user_id))
     .map((t) => ({
       value: t.user_id,
       label: `${t.first_name} ${t.last_name}`,
     }));
-  return [{ value: "all", label: "Barcha o'qituvchilar" }, ...named];
 });
 
-const groupTeacherFilterLabel = computed(
+const mainTeacherLabel = computed(
   () =>
-    groupTeacherOptions.value.find((t) => t.value === groupTeacherFilter.value)
-      ?.label || "Barcha o'qituvchilar",
+    mainTeacherOptions.value.find((t) => t.value === formData.value.teacher_id)
+      ?.label || "O'qituvchini tanlang",
 );
 
 const groupOptions = computed(() =>
   props.groups
     .filter(
-      (g) =>
-        groupTeacherFilter.value === "all" ||
-        g.teacher_id === groupTeacherFilter.value,
+      (g) => !formData.value.teacher_id || g.teacher_id === formData.value.teacher_id,
     )
     .map((g) => ({ value: g.id, label: g.name })),
 );
 
-// If the active group filter no longer contains the selected group, clear it
-watch(groupTeacherFilter, () => {
-  if (
-    formData.value.group_id &&
-    !groupOptions.value.some((g) => g.value === formData.value.group_id)
-  ) {
-    formData.value.group_id = "";
-  }
-});
+// Changing the main teacher: clear the selected group if it no longer matches
+watch(
+  () => formData.value.teacher_id,
+  () => {
+    if (
+      formData.value.group_id &&
+      !groupOptions.value.some((g) => g.value === formData.value.group_id)
+    ) {
+      formData.value.group_id = "";
+    }
+  },
+);
+
+// Selecting a group with no main teacher set yet → default teacher_id to the
+// group's own teacher so the assignment records who it covers.
+watch(
+  () => formData.value.group_id,
+  (groupId) => {
+    if (!groupId || formData.value.teacher_id) return;
+    const group = props.groups.find((g) => g.id === groupId);
+    if (group?.teacher_id) formData.value.teacher_id = group.teacher_id;
+  },
+);
 
 const dayLabel = computed(
   () =>
@@ -139,6 +150,7 @@ const submit = async (close: () => void) => {
       group_id: formData.value.group_id,
       is_active: formData.value.is_active,
     };
+    if (formData.value.teacher_id) payload.teacher_id = formData.value.teacher_id;
     if (formData.value.days) payload.days = formData.value.days;
     if (formData.value.start_time) payload.start_time = formData.value.start_time;
     if (formData.value.end_time) payload.end_time = formData.value.end_time;
@@ -224,19 +236,19 @@ const submit = async (close: () => void) => {
 
           <div class="grid grid-cols-2 gap-4">
             <UFormField
-              label="O'qituvchi bo'yicha filtr"
-              help="Guruhlarni asosiy o'qituvchi bo'yicha filtrlash"
+              label="O'qituvchi"
+              help="Guruhning asosiy o'qituvchisi (guruhlarni ham filtrlaydi)"
             >
               <USelectMenu
-                v-model="groupTeacherFilter"
-                :items="groupTeacherOptions"
+                v-model="formData.teacher_id"
+                :items="mainTeacherOptions"
                 value-key="value"
                 placeholder="O'qituvchini tanlang"
                 searchable
-                icon="i-lucide-filter"
+                icon="i-lucide-user-check"
                 class="w-full"
               >
-                <template #label>{{ groupTeacherFilterLabel }}</template>
+                <template #label>{{ mainTeacherLabel }}</template>
               </USelectMenu>
             </UFormField>
 

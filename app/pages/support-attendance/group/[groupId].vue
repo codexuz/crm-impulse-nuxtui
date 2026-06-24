@@ -14,7 +14,7 @@
           />
         </template>
         <template #description>
-          {{ formatDate(selectedDate) }} uchun support sessiyasi davomatini belgilang
+          {{ formatDate(selectedDate) }} uchun support sessiyasi davomati (faqat ko'rish)
         </template>
         <template #right>
           <UInput v-model="dateInputValue" type="date" icon="i-lucide-calendar" class="w-48" />
@@ -78,27 +78,21 @@
               <h3 class="text-base font-semibold">
                 Talabalar davomati - {{ formatDate(selectedDate) }}
               </h3>
-              <div class="flex flex-wrap items-center gap-3">
+              <div class="flex items-center gap-2">
+                <UBadge color="neutral" variant="subtle" size="sm">
+                  <UIcon name="i-lucide-lock" class="w-3 h-3 mr-1" />
+                  Faqat ko'rish
+                </UBadge>
                 <UButton
                   icon="i-lucide-refresh-cw"
                   color="neutral"
                   variant="outline"
                   size="sm"
                   @click="fetchAttendanceData"
-                  :disabled="isLoading || isSaving"
+                  :disabled="isLoading"
                   :loading="isLoading"
                 >
                   Yangilash
-                </UButton>
-                <UButton
-                  icon="i-lucide-save"
-                  color="primary"
-                  size="sm"
-                  @click="saveAttendance"
-                  :disabled="isLoading || isSaving || !hasChanges"
-                  :loading="isSaving"
-                >
-                  Saqlash
                 </UButton>
               </div>
             </div>
@@ -124,13 +118,10 @@ import { api } from "~/lib/api";
 import type { SupportAttendance } from "~/types";
 
 const UAvatar = resolveComponent("UAvatar");
-const USelectMenu = resolveComponent("USelectMenu");
-const UInput = resolveComponent("UInput");
+const UBadge = resolveComponent("UBadge");
 
 const route = useRoute();
 const groupId = computed(() => route.params.groupId as string);
-const assignmentId = computed(() => (route.query.assignment_id as string) || undefined);
-const teacherIdQuery = computed(() => (route.query.teacher_id as string) || undefined);
 
 const { apiService } = useAuth();
 const toast = useToast();
@@ -138,7 +129,6 @@ const toast = useToast();
 definePageMeta({ middleware: ["auth"] });
 
 const isLoading = ref(false);
-const isSaving = ref(false);
 const group = reactive({ id: "", name: "" });
 const groupStudents = ref<any[]>([]);
 const selectedDate = ref(new Date());
@@ -151,26 +141,10 @@ const stats = ref<{
   attendanceRate: string;
 } | null>(null);
 
-const statusOptions = [
-  { value: "present", label: "Keldi" },
-  { value: "absent", label: "Kelmadi" },
-  { value: "late", label: "Kechikdi" },
-];
-
-const dotClass = (status: string) =>
-  status === "present"
-    ? "bg-green-500"
-    : status === "absent"
-      ? "bg-red-500"
-      : status === "late"
-        ? "bg-amber-500"
-        : "bg-gray-300";
-
-const getAttendanceData = (studentId: string) => {
-  if (!attendanceData[studentId]) {
-    attendanceData[studentId] = { status: "", note: "" };
-  }
-  return attendanceData[studentId];
+const statusMeta: Record<string, { label: string; color: string }> = {
+  present: { label: "Keldi", color: "success" },
+  absent: { label: "Kelmadi", color: "error" },
+  late: { label: "Kechikdi", color: "warning" },
 };
 
 const columns: TableColumn<any>[] = [
@@ -213,40 +187,11 @@ const columns: TableColumn<any>[] = [
     header: "Holat",
     cell: ({ row }) => {
       const studentId = row.original.student.user_id;
-      const currentStatus = getAttendanceData(studentId).status;
-      return h(
-        "div",
-        { class: "w-48" },
-        h(
-          USelectMenu,
-          {
-            modelValue: currentStatus,
-            "onUpdate:modelValue": (value: string) => {
-              getAttendanceData(studentId).status = value;
-            },
-            items: statusOptions,
-            valueKey: "value",
-            placeholder: "Holatni tanlang",
-            disabled: isSaving.value,
-            size: "md",
-          },
-          {
-            label: () => {
-              const selected = statusOptions.find((s) => s.value === currentStatus);
-              if (!selected) return "Holatni tanlang";
-              return h("div", { class: "flex items-center gap-2" }, [
-                h("span", { class: `h-2 w-2 rounded-full ${dotClass(currentStatus)}` }),
-                h("span", {}, selected.label),
-              ]);
-            },
-            option: ({ option }: any) =>
-              h("div", { class: "flex items-center gap-2" }, [
-                h("span", { class: `h-2 w-2 rounded-full ${dotClass(option.value)}` }),
-                h("span", {}, option.label),
-              ]),
-          },
-        ),
-      );
+      const status = attendanceData[studentId]?.status;
+      const meta = status ? statusMeta[status] : null;
+      return meta
+        ? h(UBadge, { variant: "subtle", color: meta.color }, () => meta.label)
+        : h(UBadge, { variant: "subtle", color: "neutral" }, () => "Belgilanmagan");
     },
   },
   {
@@ -254,22 +199,11 @@ const columns: TableColumn<any>[] = [
     header: "Izoh",
     cell: ({ row }) => {
       const studentId = row.original.student.user_id;
-      return h(UInput, {
-        modelValue: getAttendanceData(studentId).note,
-        "onUpdate:modelValue": (value: string) => {
-          getAttendanceData(studentId).note = value;
-        },
-        placeholder: "Ixtiyoriy izoh...",
-        disabled: isSaving.value,
-        size: "md",
-      });
+      const note = attendanceData[studentId]?.note;
+      return h("span", { class: "text-sm text-gray-500" }, note || "—");
     },
   },
 ];
-
-const hasChanges = computed(() =>
-  Object.values(attendanceData).some((d) => d.status !== ""),
-);
 
 const dateInputValue = computed({
   get: () => formatDateForApi(selectedDate.value),
@@ -294,11 +228,6 @@ const fetchGroupStudents = async () => {
       `/group-students/group/${groupId.value}`,
     );
     groupStudents.value = res || [];
-    groupStudents.value.forEach((s) => {
-      if (!attendanceData[s.student.user_id]) {
-        attendanceData[s.student.user_id] = { status: "", note: "" };
-      }
-    });
   } catch (error) {
     console.error("Failed to fetch students:", error);
     toast.add({
@@ -328,9 +257,7 @@ const fetchStats = async () => {
 const fetchAttendanceData = async () => {
   isLoading.value = true;
   try {
-    groupStudents.value.forEach((s) => {
-      attendanceData[s.student.user_id] = { status: "", note: "" };
-    });
+    Object.keys(attendanceData).forEach((k) => delete attendanceData[k]);
 
     const formattedDate = formatDateForApi(selectedDate.value);
     const records = await api.get<SupportAttendance[]>(
@@ -339,12 +266,10 @@ const fetchAttendanceData = async () => {
     );
 
     (records || []).forEach((record) => {
-      if (attendanceData[record.student_id]) {
-        attendanceData[record.student_id] = {
-          status: record.status,
-          note: record.note || "",
-        };
-      }
+      attendanceData[record.student_id] = {
+        status: record.status,
+        note: record.note || "",
+      };
     });
   } catch (error) {
     console.error("Failed to fetch support attendance:", error);
@@ -355,59 +280,6 @@ const fetchAttendanceData = async () => {
     });
   } finally {
     isLoading.value = false;
-  }
-};
-
-const saveAttendance = async () => {
-  const teacherId = teacherIdQuery.value;
-  if (!teacherId) {
-    toast.add({
-      title: "Xatolik",
-      description: "Support o'qituvchi aniqlanmadi. Biriktirishdan kiring.",
-      color: "error",
-    });
-    return;
-  }
-
-  isSaving.value = true;
-  const formattedDate = formatDateForApi(selectedDate.value);
-  try {
-    const records = Object.entries(attendanceData)
-      .filter(([, data]) => data.status !== "")
-      .map(([student_id, data]) => ({
-        student_id,
-        status: data.status,
-        note: data.note,
-      }));
-
-    if (records.length === 0) {
-      isSaving.value = false;
-      return;
-    }
-
-    await api.post(apiService.value, "/support-attendance/bulk", {
-      assignment_id: assignmentId.value,
-      support_teacher_id: teacherId,
-      group_id: groupId.value,
-      date: formattedDate,
-      records,
-    });
-
-    toast.add({
-      title: "Muvaffaqiyat",
-      description: "Support davomati saqlandi!",
-      color: "success",
-    });
-    fetchStats();
-  } catch (error: any) {
-    console.error("Failed to save support attendance:", error);
-    toast.add({
-      title: "Xatolik",
-      description: error.message || "Davomatni saqlashda xatolik",
-      color: "error",
-    });
-  } finally {
-    isSaving.value = false;
   }
 };
 

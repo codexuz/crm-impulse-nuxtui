@@ -37,6 +37,22 @@
           </USelectMenu>
 
           <USelectMenu
+            v-model="filterMainTeacher"
+            :items="mainTeacherFilterOptions"
+            value-key="value"
+            placeholder="O'qituvchi"
+            searchable
+            class="w-52"
+          >
+            <template #label>
+              {{
+                mainTeacherFilterOptions.find((t) => t.value === filterMainTeacher)
+                  ?.label || "O'qituvchi"
+              }}
+            </template>
+          </USelectMenu>
+
+          <USelectMenu
             v-model="filterGroup"
             :items="groupFilterOptions"
             value-key="value"
@@ -126,12 +142,21 @@ const editOpen = ref(false);
 
 // Filters
 const filterTeacher = ref("all");
+const filterMainTeacher = ref("all");
 const filterGroup = ref("all");
 const filterDays = ref("all");
 
 const teacherFilterOptions = computed(() => [
-  { value: "all", label: "Barcha o'qituvchilar" },
+  { value: "all", label: "Barcha yordamchi o'qituvchilar" },
   ...supportTeachers.value.map((t) => ({
+    value: t.user_id,
+    label: `${t.first_name} ${t.last_name}`,
+  })),
+]);
+
+const mainTeacherFilterOptions = computed(() => [
+  { value: "all", label: "Barcha o'qituvchilar" },
+  ...mainTeachers.value.map((t) => ({
     value: t.user_id,
     label: `${t.first_name} ${t.last_name}`,
   })),
@@ -171,6 +196,18 @@ const columns: TableColumn<SupportAssignment>[] = [
       return h(
         "span",
         { class: "font-medium" },
+        t ? `${t.first_name} ${t.last_name}` : "—",
+      );
+    },
+  },
+  {
+    accessorKey: "main_teacher",
+    header: "O'qituvchi",
+    cell: ({ row }) => {
+      const t = row.original.main_teacher;
+      return h(
+        "span",
+        { class: "text-sm" },
         t ? `${t.first_name} ${t.last_name}` : "—",
       );
     },
@@ -221,10 +258,10 @@ const columns: TableColumn<SupportAssignment>[] = [
         h(UButton, {
           variant: "ghost",
           color: "primary",
-          icon: "i-lucide-clipboard-check",
+          icon: "i-lucide-eye",
           size: "sm",
           square: true,
-          title: "Davomat belgilash",
+          title: "Davomatni ko'rish",
           onClick: () =>
             navigateTo(
               `/support-attendance/group/${row.original.group_id}?assignment_id=${row.original.id}&teacher_id=${row.original.support_teacher_id}`,
@@ -259,6 +296,8 @@ const loadAssignments = async () => {
     const params = new URLSearchParams();
     if (filterTeacher.value !== "all")
       params.append("support_teacher_id", filterTeacher.value);
+    if (filterMainTeacher.value !== "all")
+      params.append("teacher_id", filterMainTeacher.value);
     if (filterGroup.value !== "all")
       params.append("group_id", filterGroup.value);
     if (filterDays.value !== "all") params.append("days", filterDays.value);
@@ -346,7 +385,7 @@ const removeAssignment = async (id: string) => {
   }
 };
 
-watch([filterTeacher, filterGroup, filterDays], () => {
+watch([filterTeacher, filterMainTeacher, filterGroup, filterDays], () => {
   loadAssignments();
 });
 

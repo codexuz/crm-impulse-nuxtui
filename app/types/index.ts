@@ -114,6 +114,7 @@ export type SupportDays = "odd" | "even" | "every_day" | "other_day";
 export interface SupportAssignment {
   id: string;
   support_teacher_id: string;
+  teacher_id?: string | null;
   group_id: string;
   days?: SupportDays | null;
   start_time?: string | null;
@@ -130,6 +131,12 @@ export interface SupportAssignment {
     last_name: string;
     avatar_url?: string | null;
   };
+  main_teacher?: {
+    user_id: string;
+    first_name: string;
+    last_name: string;
+    avatar_url?: string | null;
+  } | null;
   group?: Group;
 }
 
