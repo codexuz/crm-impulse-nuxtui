@@ -652,7 +652,7 @@ const studentAttendance = ref<Record<string, AttendanceRecord>>({});
 const loadingAttendance = ref(new Set<string>());
 
 // Pagination state
-const currentPage = ref(1);
+const currentPage = usePaginationState("page", 1);
 const totalPages = ref(1);
 const totalTransactions = ref(0);
 const transactionsPerPage = ref(10);

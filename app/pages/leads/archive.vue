@@ -161,8 +161,8 @@ const isLoading = ref(true);
 const isDeleting = ref(false);
 
 // Pagination
-const currentPage = ref(1);
-const itemsPerPage = ref(10);
+const currentPage = usePaginationState("page", 1);
+const itemsPerPage = usePaginationState("limit", 10);
 const totalLeads = ref(0);
 
 const totalPages = computed(() =>

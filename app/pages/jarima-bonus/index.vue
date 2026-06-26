@@ -139,7 +139,7 @@ const startDate = ref(getMonthStart());
 const endDate = ref(getMonthEnd());
 
 // Pagination
-const currentPage = ref(1);
+const currentPage = usePaginationState("page", 1);
 const itemsPerPage = 10;
 const totalCount = ref(0);
 const summary = reactive({ bonus: 0, jarima: 0, referal: 0 });

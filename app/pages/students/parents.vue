@@ -111,8 +111,8 @@ const { formatPhone } = usePhoneFormatter();
 // Parents data
 const parents = ref<StudentParent[]>([]);
 const isLoading = ref(true);
-const page = ref(1);
-const limit = ref(10);
+const page = usePaginationState("page", 1);
+const limit = usePaginationState("limit", 10);
 const totalItems = ref(0);
 const totalPages = ref(1);
 const sort = ref({ column: "full_name", direction: "asc" as const });

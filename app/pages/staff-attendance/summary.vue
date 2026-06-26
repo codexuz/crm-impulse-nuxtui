@@ -113,8 +113,8 @@ const endDate = ref(now.toISOString().slice(0, 10));
 
 const summary = ref<AttendanceSummaryItem[]>([]);
 const isLoading = ref(false);
-const page = ref(1);
-const limit = ref(20);
+const page = usePaginationState("page", 1);
+const limit = usePaginationState("limit", 20);
 const totalItems = ref(0);
 
 const totalStats = computed(() =>

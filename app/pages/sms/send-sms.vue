@@ -126,8 +126,8 @@ const userMessages = ref<any[]>([]);
 const isLoadingMessages = ref(false);
 
 // Pagination state
-const currentPage = ref(1);
-const pageSize = ref(20);
+const currentPage = usePaginationState("page", 1);
+const pageSize = usePaginationState("pageSize", 20);
 const totalPages = ref(1);
 const totalMessages = ref(0);
 

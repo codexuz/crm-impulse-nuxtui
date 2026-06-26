@@ -441,8 +441,8 @@ const isSubmitting = ref(false);
 const isDeleting = ref(false);
 
 // Pagination
-const page = ref(1);
-const limit = ref(10);
+const page = usePaginationState("page", 1);
+const limit = usePaginationState("limit", 10);
 const totalPayments = ref(0);
 
 const paginationStart = computed(() => (page.value - 1) * limit.value + 1);

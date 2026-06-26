@@ -791,8 +791,8 @@ const activeTab = ref("groups");
 // Grades state
 const studentGrades = ref<any[]>([]);
 const isLoadingGrades = ref(false);
-const gradesPage = ref(1);
-const gradesLimit = ref(10);
+const gradesPage = usePaginationState("gradesPage", 1);
+const gradesLimit = usePaginationState("gradesLimit", 10);
 const gradesTotalItems = ref(0);
 const gradesStartDate = ref("");
 const gradesEndDate = ref("");

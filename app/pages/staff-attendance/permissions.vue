@@ -279,8 +279,8 @@ const formatDate = (d: string) =>
 const items = ref<StaffPermission[]>([]);
 const isLoading = ref(false);
 const deletingId = ref<string | null>(null);
-const page = ref(1);
-const limit = ref(20);
+const page = usePaginationState("page", 1);
+const limit = usePaginationState("limit", 20);
 const totalItems = ref(0);
 
 const filters = ref({ status: "all" as string, type: "all" as string, date: "" as string });

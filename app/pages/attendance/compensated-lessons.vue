@@ -194,7 +194,7 @@ const teachers = ref<Teacher[]>([]);
 const pending = ref(false);
 const error = ref<string | null>(null);
 const totalRecords = ref(0);
-const currentPage = ref(1);
+const currentPage = usePaginationState("page", 1);
 
 // Filters
 const filters = ref({

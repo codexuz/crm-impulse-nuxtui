@@ -229,7 +229,7 @@ const total = ref(0);
 const totalPages = ref(1);
 const loading = ref(true);
 const searchQuery = ref("");
-const currentPage = ref(1);
+const currentPage = usePaginationState("page", 1);
 const itemsPerPage = 10;
 
 // Modal states

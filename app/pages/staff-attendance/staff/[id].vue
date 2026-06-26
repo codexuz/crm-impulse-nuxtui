@@ -310,8 +310,8 @@ const initials = computed(() => {
 // Attendance history
 const records = ref<StaffAttendanceRecord[]>([]);
 const totalRecords = ref(0);
-const currentPage = ref(1);
-const limit = ref(10);
+const currentPage = usePaginationState("page", 1);
+const limit = usePaginationState("limit", 10);
 const recordsPending = ref(false);
 
 const columns = [

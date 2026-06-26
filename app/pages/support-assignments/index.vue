@@ -114,7 +114,7 @@ const mainTeachers = ref<Teacher[]>([]);
 const isLoading = ref(true);
 
 // Pagination
-const currentPage = ref(1);
+const currentPage = usePaginationState("page", 1);
 const pageLimit = ref(10);
 const totalRecords = ref(0);
 

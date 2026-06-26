@@ -122,7 +122,7 @@ const categories = ref<BonusPenaltyCategory[]>([]);
 const loading = ref(true);
 const searchQuery = ref("");
 const typeFilter = ref<BonusPenaltyType | null>(null);
-const currentPage = ref(1);
+const currentPage = usePaginationState("page", 1);
 const itemsPerPage = 10;
 
 const showDialog = ref(false);
