@@ -74,8 +74,8 @@
                                 <span class="font-medium">{{ totalItems }}</span> ta imtihon
                             </div>
 
-                            <UPagination :model-value="page" :total="totalItems" :items-per-page="limit" show-last
-                                show-first @update:page="(p: number) => (page = p)" />
+                            <UPagination v-model:page="page" :total="totalItems" :items-per-page="limit" show-last
+                                show-first />
                         </div>
                     </template>
                 </UCard>
@@ -114,14 +114,15 @@ const limit = usePaginationState("limit", 10);
 const totalItems = ref(0);
 const totalPages = ref(1);
 
-// Filters
-const search = ref("");
-const filterStatus = ref("all");
-const filterGroup = ref("all");
-const filterTeacher = ref("all");
-const filterBonusPenalty = ref("all");
-const filterStartDate = ref("");
-const filterEndDate = ref("");
+// Filters — persisted across navigation so the list restores its
+// search/filter state when returning from a detail page.
+const search = usePaginationState("search", "");
+const filterStatus = usePaginationState("status", "all");
+const filterGroup = usePaginationState("group", "all");
+const filterTeacher = usePaginationState("teacher", "all");
+const filterBonusPenalty = usePaginationState("bonusPenalty", "all");
+const filterStartDate = usePaginationState("startDate", "");
+const filterEndDate = usePaginationState("endDate", "");
 
 // Status config
 const statusColors: Record<string, string> = {
