@@ -49,7 +49,7 @@
                                 <span class="font-medium">{{ filteredBranches.length }}</span> ta filial
                             </div>
 
-                            <UPagination v-if="filteredBranches.length > itemsPerPage" :model-value="currentPage"
+                            <UPagination v-if="filteredBranches.length > itemsPerPage" :page="currentPage"
                                 :total="filteredBranches.length" :items-per-page="itemsPerPage" show-last show-first
                                 @update:page="onPageChange" />
                         </div>

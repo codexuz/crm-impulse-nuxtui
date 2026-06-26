@@ -113,7 +113,7 @@
                 ta o'qituvchi
               </div>
 
-              <UPagination :model-value="currentPage" :total="filteredTeachers.length" :items-per-page="itemsPerPage"
+              <UPagination :page="currentPage" :total="filteredTeachers.length" :items-per-page="itemsPerPage"
                 show-last show-first @update:page="onPageChange" />
             </div>
           </template>

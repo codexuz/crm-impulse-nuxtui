@@ -76,7 +76,7 @@
               <span class="font-medium">{{ totalRecords }}</span> ta biriktirish
             </div>
 
-            <UPagination :model-value="currentPage" :total="totalRecords" :items-per-page="pageLimit" show-last
+            <UPagination :page="currentPage" :total="totalRecords" :items-per-page="pageLimit" show-last
               show-first @update:page="(p: number) => (currentPage = p)" />
           </div>
         </template>

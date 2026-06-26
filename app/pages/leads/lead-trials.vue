@@ -47,7 +47,7 @@
                 <span class="font-medium">{{ total }}</span> sinov darsi
               </div>
 
-              <UPagination :model-value="currentPage" :total="total" :items-per-page="itemsPerPage" show-last show-first
+              <UPagination :page="currentPage" :total="total" :items-per-page="itemsPerPage" show-last show-first
                 @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>

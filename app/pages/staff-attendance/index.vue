@@ -63,7 +63,7 @@
                 <span class="font-medium">{{ totalRecords }}</span> ta yozuv
               </div>
 
-              <UPagination :model-value="currentPage" :total="totalRecords" :items-per-page="limit" show-last
+              <UPagination :page="currentPage" :total="totalRecords" :items-per-page="limit" show-last
                 show-first @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>

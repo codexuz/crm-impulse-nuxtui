@@ -95,7 +95,7 @@
               </div>
 
               <UPagination
-                :model-value="page"
+                :page="page"
                 :total="totalItems"
                 :items-per-page="limit"
                 show-last

@@ -117,7 +117,7 @@
                 <span class="font-medium">{{ totalPayments }}</span> to'lov
               </div>
 
-              <UPagination :model-value="page" :total="totalPayments" :items-per-page="limit" show-last show-first
+              <UPagination :page="page" :total="totalPayments" :items-per-page="limit" show-last show-first
                 @update:page="(p: number) => (page = p)" />
             </div>
           </template>

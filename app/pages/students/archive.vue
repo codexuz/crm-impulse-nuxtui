@@ -45,7 +45,7 @@
                 <span class="font-medium">{{ totalItems }}</span> talaba
               </div>
 
-              <UPagination :model-value="page" :total="totalItems" :items-per-page="limit" show-last show-first
+              <UPagination :page="page" :total="totalItems" :items-per-page="limit" show-last show-first
                 @update:page="(p: number) => page = p" />
             </div>
           </template>

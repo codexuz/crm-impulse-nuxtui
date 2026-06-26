@@ -62,7 +62,7 @@
                 <span class="font-medium">{{ totalLeads }}</span> lead
               </div>
 
-              <UPagination :model-value="currentPage" :total="totalLeads" :items-per-page="itemsPerPage" show-last
+              <UPagination :page="currentPage" :total="totalLeads" :items-per-page="itemsPerPage" show-last
                 show-first @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>

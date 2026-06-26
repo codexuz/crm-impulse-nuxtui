@@ -52,7 +52,7 @@
                 <span class="font-medium">{{ totalItems }}</span> ta profil
               </div>
 
-              <UPagination :model-value="currentPage" :total="totalItems" :items-per-page="itemsPerPage" show-last
+              <UPagination :page="currentPage" :total="totalItems" :items-per-page="itemsPerPage" show-last
                 show-first @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>

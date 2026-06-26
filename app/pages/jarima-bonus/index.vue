@@ -66,7 +66,7 @@
                 <span class="font-medium">{{ paginationEnd }}</span> gacha, jami
                 <span class="font-medium">{{ totalCount }}</span> ta yozuv
               </div>
-              <UPagination :model-value="currentPage" :total="totalCount" :items-per-page="itemsPerPage" show-last
+              <UPagination :page="currentPage" :total="totalCount" :items-per-page="itemsPerPage" show-last
                 show-first @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>

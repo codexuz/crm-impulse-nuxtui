@@ -42,7 +42,7 @@
               <div class="text-sm text-gray-500">
                 Jami <span class="font-medium">{{ filteredCategories.length }}</span> ta kategoriya
               </div>
-              <UPagination :model-value="currentPage" :total="filteredCategories.length" :items-per-page="itemsPerPage"
+              <UPagination :page="currentPage" :total="filteredCategories.length" :items-per-page="itemsPerPage"
                 show-last show-first @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>

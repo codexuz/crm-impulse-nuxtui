@@ -58,7 +58,7 @@
                                 <span class="font-medium">{{ total }}</span> ta bildirishnoma
                             </div>
 
-                            <UPagination v-if="total > itemsPerPage" :model-value="currentPage" :total="total"
+                            <UPagination v-if="total > itemsPerPage" :page="currentPage" :total="total"
                                 :items-per-page="itemsPerPage" show-last show-first @update:page="onPageChange" />
                         </div>
                     </template>

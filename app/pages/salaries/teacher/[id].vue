@@ -247,7 +247,7 @@
                       ta tranzaksiya
                     </div>
 
-                    <UPagination :model-value="currentPage" :total="totalTransactions"
+                    <UPagination :page="currentPage" :total="totalTransactions"
                       :items-per-page="transactionsPerPage" show-last show-first
                       @update:page="(p: number) => (currentPage = p)" />
                   </div>
@@ -335,7 +335,7 @@
                       ta dars
                     </div>
 
-                    <UPagination :model-value="compensatedLessonsPage" :total="totalCompensatedLessons"
+                    <UPagination :page="compensatedLessonsPage" :total="totalCompensatedLessons"
                       :items-per-page="compensatedLessonsPerPage" show-last show-first
                       @update:page="(p: number) => (compensatedLessonsPage = p)" />
                   </div>
@@ -384,7 +384,7 @@
                       &nbsp;|&nbsp; Jami summa:
                       <span class="font-semibold text-gray-800 dark:text-gray-200">{{ formatCurrency(totalBonusAmount) }}</span>
                     </div>
-                    <UPagination :model-value="bonusPage" :total="totalBonusTransactions" :items-per-page="bonusPerPage"
+                    <UPagination :page="bonusPage" :total="totalBonusTransactions" :items-per-page="bonusPerPage"
                       show-last show-first @update:page="(p: number) => (bonusPage = p)" />
                   </div>
                 </div>

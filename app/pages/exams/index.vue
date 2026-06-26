@@ -96,8 +96,6 @@ const UButton = resolveComponent("UButton");
 
 const { apiService } = useAuth();
 const toast = useToast();
-const route = useRoute();
-const router = useRouter();
 
 definePageMeta({
     layout: "default",
@@ -378,23 +376,6 @@ const formatDate = (dateString?: string): string => {
     });
 };
 
-const updateUrlParams = () => {
-    const query: Record<string, string> = {
-        page: page.value.toString(),
-        limit: limit.value.toString(),
-    };
-
-    if (search.value) query.query = search.value;
-    if (filterStatus.value !== "all") query.status = filterStatus.value;
-    if (filterGroup.value !== "all") query.group_id = filterGroup.value;
-    if (filterTeacher.value !== "all") query.teacher_id = filterTeacher.value;
-    if (filterBonusPenalty.value !== "all") query.bonusOrPenaltyAdded = filterBonusPenalty.value;
-    if (filterStartDate.value) query.start_date = filterStartDate.value;
-    if (filterEndDate.value) query.end_date = filterEndDate.value;
-
-    router.push({ query });
-};
-
 // Watchers
 let searchTimeout: NodeJS.Timeout | null = null;
 watch(search, () => {
@@ -402,39 +383,27 @@ watch(search, () => {
     searchTimeout = setTimeout(() => {
         page.value = 1;
         loadExams();
-        updateUrlParams();
     }, 300);
 });
 
 watch([filterStatus, filterGroup, filterTeacher, filterBonusPenalty, filterStartDate, filterEndDate], () => {
     page.value = 1;
     loadExams();
-    updateUrlParams();
 });
 
 watch(page, () => {
     loadExams();
-    updateUrlParams();
 });
 
 watch(limit, () => {
     page.value = 1;
     loadExams();
-    updateUrlParams();
 });
 
-// Initialize
+// Initialize. List state (page/limit/search/filters) is restored by
+// usePaginationState when returning from an exam detail page, otherwise it
+// starts fresh — so we just load with whatever the current state is.
 onMounted(async () => {
-    if (route.query.page) page.value = parseInt(route.query.page as string) || 1;
-    if (route.query.limit) limit.value = parseInt(route.query.limit as string) || 10;
-    if (route.query.query) search.value = route.query.query as string;
-    if (route.query.status) filterStatus.value = route.query.status as string;
-    if (route.query.group_id) filterGroup.value = route.query.group_id as string;
-    if (route.query.teacher_id) filterTeacher.value = route.query.teacher_id as string;
-    if (route.query.bonusOrPenaltyAdded) filterBonusPenalty.value = route.query.bonusOrPenaltyAdded as string;
-    if (route.query.start_date) filterStartDate.value = route.query.start_date as string;
-    if (route.query.end_date) filterEndDate.value = route.query.end_date as string;
-
     await Promise.all([loadGroups(), loadTeachers()]);
     await loadExams();
 });

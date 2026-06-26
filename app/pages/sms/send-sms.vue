@@ -73,7 +73,7 @@
               <span class="font-medium">{{ totalMessages }}</span> xabar
             </div>
 
-            <UPagination :model-value="currentPage" :total="totalMessages" :items-per-page="pageSize" show-last
+            <UPagination :page="currentPage" :total="totalMessages" :items-per-page="pageSize" show-last
               show-first @update:page="(p: number) => (currentPage = p)" />
           </div>
         </UCard>

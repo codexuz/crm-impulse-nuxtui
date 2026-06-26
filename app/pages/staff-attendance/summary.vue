@@ -75,7 +75,7 @@
             <div class="text-sm text-muted">
               Jami <span class="font-medium">{{ totalItems }}</span> ta xodim
             </div>
-            <UPagination :model-value="page" :total="totalItems" :items-per-page="limit"
+            <UPagination :page="page" :total="totalItems" :items-per-page="limit"
               show-last show-first @update:page="(p: number) => { page = p; load() }" />
           </div>
         </template>

@@ -46,7 +46,7 @@
                                 <span class="font-medium">{{ total }}</span> ta foydalanuvchi
                             </div>
 
-                            <UPagination v-if="total > limit" :model-value="page" :total="total" :items-per-page="limit"
+                            <UPagination v-if="total > limit" :page="page" :total="total" :items-per-page="limit"
                                 show-last show-first @update:page="onPageChange" />
                         </div>
                     </template>

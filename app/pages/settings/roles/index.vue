@@ -48,7 +48,7 @@
                                 <span class="font-medium">{{ filteredRoles.length }}</span> ta lavozim
                             </div>
 
-                            <UPagination v-if="filteredRoles.length > itemsPerPage" :model-value="currentPage"
+                            <UPagination v-if="filteredRoles.length > itemsPerPage" :page="currentPage"
                                 :total="filteredRoles.length" :items-per-page="itemsPerPage" show-last show-first
                                 @update:page="onPageChange" />
                         </div>

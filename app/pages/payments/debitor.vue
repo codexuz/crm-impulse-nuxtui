@@ -89,7 +89,7 @@
                 <span class="font-medium">{{ filteredDebitors.length }}</span>
                 qarzdorlar
               </div>
-              <UPagination :model-value="currentPage" :total="filteredDebitors.length" :items-per-page="itemsPerPage"
+              <UPagination :page="currentPage" :total="filteredDebitors.length" :items-per-page="itemsPerPage"
                 show-first show-last @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>
