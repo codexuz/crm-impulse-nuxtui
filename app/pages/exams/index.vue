@@ -237,6 +237,16 @@ const columns: TableColumn<Exam>[] = [
         },
     },
     {
+        accessorKey: "created_at",
+        header: "Yaratilgan",
+        cell: ({ row }) => formatDate(row.original.created_at),
+    },
+    {
+        accessorKey: "updated_at",
+        header: "Yangilangan",
+        cell: ({ row }) => formatDate(row.original.updated_at),
+    },
+    {
         id: "actions",
         header: "Amallar",
         cell: ({ row }) => {
