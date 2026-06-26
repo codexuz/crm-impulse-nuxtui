@@ -295,7 +295,7 @@ const router = useRouter();
 const notifications = ref<Notification[]>([]);
 const loading = ref(true);
 const searchQuery = ref("");
-const currentPage = usePaginationState("page", 1);
+const currentPage = ref(1);
 const itemsPerPage = 10;
 
 // Dialog states
