@@ -235,6 +235,20 @@ const resultColumns: TableColumn<ExamResult>[] = [
             return h("span", { class: "text-sm text-muted" }, row.original.feedback || "—");
         },
     },
+    {
+        accessorKey: "created_at",
+        header: "Yaratilgan",
+        cell: ({ row }) => {
+            return h("span", { class: "text-sm text-muted" }, formatDate(row.original.created_at));
+        },
+    },
+    {
+        accessorKey: "updated_at",
+        header: "Yangilangan",
+        cell: ({ row }) => {
+            return h("span", { class: "text-sm text-muted" }, formatDate(row.original.updated_at));
+        },
+    },
 ];
 
 // Methods
