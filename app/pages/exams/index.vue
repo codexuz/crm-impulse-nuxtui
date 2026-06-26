@@ -39,6 +39,13 @@
                         </template>
                     </USelectMenu>
 
+                    <USelectMenu v-model="filterBonusPenalty" :items="bonusPenaltyOptions" value-key="value" placeholder="Bonus/Jarima"
+                        class="w-45">
+                        <template #label>
+                            {{bonusPenaltyOptions.find((b) => b.value === filterBonusPenalty)?.label || "Bonus/Jarima"}}
+                        </template>
+                    </USelectMenu>
+
                     <UInput v-model="filterStartDate" type="date" class="w-40" placeholder="Boshlanish" />
 
                     <UInput v-model="filterEndDate" type="date" class="w-40" placeholder="Tugash" />
@@ -112,6 +119,7 @@ const search = ref("");
 const filterStatus = ref("all");
 const filterGroup = ref("all");
 const filterTeacher = ref("all");
+const filterBonusPenalty = ref("all");
 const filterStartDate = ref("");
 const filterEndDate = ref("");
 
@@ -150,6 +158,12 @@ const teacherOptions = computed(() => [
         value: t.user_id,
         label: `${t.first_name} ${t.last_name}`,
     })),
+]);
+
+const bonusPenaltyOptions = computed(() => [
+    { value: "all", label: "Barchasi" },
+    { value: "true", label: "Qo'shilgan" },
+    { value: "false", label: "Qo'shilmagan" },
 ]);
 
 // Table columns
@@ -293,6 +307,10 @@ const loadExams = async () => {
             params.append("teacher_id", filterTeacher.value);
         }
 
+        if (filterBonusPenalty.value !== "all") {
+            params.append("bonusOrPenaltyAdded", filterBonusPenalty.value);
+        }
+
         if (filterStartDate.value) {
             params.append("start_date", filterStartDate.value);
         }
@@ -369,6 +387,7 @@ const updateUrlParams = () => {
     if (filterStatus.value !== "all") query.status = filterStatus.value;
     if (filterGroup.value !== "all") query.group_id = filterGroup.value;
     if (filterTeacher.value !== "all") query.teacher_id = filterTeacher.value;
+    if (filterBonusPenalty.value !== "all") query.bonusOrPenaltyAdded = filterBonusPenalty.value;
     if (filterStartDate.value) query.start_date = filterStartDate.value;
     if (filterEndDate.value) query.end_date = filterEndDate.value;
 
@@ -386,7 +405,7 @@ watch(search, () => {
     }, 300);
 });
 
-watch([filterStatus, filterGroup, filterTeacher, filterStartDate, filterEndDate], () => {
+watch([filterStatus, filterGroup, filterTeacher, filterBonusPenalty, filterStartDate, filterEndDate], () => {
     page.value = 1;
     loadExams();
     updateUrlParams();
@@ -411,6 +430,7 @@ onMounted(async () => {
     if (route.query.status) filterStatus.value = route.query.status as string;
     if (route.query.group_id) filterGroup.value = route.query.group_id as string;
     if (route.query.teacher_id) filterTeacher.value = route.query.teacher_id as string;
+    if (route.query.bonusOrPenaltyAdded) filterBonusPenalty.value = route.query.bonusOrPenaltyAdded as string;
     if (route.query.start_date) filterStartDate.value = route.query.start_date as string;
     if (route.query.end_date) filterEndDate.value = route.query.end_date as string;
 
