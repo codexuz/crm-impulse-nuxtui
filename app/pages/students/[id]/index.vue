@@ -396,7 +396,7 @@
                             <template v-else>
                                 <UTable :data="studentGrades" :columns="gradeColumns" />
                                 <div v-if="gradesTotalItems > gradesLimit" class="flex justify-center mt-4">
-                                    <UPagination v-model="gradesPage" :total="gradesTotalItems"
+                                    <UPagination v-model:page="gradesPage" :total="gradesTotalItems"
                                         :items-per-page="gradesLimit" />
                                 </div>
                             </template>

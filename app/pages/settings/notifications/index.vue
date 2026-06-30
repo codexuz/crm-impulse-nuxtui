@@ -58,7 +58,7 @@
                                 <span class="font-medium">{{ total }}</span> ta bildirishnoma
                             </div>
 
-                            <UPagination v-if="total > itemsPerPage" :model-value="currentPage" :total="total"
+                            <UPagination v-if="total > itemsPerPage" :page="currentPage" :total="total"
                                 :items-per-page="itemsPerPage" show-last show-first @update:page="onPageChange" />
                         </div>
                     </template>
@@ -229,7 +229,7 @@ const total = ref(0);
 const totalPages = ref(1);
 const loading = ref(true);
 const searchQuery = ref("");
-const currentPage = ref(1);
+const currentPage = usePaginationState("page", 1);
 const itemsPerPage = 10;
 
 // Modal states

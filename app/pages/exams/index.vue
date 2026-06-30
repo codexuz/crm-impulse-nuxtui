@@ -40,13 +40,6 @@
                         </template>
                     </USelectMenu>
 
-                    <USelectMenu v-model="filterType" :items="typeOptions" value-key="value" placeholder="Test turi"
-                        class="w-40">
-                        <template #label>
-                            {{typeOptions.find((t) => t.value === filterType)?.label || "Test turi"}}
-                        </template>
-                    </USelectMenu>
-
                     <UInput v-model="filterStartDate" type="date" class="w-40" placeholder="Boshlanish" />
 
                     <UInput v-model="filterEndDate" type="date" class="w-40" placeholder="Tugash" />
@@ -75,8 +68,8 @@
                                 <span class="font-medium">{{ totalItems }}</span> ta imtihon
                             </div>
 
-                            <UPagination :model-value="page" :total="totalItems" :items-per-page="limit" show-last
-                                show-first @update:page="(p: number) => (page = p)" />
+                            <UPagination v-model:page="page" :total="totalItems" :items-per-page="limit" show-last
+                                show-first />
                         </div>
                     </template>
                 </UCard>
@@ -110,8 +103,6 @@ const examsNavItems: NavigationMenuItem[] = [
 
 const { apiService } = useAuth();
 const toast = useToast();
-const route = useRoute();
-const router = useRouter();
 
 definePageMeta({
     layout: "default",
@@ -123,8 +114,8 @@ const exams = ref<Exam[]>([]);
 const groups = ref<Group[]>([]);
 const teachers = ref<Teacher[]>([]);
 const isLoading = ref(true);
-const page = ref(1);
-const limit = ref(10);
+const page = usePaginationState("page", 1);
+const limit = usePaginationState("limit", 10);
 const totalItems = ref(0);
 const totalPages = ref(1);
 
@@ -133,23 +124,8 @@ const search = ref("");
 const filterStatus = ref("all");
 const filterGroup = ref("all");
 const filterTeacher = ref("all");
-const filterType = ref("all");
 const filterStartDate = ref("");
 const filterEndDate = ref("");
-
-// Exam type config
-const examTypeLabels: Record<ExamType, string> = {
-    unit_test: "Unit Test",
-    level_test: "Level Test",
-    haftalik_test: "Haftalik Test",
-    oylik_test: "Oylik Test",
-    mid_course_test: "Mid Course Test",
-};
-
-const typeOptions = computed(() => [
-    { value: "all", label: "Barcha turlar" },
-    ...Object.entries(examTypeLabels).map(([value, label]) => ({ value, label })),
-]);
 
 // Status config
 const statusColors: Record<string, string> = {
@@ -186,6 +162,12 @@ const teacherOptions = computed(() => [
         value: t.user_id,
         label: `${t.first_name} ${t.last_name}`,
     })),
+]);
+
+const bonusPenaltyOptions = computed(() => [
+    { value: "all", label: "Barchasi" },
+    { value: "true", label: "Qo'shilgan" },
+    { value: "false", label: "Qo'shilmagan" },
 ]);
 
 // Table columns
@@ -297,6 +279,30 @@ const columns: TableColumn<Exam>[] = [
         },
     },
     {
+        accessorKey: "bonusOrPenaltyAdded",
+        header: "Bonus/Jarima",
+        cell: ({ row }) => {
+            return h(
+                UBadge,
+                {
+                    variant: "subtle",
+                    color: row.original.bonusOrPenaltyAdded ? "success" : "neutral",
+                },
+                () => (row.original.bonusOrPenaltyAdded ? "Qo'shilgan" : "Qo'shilmagan"),
+            );
+        },
+    },
+    {
+        accessorKey: "created_at",
+        header: "Yaratilgan",
+        cell: ({ row }) => formatDate(row.original.created_at),
+    },
+    {
+        accessorKey: "updated_at",
+        header: "Yangilangan",
+        cell: ({ row }) => formatDate(row.original.updated_at),
+    },
+    {
         id: "actions",
         header: "Amallar",
         cell: ({ row }) => {
@@ -341,10 +347,6 @@ const loadExams = async () => {
 
         if (filterTeacher.value !== "all") {
             params.append("teacher_id", filterTeacher.value);
-        }
-
-        if (filterType.value !== "all") {
-            params.append("type", filterType.value);
         }
 
         if (filterStartDate.value) {
@@ -423,7 +425,6 @@ const updateUrlParams = () => {
     if (filterStatus.value !== "all") query.status = filterStatus.value;
     if (filterGroup.value !== "all") query.group_id = filterGroup.value;
     if (filterTeacher.value !== "all") query.teacher_id = filterTeacher.value;
-    if (filterType.value !== "all") query.type = filterType.value;
     if (filterStartDate.value) query.start_date = filterStartDate.value;
     if (filterEndDate.value) query.end_date = filterEndDate.value;
 
@@ -437,28 +438,26 @@ watch(search, () => {
     searchTimeout = setTimeout(() => {
         page.value = 1;
         loadExams();
-        updateUrlParams();
     }, 300);
 });
 
-watch([filterStatus, filterGroup, filterTeacher, filterType, filterStartDate, filterEndDate], () => {
+watch([filterStatus, filterGroup, filterTeacher, filterStartDate, filterEndDate], () => {
     page.value = 1;
     loadExams();
-    updateUrlParams();
 });
 
 watch(page, () => {
     loadExams();
-    updateUrlParams();
 });
 
 watch(limit, () => {
     page.value = 1;
     loadExams();
-    updateUrlParams();
 });
 
-// Initialize
+// Initialize. List state (page/limit/search/filters) is restored by
+// usePaginationState when returning from an exam detail page, otherwise it
+// starts fresh — so we just load with whatever the current state is.
 onMounted(async () => {
     if (route.query.page) page.value = parseInt(route.query.page as string) || 1;
     if (route.query.limit) limit.value = parseInt(route.query.limit as string) || 10;
@@ -466,7 +465,6 @@ onMounted(async () => {
     if (route.query.status) filterStatus.value = route.query.status as string;
     if (route.query.group_id) filterGroup.value = route.query.group_id as string;
     if (route.query.teacher_id) filterTeacher.value = route.query.teacher_id as string;
-    if (route.query.type) filterType.value = route.query.type as string;
     if (route.query.start_date) filterStartDate.value = route.query.start_date as string;
     if (route.query.end_date) filterEndDate.value = route.query.end_date as string;
 

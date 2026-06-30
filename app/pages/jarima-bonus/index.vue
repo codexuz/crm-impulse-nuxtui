@@ -66,7 +66,7 @@
                 <span class="font-medium">{{ paginationEnd }}</span> gacha, jami
                 <span class="font-medium">{{ totalCount }}</span> ta yozuv
               </div>
-              <UPagination :model-value="currentPage" :total="totalCount" :items-per-page="itemsPerPage" show-last
+              <UPagination :page="currentPage" :total="totalCount" :items-per-page="itemsPerPage" show-last
                 show-first @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>
@@ -139,7 +139,7 @@ const startDate = ref(getMonthStart());
 const endDate = ref(getMonthEnd());
 
 // Pagination
-const currentPage = ref(1);
+const currentPage = usePaginationState("page", 1);
 const itemsPerPage = 10;
 const totalCount = ref(0);
 const summary = reactive({ bonus: 0, jarima: 0, referal: 0 });

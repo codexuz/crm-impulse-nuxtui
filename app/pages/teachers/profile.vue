@@ -52,7 +52,7 @@
                 <span class="font-medium">{{ totalItems }}</span> ta profil
               </div>
 
-              <UPagination :model-value="currentPage" :total="totalItems" :items-per-page="itemsPerPage" show-last
+              <UPagination :page="currentPage" :total="totalItems" :items-per-page="itemsPerPage" show-last
                 show-first @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>
@@ -226,8 +226,8 @@ const teachers = ref<Teacher[]>([]);
 const loading = ref(true);
 const searchQuery = ref("");
 const paymentTypeFilter = ref("all");
-const currentPage = ref(1);
-const itemsPerPage = ref(10);
+const currentPage = usePaginationState("page", 1);
+const itemsPerPage = usePaginationState("limit", 10);
 const totalItems = ref(0);
 const totalServerPages = ref(1);
 

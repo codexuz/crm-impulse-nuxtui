@@ -113,7 +113,7 @@
                 ta o'qituvchi
               </div>
 
-              <UPagination :model-value="currentPage" :total="filteredTeachers.length" :items-per-page="itemsPerPage"
+              <UPagination :page="currentPage" :total="filteredTeachers.length" :items-per-page="itemsPerPage"
                 show-last show-first @update:page="onPageChange" />
             </div>
           </template>
@@ -288,7 +288,7 @@ const teachers = ref<Teacher[]>([]);
 const loading = ref(true);
 const searchQuery = ref("");
 const paymentTypeFilter = ref<string | null>(null);
-const currentPage = ref(1);
+const currentPage = usePaginationState("page", 1);
 const itemsPerPage = 10;
 const showViewDialog = ref(false);
 const selectedTeacher = ref<Teacher | null>(null);

@@ -48,7 +48,7 @@
                                 <span class="font-medium">{{ filteredRoles.length }}</span> ta lavozim
                             </div>
 
-                            <UPagination v-if="filteredRoles.length > itemsPerPage" :model-value="currentPage"
+                            <UPagination v-if="filteredRoles.length > itemsPerPage" :page="currentPage"
                                 :total="filteredRoles.length" :items-per-page="itemsPerPage" show-last show-first
                                 @update:page="onPageChange" />
                         </div>
@@ -180,7 +180,7 @@ const isLoadingUsers = ref(false);
 const selectedUser = ref<any>(null);
 const loading = ref(true);
 const searchQuery = ref("");
-const currentPage = ref(1);
+const currentPage = usePaginationState("page", 1);
 const itemsPerPage = 10;
 const showDialog = ref(false);
 const showAssignDialog = ref(false);

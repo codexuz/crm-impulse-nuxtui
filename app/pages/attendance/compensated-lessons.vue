@@ -59,7 +59,7 @@
                 <span class="font-medium">{{ totalRecords }}</span> ta yozuv
               </div>
 
-              <UPagination :model-value="currentPage" :total="totalRecords" :items-per-page="filters.limit" show-last
+              <UPagination :page="currentPage" :total="totalRecords" :items-per-page="filters.limit" show-last
                 show-first @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>
@@ -194,7 +194,7 @@ const teachers = ref<Teacher[]>([]);
 const pending = ref(false);
 const error = ref<string | null>(null);
 const totalRecords = ref(0);
-const currentPage = ref(1);
+const currentPage = usePaginationState("page", 1);
 
 // Filters
 const filters = ref({

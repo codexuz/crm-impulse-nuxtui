@@ -129,7 +129,7 @@
                 ta xarajat
               </div>
 
-              <UPagination :model-value="currentPage" :total="filteredExpenses.length" :items-per-page="itemsPerPage"
+              <UPagination :page="currentPage" :total="filteredExpenses.length" :items-per-page="itemsPerPage"
                 show-last show-first @update:page="onPageChange" />
             </div>
           </template>
@@ -338,7 +338,7 @@ const searchQuery = ref("");
 const categoryFilter = ref("all");
 const startDate = ref("");
 const endDate = ref("");
-const currentPage = ref(1);
+const currentPage = usePaginationState("page", 1);
 const itemsPerPage = 10;
 const showExpenseDialog = ref(false);
 const showViewDialog = ref(false);

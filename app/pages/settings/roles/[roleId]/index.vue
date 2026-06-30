@@ -46,7 +46,7 @@
                                 <span class="font-medium">{{ total }}</span> ta foydalanuvchi
                             </div>
 
-                            <UPagination v-if="total > limit" :model-value="page" :total="total" :items-per-page="limit"
+                            <UPagination v-if="total > limit" :page="page" :total="total" :items-per-page="limit"
                                 show-last show-first @update:page="onPageChange" />
                         </div>
                     </template>
@@ -84,8 +84,8 @@ const users = ref<User[]>([])
 const total = ref(0)
 const isLoading = ref(true)
 const searchQuery = ref('')
-const page = ref(1)
-const limit = ref(10)
+const page = usePaginationState("page", 1)
+const limit = usePaginationState("limit", 10)
 const isRemoving = ref(false)
 const removePopoverOpen = ref<Record<string, boolean>>({})
 

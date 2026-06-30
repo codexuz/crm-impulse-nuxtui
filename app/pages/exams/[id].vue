@@ -28,6 +28,15 @@
                                 </UBadge>
                             </div>
 
+                            <div class="flex items-center gap-3">
+                                <USwitch :model-value="exam.bonusOrPenaltyAdded ?? false"
+                                    :loading="isUpdatingBonus" :disabled="isUpdatingBonus"
+                                    @update:model-value="toggleBonusOrPenalty" />
+                                <span class="text-sm font-medium">
+                                    {{ exam.bonusOrPenaltyAdded ? "Bonus/Jarima qo'shilgan" : "Bonus/Jarima qo'shilmagan" }}
+                                </span>
+                            </div>
+
                             <div class="space-y-2 text-sm">
                                 <div class="flex items-center gap-3">
                                     <UIcon name="i-lucide-layers" class="size-4 text-muted" />
@@ -145,6 +154,7 @@ const results = ref<ExamResult[]>([]);
 const teacher = ref<Teacher | null>(null);
 const isLoading = ref(true);
 const isLoadingResults = ref(false);
+const isUpdatingBonus = ref(false);
 const groupName = ref("Noma'lum");
 
 const teacherName = computed(() => {
@@ -225,6 +235,20 @@ const resultColumns: TableColumn<ExamResult>[] = [
             return h("span", { class: "text-sm text-muted" }, row.original.feedback || "—");
         },
     },
+    {
+        accessorKey: "created_at",
+        header: "Yaratilgan",
+        cell: ({ row }) => {
+            return h("span", { class: "text-sm text-muted" }, formatDate(row.original.created_at));
+        },
+    },
+    {
+        accessorKey: "updated_at",
+        header: "Yangilangan",
+        cell: ({ row }) => {
+            return h("span", { class: "text-sm text-muted" }, formatDate(row.original.updated_at));
+        },
+    },
 ];
 
 // Methods
@@ -269,6 +293,37 @@ const loadExam = async () => {
         });
     } finally {
         isLoading.value = false;
+    }
+};
+
+const toggleBonusOrPenalty = async (value: boolean) => {
+    if (!exam.value) return;
+    const previous = exam.value.bonusOrPenaltyAdded ?? false;
+    exam.value.bonusOrPenaltyAdded = value; // optimistic update
+    isUpdatingBonus.value = true;
+    try {
+        await api.put(
+            apiService.value,
+            `/exams/${examId.value}`,
+            { bonusOrPenaltyAdded: value },
+        );
+        toast.add({
+            title: "Saqlandi",
+            description: value
+                ? "Bonus/Jarima qo'shilgan deb belgilandi."
+                : "Bonus/Jarima qo'shilmagan deb belgilandi.",
+            color: "success",
+        });
+    } catch (error) {
+        console.error("Failed to update bonus/penalty status:", error);
+        exam.value.bonusOrPenaltyAdded = previous; // revert on error
+        toast.add({
+            title: "Xatolik",
+            description: "Holatni yangilashda xatolik. Qaytadan urinib ko'ring.",
+            color: "error",
+        });
+    } finally {
+        isUpdatingBonus.value = false;
     }
 };
 

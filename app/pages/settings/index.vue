@@ -49,7 +49,7 @@
                                 <span class="font-medium">{{ filteredBranches.length }}</span> ta filial
                             </div>
 
-                            <UPagination v-if="filteredBranches.length > itemsPerPage" :model-value="currentPage"
+                            <UPagination v-if="filteredBranches.length > itemsPerPage" :page="currentPage"
                                 :total="filteredBranches.length" :items-per-page="itemsPerPage" show-last show-first
                                 @update:page="onPageChange" />
                         </div>
@@ -132,7 +132,7 @@ const route = useRoute();
 const branches = ref<Branch[]>([]);
 const loading = ref(true);
 const searchQuery = ref("");
-const currentPage = ref(1);
+const currentPage = usePaginationState("page", 1);
 const itemsPerPage = 10;
 const showDialog = ref(false);
 const selectedBranch = ref<Branch | null>(null);

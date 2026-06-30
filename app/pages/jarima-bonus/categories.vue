@@ -42,7 +42,7 @@
               <div class="text-sm text-gray-500">
                 Jami <span class="font-medium">{{ filteredCategories.length }}</span> ta kategoriya
               </div>
-              <UPagination :model-value="currentPage" :total="filteredCategories.length" :items-per-page="itemsPerPage"
+              <UPagination :page="currentPage" :total="filteredCategories.length" :items-per-page="itemsPerPage"
                 show-last show-first @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>
@@ -122,7 +122,7 @@ const categories = ref<BonusPenaltyCategory[]>([]);
 const loading = ref(true);
 const searchQuery = ref("");
 const typeFilter = ref<BonusPenaltyType | null>(null);
-const currentPage = ref(1);
+const currentPage = usePaginationState("page", 1);
 const itemsPerPage = 10;
 
 const showDialog = ref(false);

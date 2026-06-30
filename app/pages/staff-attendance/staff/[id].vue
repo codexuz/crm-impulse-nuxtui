@@ -129,7 +129,7 @@
               <div class="text-sm text-gray-500">
                 Jami <span class="font-medium">{{ totalRecords }}</span> ta yozuv
               </div>
-              <UPagination :model-value="currentPage" :total="totalRecords" :items-per-page="limit"
+              <UPagination :page="currentPage" :total="totalRecords" :items-per-page="limit"
                 show-last show-first @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>
@@ -310,8 +310,8 @@ const initials = computed(() => {
 // Attendance history
 const records = ref<StaffAttendanceRecord[]>([]);
 const totalRecords = ref(0);
-const currentPage = ref(1);
-const limit = ref(10);
+const currentPage = usePaginationState("page", 1);
+const limit = usePaginationState("limit", 10);
 const recordsPending = ref(false);
 
 const columns = [

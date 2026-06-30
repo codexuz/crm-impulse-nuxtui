@@ -47,7 +47,7 @@
                 ta kategoriya
               </div>
 
-              <UPagination :model-value="currentPage" :total="filteredCategories.length" :items-per-page="itemsPerPage"
+              <UPagination :page="currentPage" :total="filteredCategories.length" :items-per-page="itemsPerPage"
                 show-last show-first @update:page="onPageChange" />
             </div>
           </template>
@@ -122,7 +122,7 @@ const route = useRoute();
 const categories = ref<Category[]>([]);
 const loading = ref(true);
 const searchQuery = ref("");
-const currentPage = ref(1);
+const currentPage = usePaginationState("page", 1);
 const itemsPerPage = 10;
 const showCategoryDialog = ref(false);
 const selectedCategory = ref<Category | null>(null);

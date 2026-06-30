@@ -100,7 +100,7 @@
           <div class="text-sm text-muted">
             Jami <span class="font-medium">{{ totalItems }}</span> ta qoida
           </div>
-          <UPagination :model-value="page" :total="totalItems" :items-per-page="limit"
+          <UPagination :page="page" :total="totalItems" :items-per-page="limit"
             show-last show-first @update:page="(p: number) => { page = p; load() }" />
         </div>
       </div>
@@ -221,8 +221,8 @@ async function loadRoles() {
 const policies = ref<AttendancePolicy[]>([]);
 const isLoading = ref(false);
 const deletingId = ref<string | null>(null);
-const page = ref(1);
-const limit = ref(20);
+const page = usePaginationState("page", 1);
+const limit = usePaginationState("limit", 20);
 const totalItems = ref(0);
 
 const dialog = ref(false);

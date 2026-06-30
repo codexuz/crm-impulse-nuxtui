@@ -112,7 +112,7 @@
           <div class="text-sm text-muted">
             Jami <span class="font-medium">{{ totalItems }}</span> ta ruxsat
           </div>
-          <UPagination :model-value="page" :total="totalItems" :items-per-page="limit" show-last show-first
+          <UPagination :page="page" :total="totalItems" :items-per-page="limit" show-last show-first
             @update:page="(p: number) => { page = p; load() }" />
         </div>
       </div>
@@ -279,8 +279,8 @@ const formatDate = (d: string) =>
 const items = ref<StaffPermission[]>([]);
 const isLoading = ref(false);
 const deletingId = ref<string | null>(null);
-const page = ref(1);
-const limit = ref(20);
+const page = usePaginationState("page", 1);
+const limit = usePaginationState("limit", 20);
 const totalItems = ref(0);
 
 const filters = ref({ status: "all" as string, type: "all" as string, date: "" as string });

@@ -117,7 +117,7 @@
                 <span class="font-medium">{{ totalPayments }}</span> to'lov
               </div>
 
-              <UPagination :model-value="page" :total="totalPayments" :items-per-page="limit" show-last show-first
+              <UPagination :page="page" :total="totalPayments" :items-per-page="limit" show-last show-first
                 @update:page="(p: number) => (page = p)" />
             </div>
           </template>
@@ -441,8 +441,8 @@ const isSubmitting = ref(false);
 const isDeleting = ref(false);
 
 // Pagination
-const page = ref(1);
-const limit = ref(10);
+const page = usePaginationState("page", 1);
+const limit = usePaginationState("limit", 10);
 const totalPayments = ref(0);
 
 const paginationStart = computed(() => (page.value - 1) * limit.value + 1);

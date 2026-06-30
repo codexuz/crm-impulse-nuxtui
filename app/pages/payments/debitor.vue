@@ -89,7 +89,7 @@
                 <span class="font-medium">{{ filteredDebitors.length }}</span>
                 qarzdorlar
               </div>
-              <UPagination :model-value="currentPage" :total="filteredDebitors.length" :items-per-page="itemsPerPage"
+              <UPagination :page="currentPage" :total="filteredDebitors.length" :items-per-page="itemsPerPage"
                 show-first show-last @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>
@@ -290,7 +290,7 @@ const debitors = ref<any[]>([]);
 const loading = ref(true);
 const searchQuery = ref("");
 const daysFilter = ref("all");
-const currentPage = ref(1);
+const currentPage = usePaginationState("page", 1);
 const itemsPerPage = 10;
 const totalItems = ref(0);
 const showPaymentDialog = ref(false);

@@ -47,7 +47,7 @@
                 <span class="font-medium">{{ total }}</span> sinov darsi
               </div>
 
-              <UPagination :model-value="currentPage" :total="total" :items-per-page="itemsPerPage" show-last show-first
+              <UPagination :page="currentPage" :total="total" :items-per-page="itemsPerPage" show-last show-first
                 @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>
@@ -183,8 +183,8 @@ const trialLessons = ref<TrialLesson[]>([]);
 const teachers = ref<TeacherInfo[]>([]);
 const loading = ref(true);
 const error = ref("");
-const currentPage = ref(1);
-const itemsPerPage = ref(10);
+const currentPage = usePaginationState("page", 1);
+const itemsPerPage = usePaginationState("limit", 10);
 const total = ref(0);
 const totalPages = ref(1);
 const searchQuery = ref("");

@@ -83,7 +83,7 @@
               </div>
 
               <UPagination
-                :model-value="page"
+                :page="page"
                 :total="totalItems"
                 :items-per-page="limit"
                 show-last
@@ -139,8 +139,8 @@ const isLoading = ref(true);
 const groupName = ref("");
 const search = ref("");
 const statusFilter = ref("all");
-const page = ref(1);
-const limit = ref(10);
+const page = usePaginationState("page", 1);
+const limit = usePaginationState("limit", 10);
 
 // Status options
 const statusOptions = [

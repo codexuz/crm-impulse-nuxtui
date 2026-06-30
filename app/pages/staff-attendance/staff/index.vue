@@ -50,7 +50,7 @@
                 <span class="font-medium">{{ totalItems }}</span> ta xodim
               </div>
 
-              <UPagination :model-value="page" :total="totalItems" :items-per-page="limit" show-last show-first
+              <UPagination :page="page" :total="totalItems" :items-per-page="limit" show-last show-first
                 @update:page="(p: number) => (page = p)" />
             </div>
           </template>
@@ -237,8 +237,8 @@ const qrDataUrl = ref<string>("");
 const selectedStaffForQr = ref<StaffMember | null>(null);
 
 // Pagination
-const page = ref(1);
-const limit = ref(10);
+const page = usePaginationState("page", 1);
+const limit = usePaginationState("limit", 10);
 const totalItems = ref(0);
 const totalPages = ref(1);
 

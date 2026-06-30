@@ -74,7 +74,7 @@
                 <span class="font-medium">{{ totalLeads }}</span> lead
               </div>
 
-              <UPagination :model-value="currentPage" :total="totalLeads" :items-per-page="itemsPerPage" show-last
+              <UPagination :page="currentPage" :total="totalLeads" :items-per-page="itemsPerPage" show-last
                 show-first @update:page="(p: number) => (currentPage = p)" />
             </div>
           </template>
@@ -184,8 +184,8 @@ const isBulkDeleting = ref(false);
 const isBulkArchiving = ref(false);
 
 // Pagination
-const currentPage = ref(1);
-const itemsPerPage = ref(10);
+const currentPage = usePaginationState("page", 1);
+const itemsPerPage = usePaginationState("limit", 10);
 const totalLeads = ref(0);
 
 const totalPages = computed(() =>

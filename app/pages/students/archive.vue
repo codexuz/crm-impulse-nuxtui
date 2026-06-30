@@ -45,7 +45,7 @@
                 <span class="font-medium">{{ totalItems }}</span> talaba
               </div>
 
-              <UPagination :model-value="page" :total="totalItems" :items-per-page="limit" show-last show-first
+              <UPagination :page="page" :total="totalItems" :items-per-page="limit" show-last show-first
                 @update:page="(p: number) => page = p" />
             </div>
           </template>
@@ -227,8 +227,8 @@ const route = useRoute();
 const students = ref<Student[]>([]);
 const courses = ref<any[]>([]);
 const isLoading = ref(true);
-const page = ref(1);
-const limit = ref(10);
+const page = usePaginationState("page", 1);
+const limit = usePaginationState("limit", 10);
 const totalItems = ref(0);
 const totalPages = ref(1);
 const showPassword = ref(false);
