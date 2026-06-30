@@ -15,6 +15,9 @@
                     <UFormField label="Forma nomi" class="min-w-64">
                         <UInput v-model="title" placeholder="Forma nomi" size="sm" />
                     </UFormField>
+                    <UFormField label="SMS tasdiqlash">
+                        <USwitch v-model="smsVerification" size="sm" />
+                    </UFormField>
                     <UButton color="neutral" variant="subtle" label="Bekor qilish" @click="navigateTo('/forms')" />
                     <UButton :label="saving ? 'Saqlanmoqda...' : 'Saqlash'" :loading="saving" :disabled="!title.trim()"
                         @click="save" />
@@ -56,6 +59,7 @@ const toast = useToast();
 const { createForm } = useFormsApi();
 
 const title = ref("");
+const smsVerification = ref(false);
 const saving = ref(false);
 const builder$ = ref<any>(null);
 const currentSchema = ref<FormSchema | null>(null);
@@ -80,7 +84,7 @@ async function save() {
 
     try {
         saving.value = true;
-        const form = await createForm(title.value, schema);
+        const form = await createForm(title.value, schema, smsVerification.value);
         toast.add({
             title: "Yaratildi",
             description: "Forma muvaffaqiyatli yaratildi",

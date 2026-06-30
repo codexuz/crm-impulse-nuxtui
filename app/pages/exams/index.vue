@@ -1,9 +1,10 @@
 <template>
     <UDashboardPanel id="exams">
         <template #header>
-            <UDashboardNavbar title="Imtihonlar" :ui="{ right: 'gap-3' }">
+            <UDashboardNavbar :ui="{ right: 'gap-3' }">
                 <template #leading>
                     <UDashboardSidebarCollapse />
+                    <UNavigationMenu :items="examsNavItems" highlight />
                 </template>
 
                 <template #description>
@@ -36,6 +37,13 @@
                         placeholder="O'qituvchi" class="w-45">
                         <template #label>
                             {{teacherOptions.find((t) => t.value === filterTeacher)?.label || "O'qituvchi"}}
+                        </template>
+                    </USelectMenu>
+
+                    <USelectMenu v-model="filterType" :items="typeOptions" value-key="value" placeholder="Test turi"
+                        class="w-40">
+                        <template #label>
+                            {{typeOptions.find((t) => t.value === filterType)?.label || "Test turi"}}
                         </template>
                     </USelectMenu>
 
@@ -78,14 +86,27 @@
 </template>
 
 <script setup lang="ts">
-import type { TableColumn } from "@nuxt/ui";
-import type { Exam, Group, Teacher } from "~/types";
+import type { TableColumn, NavigationMenuItem } from "@nuxt/ui";
+import type { Exam, ExamType, Group, Teacher } from "~/types";
 import { api } from "~/lib/api";
 import { useAuth } from "~/composables/useAuth";
 import { h, resolveComponent } from "vue";
 
 const UBadge = resolveComponent("UBadge");
 const UButton = resolveComponent("UButton");
+
+const examsNavItems: NavigationMenuItem[] = [
+    {
+        label: "Imtihonlar",
+        icon: "i-lucide-clipboard-list",
+        to: "/exams",
+    },
+    {
+        label: "Yiqilgan o'quvchilar",
+        icon: "i-lucide-triangle-alert",
+        to: "/exams/report",
+    },
+];
 
 const { apiService } = useAuth();
 const toast = useToast();
@@ -112,8 +133,23 @@ const search = ref("");
 const filterStatus = ref("all");
 const filterGroup = ref("all");
 const filterTeacher = ref("all");
+const filterType = ref("all");
 const filterStartDate = ref("");
 const filterEndDate = ref("");
+
+// Exam type config
+const examTypeLabels: Record<ExamType, string> = {
+    unit_test: "Unit Test",
+    level_test: "Level Test",
+    haftalik_test: "Haftalik Test",
+    oylik_test: "Oylik Test",
+    mid_course_test: "Mid Course Test",
+};
+
+const typeOptions = computed(() => [
+    { value: "all", label: "Barcha turlar" },
+    ...Object.entries(examTypeLabels).map(([value, label]) => ({ value, label })),
+]);
 
 // Status config
 const statusColors: Record<string, string> = {
@@ -165,17 +201,35 @@ const columns: TableColumn<Exam>[] = [
         accessorKey: "group_id",
         header: "Guruh",
         cell: ({ row }) => {
-            const group = groups.value.find((g) => g.id === row.original.group_id);
+            const group =
+                row.original.group ||
+                groups.value.find((g) => g.id === row.original.group_id);
             return group
                 ? h(UBadge, { color: "blue", variant: "subtle", size: "md" }, () => group.name)
                 : h("span", { class: "text-gray-400 text-sm" }, "Noma'lum");
         },
     },
     {
+        accessorKey: "type",
+        header: "Turi",
+        cell: ({ row }) => {
+            const type = row.original.type;
+            return type
+                ? h(
+                      UBadge,
+                      { variant: "subtle", color: "neutral", size: "md" },
+                      () => examTypeLabels[type] || type,
+                  )
+                : h("span", { class: "text-gray-400 text-sm" }, "—");
+        },
+    },
+    {
         accessorKey: "teacher_id",
         header: "O'qituvchi",
         cell: ({ row }) => {
-            const teacher = teachers.value.find((t) => t.user_id === row.original.teacher_id);
+            const teacher =
+                row.original.teacher ||
+                teachers.value.find((t) => t.user_id === row.original.teacher_id);
             return teacher
                 ? h("span", { class: "text-sm" }, `${teacher.first_name} ${teacher.last_name}`)
                 : h("span", { class: "text-gray-400 text-sm" }, "—");
@@ -185,7 +239,27 @@ const columns: TableColumn<Exam>[] = [
         accessorKey: "level",
         header: "Daraja",
         cell: ({ row }) => {
-            return h("span", { class: "text-sm capitalize" }, row.original.level);
+            const levelData = row.original.level_data;
+            const label = levelData
+                ? `${levelData.title} (${levelData.level})`
+                : row.original.level;
+            return label
+                ? h("span", { class: "text-sm capitalize" }, label)
+                : h("span", { class: "text-gray-400 text-sm" }, "—");
+        },
+    },
+    {
+        accessorKey: "unit_id",
+        header: "Unit",
+        cell: ({ row }) => {
+            const unit = row.original.unit;
+            return unit
+                ? h(
+                      UBadge,
+                      { variant: "subtle", color: "neutral", size: "sm" },
+                      () => unit.title,
+                  )
+                : h("span", { class: "text-gray-400 text-sm" }, "—");
         },
     },
     {
@@ -269,6 +343,10 @@ const loadExams = async () => {
             params.append("teacher_id", filterTeacher.value);
         }
 
+        if (filterType.value !== "all") {
+            params.append("type", filterType.value);
+        }
+
         if (filterStartDate.value) {
             params.append("start_date", filterStartDate.value);
         }
@@ -345,6 +423,7 @@ const updateUrlParams = () => {
     if (filterStatus.value !== "all") query.status = filterStatus.value;
     if (filterGroup.value !== "all") query.group_id = filterGroup.value;
     if (filterTeacher.value !== "all") query.teacher_id = filterTeacher.value;
+    if (filterType.value !== "all") query.type = filterType.value;
     if (filterStartDate.value) query.start_date = filterStartDate.value;
     if (filterEndDate.value) query.end_date = filterEndDate.value;
 
@@ -362,7 +441,7 @@ watch(search, () => {
     }, 300);
 });
 
-watch([filterStatus, filterGroup, filterTeacher, filterStartDate, filterEndDate], () => {
+watch([filterStatus, filterGroup, filterTeacher, filterType, filterStartDate, filterEndDate], () => {
     page.value = 1;
     loadExams();
     updateUrlParams();
@@ -387,6 +466,7 @@ onMounted(async () => {
     if (route.query.status) filterStatus.value = route.query.status as string;
     if (route.query.group_id) filterGroup.value = route.query.group_id as string;
     if (route.query.teacher_id) filterTeacher.value = route.query.teacher_id as string;
+    if (route.query.type) filterType.value = route.query.type as string;
     if (route.query.start_date) filterStartDate.value = route.query.start_date as string;
     if (route.query.end_date) filterEndDate.value = route.query.end_date as string;
 

@@ -15,11 +15,14 @@ export function useFormsApi() {
     return await api.get<Form>(apiService.value, `/forms/${id}`);
   }
 
-  async function createForm(title: string, schema: object) {
-    return await api.post<Form>(apiService.value, "/forms", { title, schema });
+  async function createForm(title: string, schema: object, smsVerification = false) {
+    return await api.post<Form>(apiService.value, "/forms", { title, schema, smsVerification });
   }
 
-  async function updateForm(id: string, data: Partial<{ title: string; schema: object }>) {
+  async function updateForm(
+    id: string,
+    data: Partial<{ title: string; schema: object; smsVerification: boolean }>,
+  ) {
     return await api.patch<Form>(apiService.value, `/forms/${id}`, data);
   }
 
@@ -44,12 +47,30 @@ export function useFormsApi() {
     return (await response.json()) as Form;
   }
 
-  async function submitResponse(formId: string, answers: Record<string, any>) {
+  async function requestResponseOtp(formId: string, phone: string) {
+    const config = useRuntimeConfig();
+    const response = await fetch(`${config.public.apiBaseUrl}/forms/responses/request-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ form_id: formId, phone }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || "Failed to send verification code");
+    }
+    return (await response.json()) as { message: string };
+  }
+
+  async function submitResponse(
+    formId: string,
+    answers: Record<string, any>,
+    verification?: { phone: string; code: string },
+  ) {
     const config = useRuntimeConfig();
     const response = await fetch(`${config.public.apiBaseUrl}/forms/responses`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ form_id: formId, answers }),
+      body: JSON.stringify({ form_id: formId, answers, ...verification }),
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
@@ -67,6 +88,7 @@ export function useFormsApi() {
     getFormResponses,
     deleteResponse,
     getFormPublic,
+    requestResponseOtp,
     submitResponse,
   };
 }

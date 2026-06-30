@@ -15,6 +15,9 @@
                     <UFormField label="Forma nomi" class="min-w-64">
                         <UInput v-model="title" placeholder="Forma nomi" size="sm" />
                     </UFormField>
+                    <UFormField label="SMS tasdiqlash">
+                        <USwitch v-model="smsVerification" size="sm" />
+                    </UFormField>
                     <UButton color="neutral" variant="subtle" label="Bekor qilish" @click="navigateTo('/forms')" />
                     <UButton :label="saving ? 'Saqlanmoqda...' : 'Saqlash'" :loading="saving" :disabled="!title.trim()"
                         @click="save" />
@@ -69,6 +72,7 @@ const { getForm, updateForm } = useFormsApi();
 
 const form = ref<Form | null>(null);
 const title = ref("");
+const smsVerification = ref(false);
 const saving = ref(false);
 const isLoading = ref(false);
 const builder$ = ref<any>(null);
@@ -83,6 +87,7 @@ async function loadForm() {
         isLoading.value = true;
         form.value = await getForm(formId);
         title.value = form.value.title;
+        smsVerification.value = form.value.smsVerification ?? false;
     } catch (error: any) {
         console.error("Failed to load form:", error);
         toast.add({
@@ -114,6 +119,7 @@ async function save() {
         await updateForm(formId, {
             title: title.value,
             schema,
+            smsVerification: smsVerification.value,
         });
         toast.add({
             title: "Yangilandi",

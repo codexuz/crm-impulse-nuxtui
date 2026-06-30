@@ -33,8 +33,35 @@
                 <div>
                     <p v-if="errorMsg" class="text-sm text-red-500 mb-4">{{ errorMsg }}</p>
 
-                    <FormsFormRenderer v-if="form.schema?.fields?.length" :fields="form.schema.fields"
-                        :loading="submitting" @submit="onSubmit" />
+                    <!-- SMS verification gate -->
+                    <div v-if="form.smsVerification && !phoneVerified" class="space-y-4">
+                        <p class="text-sm text-gray-500">
+                            Formani to'ldirishdan oldin telefon raqamingizni tasdiqlang.
+                        </p>
+
+                        <UFormField label="Telefon raqam" required>
+                            <UInput v-model="phone" type="tel" placeholder="+998 90 123 45 67" size="lg"
+                                class="w-full" :disabled="codeSent" />
+                        </UFormField>
+
+                        <UFormField v-if="codeSent" label="SMS kod" required>
+                            <UInput v-model="code" inputmode="numeric" placeholder="6 xonali kod" size="lg"
+                                class="w-full" />
+                        </UFormField>
+
+                        <UButton v-if="!codeSent" block size="lg" :loading="sendingOtp" :disabled="!phone.trim()"
+                            label="Kod yuborish" @click="sendOtp" />
+                        <template v-else>
+                            <UButton block size="lg" :disabled="!code.trim()" label="Tasdiqlash"
+                                @click="phoneVerified = true" />
+                            <UButton block size="sm" color="neutral" variant="ghost" :loading="sendingOtp"
+                                label="Raqamni o'zgartirish" @click="resetOtp" />
+                        </template>
+                    </div>
+
+                    <FormsFormRenderer
+                        v-else-if="form.schema?.fields?.length"
+                        :fields="form.schema.fields" :loading="submitting" @submit="onSubmit" />
                     <div v-else class="text-center py-8 text-gray-400">
                         <p>Bu formada maydonlar yo'q</p>
                     </div>
@@ -53,13 +80,20 @@ definePageMeta({
 
 const route = useRoute();
 const formId = route.params.id as string;
-const { getFormPublic, submitResponse } = useFormsApi();
+const { getFormPublic, requestResponseOtp, submitResponse } = useFormsApi();
 
 const form = ref<Form | null>(null);
 const isLoading = ref(true);
 const submitted = ref(false);
 const submitting = ref(false);
 const errorMsg = ref("");
+
+// SMS verification state
+const phone = ref("");
+const code = ref("");
+const codeSent = ref(false);
+const sendingOtp = ref(false);
+const phoneVerified = ref(false);
 
 useHead({
     title: computed(() => form.value?.title ?? "Forma"),
@@ -76,12 +110,36 @@ async function loadForm() {
     }
 }
 
+async function sendOtp() {
+    if (!phone.value.trim()) return;
+    sendingOtp.value = true;
+    errorMsg.value = "";
+
+    try {
+        await requestResponseOtp(formId, phone.value.trim());
+        codeSent.value = true;
+    } catch (e: any) {
+        errorMsg.value = e?.message || "Kod yuborishda xatolik yuz berdi. Qayta urinib ko'ring.";
+    } finally {
+        sendingOtp.value = false;
+    }
+}
+
+function resetOtp() {
+    codeSent.value = false;
+    code.value = "";
+    errorMsg.value = "";
+}
+
 async function onSubmit(answers: Record<string, any>) {
     submitting.value = true;
     errorMsg.value = "";
 
     try {
-        await submitResponse(formId, answers);
+        const verification = form.value?.smsVerification
+            ? { phone: phone.value.trim(), code: code.value.trim() }
+            : undefined;
+        await submitResponse(formId, answers, verification);
         submitted.value = true;
     } catch (e: any) {
         errorMsg.value = e?.message || "Yuborishda xatolik yuz berdi. Qayta urinib ko'ring.";

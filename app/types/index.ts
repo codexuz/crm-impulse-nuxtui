@@ -190,12 +190,22 @@ export interface Grading {
   };
 }
 
+export type ExamType =
+  | "unit_test"
+  | "level_test"
+  | "haftalik_test"
+  | "oylik_test"
+  | "mid_course_test";
+
 export interface Exam {
   id: string;
   title: string;
   group_id: string;
   teacher_id?: string | null;
   branch_id?: string | null;
+  type?: ExamType | null;
+  unit_id?: string | null;
+  level_id?: string | null;
   scheduled_at: string;
   status: "scheduled" | "completed" | "cancelled";
   is_online: boolean;
@@ -203,6 +213,21 @@ export interface Exam {
   created_at: string;
   updated_at: string;
   deleted_at?: string | null;
+  // Enriched relation objects returned by the backend
+  group?: Group | null;
+  teacher?: Pick<Teacher, "user_id" | "first_name" | "last_name"> | null;
+  unit?: Unit | null;
+  level_data?: Course | null;
+}
+
+export interface UnitTestFailure {
+  student_id: string;
+  first_name: string;
+  last_name: string;
+  failed_count: number;
+  groups: { id: string; name: string }[];
+  teachers: { id: string; first_name: string; last_name: string }[];
+  units: { id: string; title: string }[];
 }
 
 export interface ExamResult {
@@ -434,6 +459,8 @@ export interface Form {
   id: string
   title: string
   schema: FormSchema
+  /** When true, submitting a response requires a verified SMS code. */
+  smsVerification: boolean
   createdAt: string
   updatedAt: string
 }
