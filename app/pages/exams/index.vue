@@ -103,6 +103,16 @@ const examsNavItems: NavigationMenuItem[] = [
 
 const { apiService } = useAuth();
 const toast = useToast();
+const route = useRoute();
+const router = useRouter();
+
+const examTypeLabels: Record<ExamType, string> = {
+    unit_test: "Unit Test",
+    level_test: "Level Test",
+    haftalik_test: "Haftalik Test",
+    oylik_test: "Oylik Test",
+    mid_course_test: "Mid Course Test",
+};
 
 definePageMeta({
     layout: "default",
